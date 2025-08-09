@@ -1,0 +1,601 @@
+.
+├── .dockerignore
+├── .env
+├── .env.example
+├── .github
+│   └── workflows
+│       └── test.yml
+├── .gitignore
+├── .pytest_cache
+│   ├── .gitignore
+│   ├── CACHEDIR.TAG
+│   ├── README.md
+│   └── v
+│       └── cache
+│           ├── lastfailed
+│           └── nodeids
+├── .tables
+├── =0.9.0
+├── =13.0.0
+├── DELETE
+├── Dockerfile
+├── FROM
+├── README.md
+├── SELECT
+├── assets
+│   └── fonts
+│       ├── NotoSansTC-Regular.ttf
+│       └── SourceHanSansTC-Regular.otf
+├── cli
+│   ├── run_classifier.py
+│   ├── run_llm_filter.py
+│   ├── run_main.py
+│   ├── run_orchestrator.py
+│   └── run_spam_classifier.py
+├── config
+├── data
+│   ├── archive
+│   │   └── quotes
+│   │       ├── 20250713
+│   │       │   └── quote_專業_佳恩科技_153801.pdf
+│   │       └── 20250715
+│   ├── db
+│   │   ├── emails_log.db
+│   │   ├── processed_mails.db
+│   │   ├── tickets.db
+│   │   └── users.db
+│   ├── emails_log.db
+│   ├── input
+│   ├── knowledge
+│   │   └── faq.md
+│   ├── leads.db
+│   ├── output
+│   │   ├── classify_result.json
+│   │   ├── final_result.json
+│   │   └── mail_7559_out.json
+│   ├── quote_log.db
+│   ├── stats.db
+│   ├── testdata
+│   │   ├── classifier
+│   │   │   ├── ham_complaint_01.json
+│   │   │   ├── ham_general_inquiry_01.json
+│   │   │   ├── ham_info_change_01.json
+│   │   │   ├── ham_quotation_01.json
+│   │   │   ├── ham_tech_support_01.json
+│   │   │   └── ham_unknown_01.json
+│   │   ├── email001.json
+│   │   ├── inbox
+│   │   │   ├── mail_0001.out.json
+│   │   │   ├── mail_10080.json
+│   │   │   ├── mail_10081.json
+│   │   │   ├── mail_10082.json
+│   │   │   ├── mail_10083.json
+│   │   │   ├── mail_10084.json
+│   │   │   ├── mail_10085.json
+│   │   │   ├── mail_10087.json
+│   │   │   ├── mail_10088.json
+│   │   │   ├── mail_10089.json
+│   │   │   ├── mail_10090.json
+│   │   │   ├── mail_10091.json
+│   │   │   ├── mail_10092.json
+│   │   │   ├── mail_10093.json
+│   │   │   ├── mail_10094.json
+│   │   │   ├── mail_10097.json
+│   │   │   ├── mail_10098.json
+│   │   │   ├── mail_10099.json
+│   │   │   ├── mail_10100.json
+│   │   │   ├── mail_10101.json
+│   │   │   ├── mail_10102.json
+│   │   │   ├── mail_10108.json
+│   │   │   ├── mail_10109.json
+│   │   │   ├── mail_10110.json
+│   │   │   ├── mail_10111.json
+│   │   │   ├── mail_10112.json
+│   │   │   ├── mail_10113.json
+│   │   │   ├── mail_10114.json
+│   │   │   ├── mail_10116.json
+│   │   │   ├── mail_10117.json
+│   │   │   ├── mail_10118.json
+│   │   │   ├── mail_10119.json
+│   │   │   ├── mail_10120.json
+│   │   │   ├── mail_10121.json
+│   │   │   ├── mail_10122.json
+│   │   │   ├── mail_10123.json
+│   │   │   ├── mail_10124.json
+│   │   │   ├── mail_10125.json
+│   │   │   ├── mail_10127.json
+│   │   │   ├── mail_10128.json
+│   │   │   ├── mail_10129.json
+│   │   │   ├── mail_10130.json
+│   │   │   ├── mail_10132.json
+│   │   │   ├── mail_10133.json
+│   │   │   ├── mail_10134.json
+│   │   │   ├── mail_10135.json
+│   │   │   ├── mail_10136.json
+│   │   │   ├── mail_10137.json
+│   │   │   ├── mail_10138.json
+│   │   │   ├── mail_10139.json
+│   │   │   ├── mail_10140.json
+│   │   │   ├── mail_10142.json
+│   │   │   ├── mail_10143.json
+│   │   │   ├── mail_10144.json
+│   │   │   ├── mail_10146.json
+│   │   │   ├── mail_10147.json
+│   │   │   ├── mail_10149.json
+│   │   │   ├── mail_10150.json
+│   │   │   ├── mail_10151.json
+│   │   │   ├── mail_10152.json
+│   │   │   ├── mail_10153.json
+│   │   │   ├── mail_10154.json
+│   │   │   ├── mail_10155.json
+│   │   │   ├── mail_10156.json
+│   │   │   ├── mail_10157.json
+│   │   │   ├── mail_10158.json
+│   │   │   ├── mail_10159.json
+│   │   │   ├── mail_10160.json
+│   │   │   ├── mail_10161.json
+│   │   │   ├── mail_10162.json
+│   │   │   ├── mail_10163.json
+│   │   │   ├── mail_10164.json
+│   │   │   ├── mail_10165.json
+│   │   │   ├── mail_10166.json
+│   │   │   ├── mail_10167.json
+│   │   │   ├── mail_10168.json
+│   │   │   ├── mail_10169.json
+│   │   │   ├── mail_10170.json
+│   │   │   ├── mail_10171.json
+│   │   │   ├── mail_10172.json
+│   │   │   ├── mail_10173.json
+│   │   │   ├── mail_10174.json
+│   │   │   ├── mail_10175.json
+│   │   │   ├── mail_10176.json
+│   │   │   ├── mail_10177.json
+│   │   │   ├── mail_10178.json
+│   │   │   ├── mail_10180.json
+│   │   │   ├── mail_10181.json
+│   │   │   ├── mail_10182.json
+│   │   │   ├── mail_10183.json
+│   │   │   ├── mail_10184.json
+│   │   │   ├── mail_10185.json
+│   │   │   ├── mail_10186.json
+│   │   │   ├── mail_10187.json
+│   │   │   ├── mail_10188.json
+│   │   │   ├── mail_10189.json
+│   │   │   ├── mail_10190.json
+│   │   │   ├── mail_10191.json
+│   │   │   ├── mail_10192.json
+│   │   │   ├── mail_10193.json
+│   │   │   ├── mail_10194.json
+│   │   │   ├── mail_10195.json
+│   │   │   ├── mail_10196.json
+│   │   │   ├── mail_10197.json
+│   │   │   ├── mail_10198.json
+│   │   │   ├── mail_10199.json
+│   │   │   ├── mail_10200.json
+│   │   │   ├── mail_10201.json
+│   │   │   ├── mail_10202.json
+│   │   │   ├── mail_10203.json
+│   │   │   ├── mail_10204.json
+│   │   │   ├── mail_10205.json
+│   │   │   ├── mail_10206.json
+│   │   │   ├── mail_10207.json
+│   │   │   ├── mail_10208.json
+│   │   │   ├── mail_10209.json
+│   │   │   ├── mail_10210.json
+│   │   │   ├── mail_10211.json
+│   │   │   ├── mail_10212.json
+│   │   │   ├── mail_10213.json
+│   │   │   ├── mail_10214.json
+│   │   │   ├── mail_10215.json
+│   │   │   ├── mail_10216.json
+│   │   │   ├── mail_10217.json
+│   │   │   ├── mail_10218.json
+│   │   │   ├── mail_10219.json
+│   │   │   ├── mail_10220.json
+│   │   │   ├── mail_10221.json
+│   │   │   ├── mail_10222.json
+│   │   │   ├── mail_10223.json
+│   │   │   ├── mail_7559.json
+│   │   │   ├── mail_7561.json
+│   │   │   ├── mail_7562.json
+│   │   │   ├── mail_7563.json
+│   │   │   ├── mail_7564.json
+│   │   │   ├── mail_7566.json
+│   │   │   ├── mail_7567.json
+│   │   │   ├── mail_7570.json
+│   │   │   ├── mail_7571.json
+│   │   │   ├── mail_7572.json
+│   │   │   ├── mail_7573.json
+│   │   │   ├── mail_7574.json
+│   │   │   ├── mail_7575.json
+│   │   │   ├── mail_7577.json
+│   │   │   ├── mail_7583.json
+│   │   │   ├── mail_7584.json
+│   │   │   ├── mail_7585.json
+│   │   │   ├── mail_7588.json
+│   │   │   ├── mail_7591.json
+│   │   │   ├── mail_7592.json
+│   │   │   ├── mail_7597.json
+│   │   │   ├── mail_7598.json
+│   │   │   ├── mail_7599.json
+│   │   │   ├── mail_7603.json
+│   │   │   ├── mail_7604.json
+│   │   │   ├── mail_7605.json
+│   │   │   ├── mail_7607.json
+│   │   │   ├── mail_7608.json
+│   │   │   ├── mail_7615.json
+│   │   │   ├── mail_7617.json
+│   │   │   ├── mail_7619.json
+│   │   │   ├── mail_7620.json
+│   │   │   ├── mail_7623.json
+│   │   │   ├── mail_7625.json
+│   │   │   ├── mail_7626.json
+│   │   │   ├── mail_7628.json
+│   │   │   ├── mail_7629.json
+│   │   │   ├── mail_7630.json
+│   │   │   ├── mail_7632.json
+│   │   │   ├── mail_7633.json
+│   │   │   ├── mail_7634.json
+│   │   │   ├── mail_7635.json
+│   │   │   ├── mail_7636.json
+│   │   │   ├── mail_7640.json
+│   │   │   ├── mail_7645.json
+│   │   │   ├── mail_7759.json
+│   │   │   ├── mail_7760.json
+│   │   │   ├── mail_7761.json
+│   │   │   ├── mail_7762.json
+│   │   │   ├── mail_7763.json
+│   │   │   ├── mail_7764.json
+│   │   │   ├── mail_7765.json
+│   │   │   ├── mail_7766.json
+│   │   │   ├── mail_7767.json
+│   │   │   ├── mail_7768.json
+│   │   │   ├── mail_7769.json
+│   │   │   ├── mail_7770.json
+│   │   │   ├── mail_7771.json
+│   │   │   ├── mail_7772.json
+│   │   │   ├── mail_7773.json
+│   │   │   ├── mail_7774.json
+│   │   │   ├── mail_7775.json
+│   │   │   ├── mail_7776.json
+│   │   │   ├── mail_7777.json
+│   │   │   ├── mail_7778.json
+│   │   │   ├── mail_7779.json
+│   │   │   ├── mail_7780.json
+│   │   │   ├── mail_7781.json
+│   │   │   ├── mail_7782.json
+│   │   │   ├── mail_7783.json
+│   │   │   ├── mail_7784.json
+│   │   │   ├── mail_7785.json
+│   │   │   ├── mail_7786.json
+│   │   │   ├── mail_7787.json
+│   │   │   ├── mail_7788.json
+│   │   │   ├── mail_7789.json
+│   │   │   ├── mail_7790.json
+│   │   │   ├── mail_7791.json
+│   │   │   ├── mail_7792.json
+│   │   │   ├── mail_7793.json
+│   │   │   ├── mail_7794.json
+│   │   │   ├── mail_7795.json
+│   │   │   ├── mail_7796.json
+│   │   │   ├── mail_7797.json
+│   │   │   ├── mail_7798.json
+│   │   │   ├── mail_7799.json
+│   │   │   ├── mail_7802.json
+│   │   │   ├── mail_7803.json
+│   │   │   ├── mail_7804.json
+│   │   │   ├── mail_7805.json
+│   │   │   ├── mail_7806.json
+│   │   │   ├── mail_7807.json
+│   │   │   ├── mail_7808.json
+│   │   │   ├── mail_7809.json
+│   │   │   ├── mail_7810.json
+│   │   │   ├── mail_7811.json
+│   │   │   ├── mail_7812.json
+│   │   │   ├── mail_7813.json
+│   │   │   ├── mail_7814.json
+│   │   │   ├── mail_7815.json
+│   │   │   ├── mail_7816.json
+│   │   │   ├── mail_7817.json
+│   │   │   ├── mail_7818.json
+│   │   │   ├── mail_7819.json
+│   │   │   ├── mail_7820.json
+│   │   │   ├── mail_7821.json
+│   │   │   ├── mail_7822.json
+│   │   │   ├── mail_7823.json
+│   │   │   ├── mail_7824.json
+│   │   │   ├── mail_7825.json
+│   │   │   ├── mail_7826.json
+│   │   │   ├── mail_7827.json
+│   │   │   ├── mail_7828.json
+│   │   │   ├── mail_7829.json
+│   │   │   ├── mail_7830.json
+│   │   │   ├── mail_7831.json
+│   │   │   ├── mail_7832.json
+│   │   │   ├── mail_7833.json
+│   │   │   ├── mail_7834.json
+│   │   │   ├── mail_7835.json
+│   │   │   ├── mail_7836.json
+│   │   │   ├── mail_7837.json
+│   │   │   ├── mail_7838.json
+│   │   │   ├── mail_7839.json
+│   │   │   ├── mail_7840.json
+│   │   │   ├── mail_7841.json
+│   │   │   ├── mail_7842.json
+│   │   │   ├── mail_7843.json
+│   │   │   ├── mail_7844.json
+│   │   │   ├── mail_7845.json
+│   │   │   ├── mail_7846.json
+│   │   │   ├── mail_7847.json
+│   │   │   ├── mail_7848.json
+│   │   │   ├── mail_7849.json
+│   │   │   ├── mail_7850.json
+│   │   │   ├── mail_7851.json
+│   │   │   ├── mail_7852.json
+│   │   │   ├── mail_7853.json
+│   │   │   ├── mail_7854.json
+│   │   │   ├── mail_7855.json
+│   │   │   ├── mail_7856.json
+│   │   │   ├── mail_7857.json
+│   │   │   ├── mail_7858.json
+│   │   │   ├── mail_7859.json
+│   │   │   ├── mail_7860.json
+│   │   │   └── mail_7861.json
+│   │   ├── pipeline
+│   │   │   ├── change_info.json
+│   │   │   ├── error_missing_subject.json
+│   │   │   ├── error_no_model_path.json
+│   │   │   ├── error_smtp_missing.json
+│   │   │   ├── quote_request.json
+│   │   │   ├── test_complaint.json
+│   │   │   ├── test_general_inquiry.json
+│   │   │   ├── test_info_change.json
+│   │   │   ├── test_quotation.json
+│   │   │   ├── test_tech_support.json
+│   │   │   └── test_unknown.json
+│   │   └── spam
+│   │       ├── ham_legit.json
+│   │       ├── spam_llm.json
+│   │       ├── spam_ml.json
+│   │       └── spam_rule.json
+│   ├── tickets.db
+│   ├── train
+│   │   ├── Ham.json
+│   │   ├── emails_train.json
+│   │   ├── emails_train.json:Zone.Identifier
+│   │   ├── emails_train_180.json
+│   │   └── emails_train_augmented.json:Zone.Identifier
+│   └── users.db
+├── docker-compose.yml
+├── logs
+│   ├── pipeline.log
+│   └── run.log
+├── model
+│   ├── bert_spam_classifier
+│   │   ├── checkpoint-108
+│   │   │   ├── config.json
+│   │   │   ├── config.json:Zone.Identifier
+│   │   │   ├── model.safetensors
+│   │   │   ├── model.safetensors:Zone.Identifier
+│   │   │   ├── optimizer.pt
+│   │   │   ├── optimizer.pt:Zone.Identifier
+│   │   │   ├── rng_state.pth
+│   │   │   ├── rng_state.pth:Zone.Identifier
+│   │   │   ├── scheduler.pt
+│   │   │   ├── scheduler.pt:Zone.Identifier
+│   │   │   ├── special_tokens_map.json
+│   │   │   ├── special_tokens_map.json:Zone.Identifier
+│   │   │   ├── tokenizer_config.json
+│   │   │   ├── tokenizer_config.json:Zone.Identifier
+│   │   │   ├── trainer_state.json
+│   │   │   ├── trainer_state.json:Zone.Identifier
+│   │   │   ├── training_args.bin
+│   │   │   ├── training_args.bin:Zone.Identifier
+│   │   │   ├── vocab.txt
+│   │   │   └── vocab.txt:Zone.Identifier
+│   │   ├── checkpoint-135
+│   │   │   ├── config.json
+│   │   │   ├── config.json:Zone.Identifier
+│   │   │   ├── model.safetensors
+│   │   │   ├── model.safetensors:Zone.Identifier
+│   │   │   ├── optimizer.pt
+│   │   │   ├── optimizer.pt:Zone.Identifier
+│   │   │   ├── rng_state.pth
+│   │   │   ├── rng_state.pth:Zone.Identifier
+│   │   │   ├── scheduler.pt
+│   │   │   ├── scheduler.pt:Zone.Identifier
+│   │   │   ├── special_tokens_map.json
+│   │   │   ├── special_tokens_map.json:Zone.Identifier
+│   │   │   ├── tokenizer_config.json
+│   │   │   ├── tokenizer_config.json:Zone.Identifier
+│   │   │   ├── trainer_state.json
+│   │   │   ├── trainer_state.json:Zone.Identifier
+│   │   │   ├── training_args.bin
+│   │   │   ├── training_args.bin:Zone.Identifier
+│   │   │   ├── vocab.txt
+│   │   │   └── vocab.txt:Zone.Identifier
+│   │   ├── config.json
+│   │   ├── config.json:Zone.Identifier
+│   │   ├── model.safetensors
+│   │   ├── model.safetensors:Zone.Identifier
+│   │   ├── special_tokens_map.json
+│   │   ├── special_tokens_map.json:Zone.Identifier
+│   │   ├── tokenizer_config.json
+│   │   ├── tokenizer_config.json:Zone.Identifier
+│   │   ├── vocab.txt
+│   │   └── vocab.txt:Zone.Identifier
+│   ├── bert_spam_classifier_20250710-0729
+│   │   ├── checkpoint-10
+│   │   │   ├── config.json
+│   │   │   ├── model.safetensors
+│   │   │   ├── optimizer.pt
+│   │   │   ├── rng_state.pth
+│   │   │   ├── scheduler.pt
+│   │   │   ├── special_tokens_map.json
+│   │   │   ├── tokenizer_config.json
+│   │   │   ├── trainer_state.json
+│   │   │   ├── training_args.bin
+│   │   │   └── vocab.txt
+│   │   └── checkpoint-5
+│   │       ├── config.json
+│   │       ├── model.safetensors
+│   │       ├── rng_state.pth
+│   │       ├── scheduler.pt
+│   │       ├── special_tokens_map.json
+│   │       ├── tokenizer_config.json
+│   │       ├── trainer_state.json
+│   │       ├── training_args.bin
+│   │       └── vocab.txt
+│   └── roberta-zh-checkpoint
+│       ├── checkpoint-166
+│       │   ├── config.json
+│       │   ├── model.safetensors
+│       │   ├── optimizer.pt
+│       │   ├── rng_state.pth
+│       │   ├── scheduler.pt
+│       │   ├── special_tokens_map.json
+│       │   ├── tokenizer.json
+│       │   ├── tokenizer_config.json
+│       │   ├── trainer_state.json
+│       │   ├── training_args.bin
+│       │   └── vocab.txt
+│       ├── checkpoint-249
+│       │   ├── config.json
+│       │   ├── model.safetensors
+│       │   ├── optimizer.pt
+│       │   ├── rng_state.pth
+│       │   ├── scheduler.pt
+│       │   ├── special_tokens_map.json
+│       │   ├── tokenizer.json
+│       │   ├── tokenizer_config.json
+│       │   ├── trainer_state.json
+│       │   ├── training_args.bin
+│       │   └── vocab.txt
+│       ├── checkpoint-332
+│       │   ├── config.json
+│       │   ├── model.safetensors
+│       │   ├── optimizer.pt
+│       │   ├── rng_state.pth
+│       │   ├── scheduler.pt
+│       │   ├── special_tokens_map.json
+│       │   ├── tokenizer.json
+│       │   ├── tokenizer_config.json
+│       │   ├── trainer_state.json
+│       │   ├── training_args.bin
+│       │   └── vocab.txt
+│       ├── checkpoint-375
+│       │   ├── config.json
+│       │   ├── model.safetensors
+│       │   ├── optimizer.pt
+│       │   ├── rng_state.pth
+│       │   ├── scheduler.pt
+│       │   ├── special_tokens_map.json
+│       │   ├── tokenizer.json
+│       │   ├── tokenizer_config.json
+│       │   ├── trainer_state.json
+│       │   ├── training_args.bin
+│       │   └── vocab.txt
+│       ├── checkpoint-415
+│       │   ├── config.json
+│       │   ├── model.safetensors
+│       │   ├── optimizer.pt
+│       │   ├── rng_state.pth
+│       │   ├── scheduler.pt
+│       │   ├── special_tokens_map.json
+│       │   ├── tokenizer.json
+│       │   ├── tokenizer_config.json
+│       │   ├── trainer_state.json
+│       │   ├── training_args.bin
+│       │   └── vocab.txt
+│       ├── checkpoint-83
+│       │   ├── config.json
+│       │   ├── model.safetensors
+│       │   ├── optimizer.pt
+│       │   ├── rng_state.pth
+│       │   ├── scheduler.pt
+│       │   ├── special_tokens_map.json
+│       │   ├── tokenizer.json
+│       │   ├── tokenizer_config.json
+│       │   ├── trainer_state.json
+│       │   ├── training_args.bin
+│       │   └── vocab.txt
+│       ├── config.json
+│       ├── label_map.json
+│       ├── model.safetensors
+│       ├── special_tokens_map.json
+│       ├── tokenizer.json
+│       ├── tokenizer_config.json
+│       ├── train_log.txt
+│       ├── training_args.bin
+│       └── vocab.txt
+├── output
+│   └── predict_result.json
+├── outputs
+├── pipeline
+│   ├── main.py
+│   └── main1.py
+├── project_structure.txt
+├── pytest.ini
+├── report.html
+├── requirements.txt
+├── run_leads_test.py
+├── run_pipeline.sh
+├── scripts
+│   ├── check_email_log.py
+│   ├── gen_all_testdata.py
+│   ├── gen_testdata_pipeline.py
+│   ├── list_gmail_folders.py
+│   ├── run_pipeline.sh
+│   ├── send_test_emails.py
+│   ├── test_imap_login.py
+│   └── test_smtp.py
+├── src
+│   ├── .env
+│   ├── __init__.py
+│   ├── action_handler.py
+│   ├── classifier.py
+│   ├── email_processor.py
+│   ├── inference_classifier.py
+│   ├── init_db.py
+│   ├── log_writer.py
+│   ├── logs
+│   │   └── run.log
+│   ├── modules
+│   │   ├── apply_diff.py
+│   │   ├── leads_logger.py
+│   │   ├── quotation.py
+│   │   ├── quote_logger.py
+│   │   └── sales_notifier.py
+│   ├── requirements.txt
+│   ├── send_with_attachment.py
+│   ├── spam
+│   │   ├── feature_extractor.py
+│   │   ├── is_spam.py
+│   │   ├── ml_spam_classifier.py
+│   │   ├── rule_filter.py
+│   │   ├── spam_filter_orchestrator.py
+│   │   └── spam_llm_filter.py
+│   ├── stats_collector.py
+│   ├── support_ticket.py
+│   ├── train_classifier.py
+│   ├── trainers
+│   │   └── train_bert_spam_classifier.py
+│   └── utils
+│       ├── db_tools.py
+│       ├── imap_folder_detector.py
+│       ├── log_writer.py
+│       ├── logger.py
+│       ├── mailer.py
+│       ├── pdf_generator.py
+│       └── rag_reply.py
+├── subject,
+├── test_imap_connect.py
+├── tests
+│   ├── test_classifier.py
+│   ├── test_model_output_format.py
+│   ├── test_pipeline.py
+│   └── test_spam_detector.py
+└── tmp
+    └── out.json
+
+51 directories, 547 files
