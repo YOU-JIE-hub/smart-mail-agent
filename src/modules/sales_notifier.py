@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
+import os
+
 # 檔案位置：src/modules/sales_notifier.py
 # 模組用途：寄送報價 PDF 副本至內部業務信箱，支援 retry 機制與錯誤追蹤
-
-import os
 from datetime import datetime
 
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
