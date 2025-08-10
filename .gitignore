@@ -57,3 +57,6 @@ __pycache__/
 *.db
 *.sqlite
 reports/
+
+# diagnostics bundles
+diagnostics/
