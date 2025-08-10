@@ -1,0 +1,20 @@
+# 檔案位置：.flake8
+# 模組用途：Flake8 設定（忽略 .venv 與第三方；全域忽略 E402/E501）
+[flake8]
+max-line-length = 100
+extend-ignore = E203, W503, E402, E501
+exclude =
+    .git,
+    .venv,
+    **/.venv/**,
+    **/site-packages/**,
+    __pycache__,
+    .pytest_cache,
+    .mypy_cache,
+    data,
+    dist,
+    build,
+    logs
+per-file-ignores =
+    modules/*.py: F401
+    tests/*.py: F401
