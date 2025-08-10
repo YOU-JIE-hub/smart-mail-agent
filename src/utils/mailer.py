@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 import os
 import smtplib
 from email.message import EmailMessage
@@ -11,23 +13,23 @@ from smtplib import (
 
 from dotenv import load_dotenv
 
-from utils.logger import logger  # 單一來源的 logger
+from utils.logger import logger  # 專案內的單一 logger
 
 # 載入 .env
 load_dotenv()
 
 # SMTP/寄件人設定
 SMTP_HOST = os.getenv("SMTP_HOST")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "465"))
+SMTP_PORT = int(os.getenv("SMTP_PORT") or "465")
 SMTP_USER = os.getenv("SMTP_USER")
 SMTP_PASS = os.getenv("SMTP_PASS")
-REPLY_TO = os.getenv("REPLY_TO", SMTP_USER or "")
-SMTP_FROM = os.getenv(
-    "SMTP_FROM", f"Smart-Mail-Agent <{SMTP_USER}>" if SMTP_USER else "Smart-Mail-Agent"
+REPLY_TO = os.getenv("REPLY_TO") or (SMTP_USER or "")
+SMTP_FROM = os.getenv("SMTP_FROM") or (
+    f"Smart-Mail-Agent <{SMTP_USER}>" if SMTP_USER else "Smart-Mail-Agent"
 )
 
 
-def validate_smtp_config():
+def validate_smtp_config() -> None:
     """檢查 SMTP 設定是否齊全，缺少則丟 ValueError。"""
     required = ["SMTP_USER", "SMTP_PASS", "SMTP_HOST", "SMTP_PORT"]
     missing = [k for k in required if not os.getenv(k)]
@@ -42,7 +44,8 @@ def send_email_with_attachment(
     attachment_path: str | None = None,
 ) -> bool:
     """
-    發送 HTML 郵件（可選 PDF 附件）。離線模式 OFFLINE=1 會直接回傳成功，不做網路連線。
+    發送 HTML 郵件（可選 PDF 附件）。
+    若環境變數 OFFLINE=1/true/yes/on，直接回傳成功，不做實際 SMTP 連線（給 CI 用）。
     """
     # ---- 離線模式：直接當作成功 ----
     if str(os.getenv("OFFLINE", "0")).lower() in ("1", "true", "yes", "on"):
