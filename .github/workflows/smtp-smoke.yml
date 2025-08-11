@@ -1,0 +1,40 @@
+name: SMTP smoke (secrets-gated)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  smtp_online_test:
+    if: ${{ secrets.SMTP_HOST && secrets.SMTP_PORT && secrets.SMTP_USER && secrets.SMTP_PASS && secrets.SMTP_FROM }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install
+        run: |
+          python -m pip install -U pip
+          pip install -U pytest
+      - name: Create dummy attachment
+        run: |
+          mkdir -p data/output
+          echo "hello" > data/output/smoke.txt
+      - name: Send email
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+        run: |
+          PYTHONPATH=src python - <<'PY'
+from utils.mailer import send_email_with_attachment
+ok = send_email_with_attachment(
+  recipient="${{ secrets.SMTP_FROM }}",
+  subject="[smoke] smart-mail-agent",
+  body_html="<p>smoke</p>",
+  attachment_path="data/output/smoke.txt",
+)
+print("result:", ok)
+PY
