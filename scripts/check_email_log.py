@@ -2,6 +2,7 @@
 # 檔案位置：scripts/check_email_log.py
 # 模組用途：檢查 emails_log.db 最新紀錄與統計（自動遷移、適配欄位/表名）
 
+import argparse
 import sqlite3
 from pathlib import Path
 
@@ -85,9 +86,15 @@ def show_stats():
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--limit", type=int, default=20)
+    args = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--limit", type=int, default=20)
+    args = parser.parse_args()
     ensure_migrated()
     print("最新信件處理紀錄 (最近 20 筆)：\n")
-    headers, rows = fetch_latest(20)
+    headers, rows = fetch_latest(args.limit)
     if not rows:
         print("無任何 log 記錄，請確認主流程有正確寫入 emails_log.db")
     else:

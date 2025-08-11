@@ -10,32 +10,32 @@ PKG_BASIC = "基礎"
 PKG_PRO = "專業"
 PKG_ENT = "企業"
 
-# 專業優先；企業包含「功能」對應測試第 4 筆
+KW_ENT = ("整合", "API", "ERP", "LINE", "企業")
 KW_PRO = ("自動化", "排程", "自動分類", "專業")
-KW_ENT = ("整合", "API", "ERP", "LINE", "企業", "功能")
 
 DEFAULT_FONT_PATH = os.getenv("FONT_TTF_PATH", "assets/fonts/NotoSansTC-Regular.ttf")
 DEFAULT_OUT_DIR = Path("data/output")
 
 
-def choose_package(subject: str, content: str) -> Dict[str, object]:
+def choose_package(subject: str, content: str) -> Dict[str, str]:
     """
-    回傳格式：{"package": <基礎/專業/企業>, "needs_manual": <bool>}
-    - 先判專業，再判企業，最後才是基礎
-    - 基礎：needs_manual=True（弱訊號，需人工確認）
+    測試期待回傳 dict，至少含 'package' 鍵。
     """
     text = f"{subject or ''} {content or ''}".lower()
-    if any(k.lower() in text for k in KW_PRO):
-        pkg = PKG_PRO
-    elif any(k.lower() in text for k in KW_ENT):
+    if any(k.lower() in text for k in KW_ENT):
         pkg = PKG_ENT
+    elif any(k.lower() in text for k in KW_PRO):
+        pkg = PKG_PRO
     else:
         pkg = PKG_BASIC
-    return {"package": pkg, "needs_manual": (pkg == PKG_BASIC)}
+    return {"package": pkg}
 
 
 def _render_pdf(path: Path, title: str, lines: List[str]) -> str:
-    """優先用 reportlab；缺字型退回 Helvetica，不丟錯。"""
+    """
+    優先用 reportlab；找不到中文字型或任何字型錯誤時退回 Helvetica，不丟錯。
+    若 reportlab 模組不存在，外層會轉存 .txt。
+    """
     from reportlab.lib.pagesizes import A4  # type: ignore
     from reportlab.pdfgen import canvas  # type: ignore
 
@@ -48,7 +48,7 @@ def _render_pdf(path: Path, title: str, lines: List[str]) -> str:
             pdfmetrics.registerFont(TTFont("CJK", DEFAULT_FONT_PATH))
             font_name = "CJK"
     except Exception:
-        pass
+        pass  # 任何字型處理問題都回退 Helvetica
 
     path.parent.mkdir(parents=True, exist_ok=True)
     c = canvas.Canvas(str(path), pagesize=A4)
@@ -58,6 +58,7 @@ def _render_pdf(path: Path, title: str, lines: List[str]) -> str:
     c.setFont(font_name, 16)
     c.drawString(72, y, title)
     y -= 24
+
     c.setFont(font_name, 12)
     for line in lines:
         c.drawString(72, y, line)
@@ -66,6 +67,7 @@ def _render_pdf(path: Path, title: str, lines: List[str]) -> str:
             c.showPage()
             c.setFont(font_name, 12)
             y = h - 72
+
     c.save()
     return str(path)
 
@@ -78,9 +80,9 @@ def generate_pdf_quote(
 ) -> str:
     """
     相容兩種用法：
-      - generate_pdf_quote(tmp_path)
-      - generate_pdf_quote(package="基礎", client_name="a@b.com")
-    缺中文字型不丟錯；reportlab 不在時輸出 .txt 保底。
+      - generate_pdf_quote(tmp_path)                                -> out_dir=tmp_path
+      - generate_pdf_quote(package="基礎", client_name="a@b.com")   -> out_dir=data/output
+    缺中文字型不丟錯；reportlab 不在時輸出 .txt 作為保底。
     """
     out_base = Path(out_dir) if out_dir is not None else DEFAULT_OUT_DIR
     out_base.mkdir(parents=True, exist_ok=True)
