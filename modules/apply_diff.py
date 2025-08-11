@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-# 檔案位置：modules/apply_diff.py
-# 模組用途：比對並更新使用者資料庫（SQLite）。若無異動則不更新。
 from __future__ import annotations
 
+import re
 import sqlite3
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 DB_DEFAULT = "data/users.db"
 TABLE = "users"
@@ -20,103 +19,83 @@ class UserRow:
     address: Optional[str] = None
 
 
-def _ensure_db(db_path: str) -> None:
-    Path(db_path).parent.mkdir(parents=True, exist_ok=True)
-    with sqlite3.connect(db_path) as conn:
-        cur = conn.cursor()
-        cur.execute(
-            f"""
-            CREATE TABLE IF NOT EXISTS {TABLE} (
-                email   TEXT PRIMARY KEY,
-                name    TEXT,
-                phone   TEXT,
-                address TEXT
-            )
-            """
+def _ensure_db(db: str) -> None:
+    Path(db).parent.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(db) as c:
+        c.execute(
+            f"""CREATE TABLE IF NOT EXISTS {TABLE}(
+            email TEXT PRIMARY KEY, name TEXT, phone TEXT, address TEXT)"""
         )
-        conn.commit()
+        c.commit()
 
 
-def _get_user(db_path: str, email: str) -> Optional[UserRow]:
-    with sqlite3.connect(db_path) as conn:
-        cur = conn.cursor()
-        cur.execute(f"SELECT email, name, phone, address FROM {TABLE} WHERE email = ?", (email,))
-        row = cur.fetchone()
-        if row:
-            return UserRow(email=row[0], name=row[1], phone=row[2], address=row[3])
-        return None
+def _get(db: str, email: str) -> Optional[UserRow]:
+    with sqlite3.connect(db) as c:
+        cur = c.cursor()
+        cur.execute(f"SELECT email,name,phone,address FROM {TABLE} WHERE email=?", (email,))
+        r = cur.fetchone()
+        return UserRow(*r) if r else None
 
 
-def _insert_user(db_path: str, row: UserRow) -> None:
-    with sqlite3.connect(db_path) as conn:
-        cur = conn.cursor()
-        cur.execute(
-            f"INSERT INTO {TABLE} (email, name, phone, address) VALUES (?,?,?,?)",
+def _insert(db: str, row: UserRow) -> None:
+    with sqlite3.connect(db) as c:
+        c.execute(
+            f"INSERT INTO {TABLE}(email,name,phone,address) VALUES(?,?,?,?)",
             (row.email, row.name, row.phone, row.address),
         )
-        conn.commit()
+        c.commit()
 
 
-def _update_user(db_path: str, email: str, updates: Dict[str, Any]) -> None:
-    fields = []
-    values = []
-    for k, v in updates.items():
-        if k == "email":
-            continue
-        fields.append(f"{k} = ?")
-        values.append(v)
-    if not fields:
+def _update(db: str, email: str, updates: Dict[str, Any]) -> None:
+    if not updates:
         return
-    values.append(email)
-    with sqlite3.connect(db_path) as conn:
-        cur = conn.cursor()
-        cur.execute(f"UPDATE {TABLE} SET {', '.join(fields)} WHERE email = ?", tuple(values))
-        conn.commit()
+    cols = ", ".join(f"{k}=?" for k in updates.keys())
+    vals = list(updates.values()) + [email]
+    with sqlite3.connect(db) as c:
+        c.execute(f"UPDATE {TABLE} SET {cols} WHERE email=?", vals)
+        c.commit()
 
 
-def update_user_info(db_path: str, email: str, new_info: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    根據 email 對使用者資料進行「有差異才更新」：
-    參數:
-        db_path: SQLite 檔案路徑
-        email:   目標使用者 email（作為主鍵）
-        new_info: 欲更新欄位（name/phone/address）
-    回傳:
-        dict: { ok, updated(bool), updated_fields(list[str]), before(dict|None), after(dict) }
-    """
-    _ensure_db(db_path)
-    before = _get_user(db_path, email)
+# 內容解析（字串/字典都吃）
+_R_PHONE = re.compile(r"(?:09\d{8})")
+_R_ADDR = re.compile(r"(?:地址)[：:]?\s*([^\s，。；]+)")
+_R_NAME = re.compile(r"(?:姓名|名字)[：:]?\s*([^\s，。；]{2,})")
+_R_TO = re.compile(r"(?:改為|更新為|變更為)[：:]?\s*([^\s，。；]+)")
 
-    # 正規化輸入
-    candidate = {
-        "email": email,
-        "name": new_info.get("name"),
-        "phone": new_info.get("phone"),
-        "address": new_info.get("address"),
-    }
 
-    if before is None:
-        # 新增
-        _insert_user(db_path, UserRow(**candidate))
+def _parse(content: Any) -> Dict[str, Optional[str]]:
+    if isinstance(content, dict):
         return {
-            "ok": True,
-            "updated": True,
-            "updated_fields": ["name", "phone", "address"],
-            "before": None,
-            "after": candidate,
+            "name": content.get("name"),
+            "phone": content.get("phone"),
+            "address": content.get("address"),
         }
+    t = (content or "").strip()
+    to = _R_TO.findall(t)
+    if not t:
+        return {"name": None, "phone": None, "address": None}
 
-    # 計算差異
-    to_update: Dict[str, Any] = {}
-    updated_fields = []
-    before_dict = asdict(before)
-    for k in ("name", "phone", "address"):
-        nv = candidate.get(k)
-        if nv is not None and nv != before_dict.get(k):
-            to_update[k] = nv
-            updated_fields.append(k)
+    phone = next((s for s in to if re.fullmatch(r"09\d{8}", s)), None)
+    if not phone:
+        m = _R_PHONE.search(t)
+        phone = m.group(0) if m else None
+    addr = None
+    m = _R_ADDR.search(t)
+    addr = m.group(1) if m else None
+    if not addr:
+        addr = next((s for s in to if not re.fullmatch(r"09\d{8}", s)), None)
+    name = None
+    m = _R_NAME.search(t)
+    name = m.group(1) if m else None
+    return {"name": name, "phone": phone, "address": addr}
 
-    if not updated_fields:
+
+def update_user_info(email: str, content: Any, *, db_path: str = DB_DEFAULT) -> Dict[str, Any]:
+    _ensure_db(db_path)
+    before = _get(db_path, email)
+    before_dict = asdict(before) if before else None
+    parsed = _parse(content)
+    if not any(parsed.values()):
         return {
             "ok": True,
             "updated": False,
@@ -124,15 +103,35 @@ def update_user_info(db_path: str, email: str, new_info: Dict[str, Any]) -> Dict
             "before": before_dict,
             "after": before_dict,
         }
+    if before is None:
+        row = UserRow(email=email, **parsed)
+        _insert(db_path, row)
+        return {
+            "ok": True,
+            "updated": True,
+            "updated_fields": [k for k, v in parsed.items() if v is not None],
+            "before": None,
+            "after": asdict(row),
+        }
+    cur = asdict(before)
 
-    _update_user(db_path, email, to_update)
-    after = _get_user(db_path, email)
+    to_update = {}
+    updated = []
+    for k in ("name", "phone", "address"):
+        nv = parsed.get(k)
+        if nv is not None and nv != cur.get(k):
+            to_update[k] = nv
+            updated.append(k)
+    if not updated:
+        return {"ok": True, "updated": False, "updated_fields": [], "before": cur, "after": cur}
+    _update(db_path, email, to_update)
+    after = _get(db_path, email)
     return {
         "ok": True,
         "updated": True,
-        "updated_fields": updated_fields,
-        "before": before_dict,
-        "after": asdict(after) if after else candidate,
+        "updated_fields": updated,
+        "before": cur,
+        "after": asdict(after) if after else None,
     }
 
 
