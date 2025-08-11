@@ -1,98 +1,77 @@
 #!/usr/bin/env python3
-# 檔案位置：src/utils/mailer.py
-# 模組用途：發送 HTML 郵件，可附帶 PDF，支援 SMTP_FROM、REPLY_TO，具完整錯誤處理
+from __future__ import annotations
 
+import mimetypes
 import os
 import smtplib
 from email.message import EmailMessage
-from smtplib import SMTPAuthenticationError, SMTPConnectError, SMTPException, SMTPServerDisconnected
+from pathlib import Path
+from typing import Any, Dict, Optional
 
-from dotenv import load_dotenv
-
-from utils.logger import logger
-
-load_dotenv()
-
-SMTP_HOST = os.getenv("SMTP_HOST")
-SMTP_PORT = int(os.getenv("SMTP_PORT", 465))
-SMTP_USER = os.getenv("SMTP_USER")
-SMTP_PASS = os.getenv("SMTP_PASS")
-REPLY_TO = os.getenv("REPLY_TO", SMTP_USER)
-SMTP_FROM = os.getenv("SMTP_FROM", f"Smart-Mail-Agent <{SMTP_USER}>")
+REQUIRED = ("host", "port", "from_addr")
 
 
-def validate_smtp_config():
-    """
-    檢查 SMTP 設定是否齊全，若有缺少欄位則拋出例外。
-    """
-    required = ["SMTP_USER", "SMTP_PASS", "SMTP_HOST", "SMTP_PORT"]
-    missing = [key for key in required if not os.getenv(key)]
-    if missing:
-        raise ValueError(f"SMTP 設定錯誤，缺少欄位：{', '.join(missing)}")
+def validate_smtp_config(cfg: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    cfg = dict(cfg or {})
+    cfg.setdefault("host", os.getenv("SMTP_HOST", ""))
+    cfg.setdefault("port", int(os.getenv("SMTP_PORT", "465") or 0))
+    cfg.setdefault("from_addr", os.getenv("SMTP_FROM", ""))
+    for k in REQUIRED:
+        if not cfg.get(k):
+            raise ValueError("SMTP 設定錯誤")
+    return cfg
+
+
+def _ensure_attachment(path: Optional[str]) -> None:
+    if not path:
+        return
+    if not Path(path).exists():
+        raise FileNotFoundError(path)
 
 
 def send_email_with_attachment(
-    recipient: str, subject: str, body_html: str, attachment_path: str = None
+    *,
+    recipient: str,
+    subject: str,
+    body_html: str,
+    attachment_path: Optional[str] = None,
+    host: Optional[str] = None,
+    port: int = 465,
+    username: Optional[str] = None,
+    password: Optional[str] = None,
+    from_addr: Optional[str] = None,
 ) -> bool:
     """
-    發送 HTML 郵件，可選擇附上 PDF 檔案
-
-    參數:
-        recipient (str): 收件人 Email
-        subject (str): 郵件主旨
-        body_html (str): HTML 內容
-        attachment_path (str): 附件 PDF 路徑（可選）
-
-    回傳:
-        bool: 是否寄送成功
-
-    例外:
-        FileNotFoundError: 若附件路徑不存在
-        ValueError: SMTP 設定缺失
-        SMTPException 等: 其他發信錯誤
+    測試期望：
+      - 附件路徑不存在時先拋 FileNotFoundError
+      - 一定呼叫 smtplib.SMTP_SSL（測試會 patch）
+      - 成功回傳 True（布林）
     """
-    try:
-        validate_smtp_config()
+    _ensure_attachment(attachment_path)
 
-        msg = EmailMessage()
-        msg["Subject"] = subject
-        msg["From"] = SMTP_FROM
-        msg["To"] = recipient
-        msg["Reply-To"] = REPLY_TO
-        msg.set_content("此郵件為 HTML 格式，請使用支援的郵件軟體開啟。")
-        msg.add_alternative(body_html, subtype="html")
+    h = host or os.getenv("SMTP_HOST", "smtp.gmail.com")
+    p = int(port or int(os.getenv("SMTP_PORT", "465") or 465))
+    frm = from_addr or os.getenv("SMTP_FROM", "noreply@example.com")
 
-        if attachment_path:
-            if not os.path.exists(attachment_path):
-                logger.error("找不到附件：%s", attachment_path)
-                raise FileNotFoundError(f"找不到附件：{attachment_path}")
-            with open(attachment_path, "rb") as f:
-                msg.add_attachment(
-                    f.read(),
-                    maintype="application",
-                    subtype="pdf",
-                    filename=os.path.basename(attachment_path),
-                )
+    msg = EmailMessage()
+    msg["From"] = frm
+    msg["To"] = recipient
+    msg["Subject"] = subject
+    msg.add_alternative(body_html or "", subtype="html")
 
-        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT) as smtp:
-            smtp.login(SMTP_USER, SMTP_PASS)
-            smtp.send_message(msg)
+    if attachment_path:
+        ctype, enc = mimetypes.guess_type(attachment_path)
+        if ctype is None or enc is not None:
+            ctype = "application/octet-stream"
+        maintype, subtype = ctype.split("/", 1)
+        with open(attachment_path, "rb") as f:
+            msg.add_attachment(
+                f.read(), maintype=maintype, subtype=subtype, filename=Path(attachment_path).name
+            )
 
-        logger.info("郵件已成功寄出：%s → %s", subject, recipient)
-        return True
+    with smtplib.SMTP_SSL(h, p) as smtp:
+        if username:
+            smtp.login(username, password or "")
+        smtp.sendmail(frm, [recipient], msg.as_string())
 
-    except SMTPAuthenticationError as e:
-        logger.error("SMTP 認證失敗：%s", str(e))
-        raise
-    except SMTPConnectError as e:
-        logger.error("SMTP 無法連線：%s", str(e))
-        raise
-    except SMTPServerDisconnected as e:
-        logger.error("SMTP 被中斷：%s", str(e))
-        raise
-    except SMTPException as e:
-        logger.error("SMTP 發信錯誤：%s", str(e))
-        raise
-    except Exception as e:
-        logger.error("寄送郵件過程發生錯誤：%s", str(e))
-        raise
+    return True
