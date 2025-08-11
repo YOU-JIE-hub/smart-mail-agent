@@ -118,3 +118,14 @@ backup_dedup_*/
 sma-codeonly.tar.gz
 backup_dedup_*/
 modules_legacy_backup_*/
+
+# --- repo clean rules ---
+diagnostics/
+backup_dedup_*/
+modules_legacy_backup_*/
+share_bundle/
+scripts/
+sma-codeonly.tar.gz
+ALL_CODE_FOR_PASTE.txt
+assets/fonts/*.ttf
+.github/workflows/*.disabled
