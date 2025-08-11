@@ -113,3 +113,8 @@ htmlcov/
 # --- final cleanup ---
 sma-codeonly.tar.gz
 backup_dedup_*/
+
+# --- repo cleanup ---
+sma-codeonly.tar.gz
+backup_dedup_*/
+modules_legacy_backup_*/
