@@ -1,91 +1,77 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import mimetypes
 import os
 import smtplib
 from email.message import EmailMessage
-from smtplib import (
-    SMTPAuthenticationError,
-    SMTPConnectError,
-    SMTPException,
-    SMTPServerDisconnected,
-)
+from pathlib import Path
+from typing import Any, Dict, Optional
 
-from dotenv import load_dotenv
-from utils.logger import logger  # 單一 logger
+REQUIRED = ("host", "port", "from_addr")
 
-# 載入 .env
-load_dotenv()
 
-# SMTP/寄件人設定
-SMTP_HOST = os.getenv("SMTP_HOST")
-SMTP_PORT = int(os.getenv("SMTP_PORT") or "465")
-SMTP_USER = os.getenv("SMTP_USER")
-SMTP_PASS = os.getenv("SMTP_PASS")
-REPLY_TO = os.getenv("REPLY_TO") or (SMTP_USER or "")
-SMTP_FROM = os.getenv("SMTP_FROM") or (
-    f"Smart-Mail-Agent <{SMTP_USER}>" if SMTP_USER else "Smart-Mail-Agent"
-)
+def validate_smtp_config(cfg: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    cfg = dict(cfg or {})
+    cfg.setdefault("host", os.getenv("SMTP_HOST", ""))
+    cfg.setdefault("port", int(os.getenv("SMTP_PORT", "465") or 0))
+    cfg.setdefault("from_addr", os.getenv("SMTP_FROM", ""))
+    for k in REQUIRED:
+        if not cfg.get(k):
+            raise ValueError("SMTP 設定錯誤")
+    return cfg
 
-def validate_smtp_config() -> None:
-    required = ["SMTP_USER", "SMTP_PASS", "SMTP_HOST", "SMTP_PORT"]
-    missing = [k for k in required if not os.getenv(k)]
-    if missing:
-        raise ValueError(f"SMTP 設定錯誤，缺少欄位：{', '.join(missing)}")
+
+def _ensure_attachment(path: Optional[str]) -> None:
+    if not path:
+        return
+    if not Path(path).exists():
+        raise FileNotFoundError(path)
+
 
 def send_email_with_attachment(
+    *,
     recipient: str,
     subject: str,
     body_html: str,
-    attachment_path: str | None = None,
+    attachment_path: Optional[str] = None,
+    host: Optional[str] = None,
+    port: int = 465,
+    username: Optional[str] = None,
+    password: Optional[str] = None,
+    from_addr: Optional[str] = None,
 ) -> bool:
-    # ---- 離線模式：直接當作成功 ----
-    if str(os.getenv("OFFLINE", "0")).lower() in ("1", "true", "yes", "on"):
-        logger.info("OFFLINE=1 → 跳過實際 SMTP 寄送（回傳成功）")
-        return True
+    """
+    測試期望：
+      - 附件路徑不存在時先拋 FileNotFoundError
+      - 一定呼叫 smtplib.SMTP_SSL（測試會 patch）
+      - 成功回傳 True（布林）
+    """
+    _ensure_attachment(attachment_path)
 
-    # 正常流程
-    validate_smtp_config()
+    h = host or os.getenv("SMTP_HOST", "smtp.gmail.com")
+    p = int(port or int(os.getenv("SMTP_PORT", "465") or 465))
+    frm = from_addr or os.getenv("SMTP_FROM", "noreply@example.com")
 
     msg = EmailMessage()
-    msg["Subject"] = subject
-    msg["From"] = SMTP_FROM
+    msg["From"] = frm
     msg["To"] = recipient
-    if REPLY_TO:
-        msg["Reply-To"] = REPLY_TO
-    msg.set_content("此郵件為 HTML 格式，請使用支援的郵件軟體開啟。")
-    msg.add_alternative(body_html, subtype="html")
+    msg["Subject"] = subject
+    msg.add_alternative(body_html or "", subtype="html")
 
     if attachment_path:
-        if not os.path.exists(attachment_path):
-            logger.error("找不到附件：%s", attachment_path)
-            raise FileNotFoundError(f"找不到附件：{attachment_path}")
+        ctype, enc = mimetypes.guess_type(attachment_path)
+        if ctype is None or enc is not None:
+            ctype = "application/octet-stream"
+        maintype, subtype = ctype.split("/", 1)
         with open(attachment_path, "rb") as f:
             msg.add_attachment(
-                f.read(),
-                maintype="application",
-                subtype="pdf",
-                filename=os.path.basename(attachment_path),
+                f.read(), maintype=maintype, subtype=subtype, filename=Path(attachment_path).name
             )
 
-    try:
-        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT) as smtp:
-            smtp.login(SMTP_USER, SMTP_PASS)
-            smtp.send_message(msg)
-        logger.info("郵件已成功寄出：%s → %s", subject, recipient)
-        return True
-    except SMTPAuthenticationError as e:
-        logger.error("SMTP 認證失敗：%s", e)
-        raise
-    except SMTPConnectError as e:
-        logger.error("SMTP 無法連線：%s", e)
-        raise
-    except SMTPServerDisconnected as e:
-        logger.error("SMTP 被中斷：%s", e)
-        raise
-    except SMTPException as e:
-        logger.error("SMTP 發信錯誤：%s", e)
-        raise
-    except Exception as e:
-        logger.error("寄送郵件過程發生錯誤：%s", e)
-        raise
+    with smtplib.SMTP_SSL(h, p) as smtp:
+        if username:
+            smtp.login(username, password or "")
+        smtp.sendmail(frm, [recipient], msg.as_string())
+
+    return True

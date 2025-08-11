@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-# 檔案位置：modules/quote_logger.py
-# 模組用途：報價記錄落庫（SQLite）
 from __future__ import annotations
 
 import sqlite3
@@ -14,47 +12,29 @@ TABLE = "quotes"
 
 def ensure_db_exists(db_path: str = DB_DEFAULT) -> None:
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)
-    with sqlite3.connect(db_path) as conn:
-        cur = conn.cursor()
-        cur.execute(
-            f"""
-            CREATE TABLE IF NOT EXISTS {TABLE} (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                customer TEXT NOT NULL,
-                package  TEXT NOT NULL,
-                total    REAL NOT NULL,
-                file_path TEXT,
-                created_at TEXT NOT NULL
-            )
-            """
+    with sqlite3.connect(db_path) as c:
+        c.execute(
+            f"""CREATE TABLE IF NOT EXISTS {TABLE}(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            client_name TEXT NOT NULL,
+            package TEXT NOT NULL,
+            pdf_path TEXT,
+            created_at TEXT NOT NULL)"""
         )
-        conn.commit()
+        c.commit()
 
 
 def log_quote(
-    db_path: str,
-    customer: str,
-    package: str,
-    total: float,
-    file_path: Optional[str] = None,
+    *, client_name: str, package: str, pdf_path: Optional[str], db_path: str = DB_DEFAULT
 ) -> int:
-    """
-    寫入一筆報價記錄，回傳 row id
-    """
     ensure_db_exists(db_path)
-    with sqlite3.connect(db_path) as conn:
-        cur = conn.cursor()
+    with sqlite3.connect(db_path) as c:
+        cur = c.cursor()
         cur.execute(
-            f"INSERT INTO {TABLE} (customer, package, total, file_path, created_at) VALUES (?,?,?,?,?)",
-            (
-                customer,
-                package,
-                float(total),
-                file_path,
-                datetime.now().isoformat(timespec="seconds"),
-            ),
+            f"INSERT INTO {TABLE}(client_name,package,pdf_path,created_at) VALUES(?,?,?,?)",
+            (client_name, package, pdf_path, datetime.now().isoformat(timespec="seconds")),
         )
-        conn.commit()
+        c.commit()
         return int(cur.lastrowid)
 
 
