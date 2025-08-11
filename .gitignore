@@ -110,3 +110,6 @@ src/logs/
 htmlcov/
 .coverage*
 .pytest_cache/
+# --- final cleanup ---
+sma-codeonly.tar.gz
+backup_dedup_*/
