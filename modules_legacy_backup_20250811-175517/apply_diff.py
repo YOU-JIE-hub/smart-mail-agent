@@ -32,7 +32,7 @@ def _ensure_db(db: str) -> None:
 def _get(db: str, email: str) -> Optional[UserRow]:
     with sqlite3.connect(db) as c:
         cur = c.cursor()
-        cur.execute(f"SELECT email,name,phone,address FROM {TABLE} WHERE email=?", (email,))
+        cur.execute("SELECT email,name,phone,address FROM " + TABLE + " WHERE email=?", (email,))
         r = cur.fetchone()
         return UserRow(*r) if r else None
 
@@ -52,7 +52,7 @@ def _update(db: str, email: str, updates: Dict[str, Any]) -> None:
     cols = ", ".join(f"{k}=?" for k in updates.keys())
     vals = list(updates.values()) + [email]
     with sqlite3.connect(db) as c:
-        c.execute(f"UPDATE {TABLE} SET {cols} WHERE email=?", vals)
+        c.execute("UPDATE " + TABLE + " SET " + cols + " WHERE email=?", vals)
         c.commit()
 
 
