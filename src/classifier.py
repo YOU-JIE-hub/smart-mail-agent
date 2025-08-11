@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-# 檔案位置：src/classifier.py
-# 模組用途：
-# 1. 提供 IntentClassifier 類別，使用模型或外部注入 pipeline 進行郵件意圖分類
-# 2. 支援 CLI 直接執行分類（離線可用；測試可注入 mock）
-
 from __future__ import annotations
 
 import argparse
@@ -15,6 +9,13 @@ from typing import Any, Callable, Dict, Optional
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
 
 from utils.logger import logger  # 統一日誌
+
+# !/usr/bin/env python3
+# 檔案位置：src/classifier.py
+# 模組用途：
+# 1. 提供 IntentClassifier 類別，使用模型或外部注入 pipeline 進行郵件意圖分類
+# 2. 支援 CLI 直接執行分類（離線可用；測試可注入 mock）
+
 
 # ===== 規則關鍵字（含中文常見商務字眼）=====
 RE_QUOTE = re.compile(
@@ -79,12 +80,8 @@ class IntentClassifier:
             logger.info("[IntentClassifier] 使用外部注入的 pipeline（不載入模型）")
         else:
             logger.info(f"[IntentClassifier] 載入模型：{model_path}")
-            self.tokenizer = AutoTokenizer.from_pretrained(
-                model_path, local_files_only=local_files_only
-            )
-            self.model = AutoModelForSequenceClassification.from_pretrained(
-                model_path, local_files_only=local_files_only
-            )
+            self.tokenizer = AutoTokenizer.from_pretrained(model_path)
+            self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
             self.pipeline = pipeline(
                 "text-classification", model=self.model, tokenizer=self.tokenizer
             )

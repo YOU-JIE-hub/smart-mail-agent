@@ -67,12 +67,21 @@ def main():
         result = spam_filter.is_legit(subject, body, sender)
 
         if not result["allow"]:
-            logger.warning(f"[Spam] 被過濾：階段 {result['stage']}")
+            logger.warning(
+                f"[Spam] 被過濾：階段 {result.get('stage') or result.get('engine','blocked')}"
+            )
             data.update(
                 {"label": "spam", "predicted_label": "spam", "confidence": 0.0, "summary": ""}
             )
             write_classification_result(data, input_path)
-            write_log(subject, body, sender, "Spam", result["stage"], confidence=0.0)
+            write_log(
+                subject,
+                body,
+                sender,
+                "Spam",
+                result.get("stage") or result.get("engine", "blocked"),
+                confidence=0.0,
+            )
             return
 
         classification = classify_intent(subject, body)

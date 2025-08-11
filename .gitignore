@@ -57,3 +57,59 @@ __pycache__/
 *.db
 *.sqlite
 reports/
+
+# diagnostics bundles
+diagnostics/
+
+# === Local & Python ===
+.venv/
+__pycache__/
+*.py[cod]
+*.pkl
+*.log
+logs/
+logs.out
+reports/
+report.html
+
+# === Local data / outputs ===
+data/*.db
+data/db/*.db
+data/tickets.db
+data/quote_log.db
+data/users.db
+data/emails_log.db
+output/
+outputs/
+
+# === Models (large) ===
+model/
+share_bundle/model/
+
+# === Diagnostics ===
+diagnostics/
+
+# === OS junk ===
+.DS_Store
+Thumbs.db
+*:Zone.Identifier
+# --- audit auto-append ---
+assets/fonts/*.ttf
+share_bundle/assets/fonts/*.ttf
+logs/
+src/logs/
+*.log
+
+# --- dedup cleanup ---
+share_bundle/
+assets/fonts/*.ttf
+logs/
+src/logs/
+*.log
+# --- dedup cleanup (Mon Aug 11 17:35:11 CST 2025) ---
+htmlcov/
+.coverage*
+.pytest_cache/
+# --- final cleanup ---
+sma-codeonly.tar.gz
+backup_dedup_*/
