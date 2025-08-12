@@ -27,3 +27,10 @@ python -m isort .
 python -m black .
 python -m flake8
 ```
+
+
+## 下載區（可直接交付）
+[![Download](https://img.shields.io/github/v/release/YOU-JIE-hub/smart-mail-agent?display_name=tag&sort=semver)](https://github.com/YOU-JIE-hub/smart-mail-agent/releases/latest)
+
+- 最新離線 Demo 報告（HTML）：`reports/offline_demo_report.html`
+- 一鍵展示 ZIP（Release 資產）：到 **Releases → 最新版本** 下載。
