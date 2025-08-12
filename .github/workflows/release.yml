@@ -1,59 +1,37 @@
 name: release
-
 on:
-  push:
-    tags:
-      - 'v*'
+  push: { tags: [ 'v*' ] }
   workflow_dispatch:
-
-permissions:
-  contents: read
-  packages: write
-
+permissions: { contents: read, packages: write }
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: pip-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            pip-${{ runner.os }}-
-
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.10' }
       - name: Install deps
         run: |
           python -m pip install -U pip
           pip install -r requirements.txt
           pip install isort black flake8 mypy
-
       - name: Lint & Type check & Test
+        env: { PYTHONPATH: src, OFFLINE: "1" }
         run: |
-          . .venv/bin/activate 2>/dev/null || python -m venv .venv
+          python -m venv .venv
           . .venv/bin/activate
           pip install -r requirements.txt
           isort .
           black .
           flake8 --config .flake8 .
           mypy --exclude '(^|/)(\.venv|data|build|dist)/' src || true
-          PYTHONPATH=src pytest -q
-
+          pytest -q -k "not online"
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -62,7 +40,6 @@ jobs:
           tags: |
             type=ref,event=tag
             type=raw,value=latest
-
       - name: Build and push
         uses: docker/build-push-action@v6
         with:

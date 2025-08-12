@@ -1,46 +1,62 @@
-.PHONY: help ensure-venv install format lint test-offline-venv fix-classifier fix-quotation clean-light clean-heavy
+PYTHON?=.venv/bin/python
+OFFLINE?=1
+export OFFLINE
+export PYTHONPATH=src
 
-help:
-	@echo "make ensure-venv          - 建 venv（如無）並升級 pip"
-	@echo "make install              - 安裝開發套件"
-	@echo "make format               - isort + black"
-	@echo "make lint                 - flake8（需全過）"
-	@echo "make test-offline-venv    - 自動啟 venv + OFFLINE 測試"
-	@echo "make fix-classifier       - 修 transformers.from_pretrained 參數順序"
-	@echo "make fix-quotation        - 修 quotation（專業優先、dict 回傳、PDF fallback）"
-	@echo "make clean-light          - 清 cache/覆蓋/輸出"
-	@echo "make clean-heavy          - 連 pip/hf 快取一起清"
+.PHONY: test-offline matrix report open-report demo clean-attachments
 
-ensure-venv:
-	@test -d .venv || python -m venv .venv
-	@. .venv/bin/activate; pip -q install -U pip
+test-offline:
+	$(PYTHON) -m pytest -q -k "not online"
 
-install: ensure-venv
-	@. .venv/bin/activate; \
-	  pip install -r requirements.txt || true; \
-	  pip install -U pytest black isort flake8 python-dotenv
+matrix:
+	$(PYTHON) tools/run_actions_matrix.py
 
-format:
-	. .venv/bin/activate; python -m isort .; python -m black .
+report:
+	$(PYTHON) tools/generate_offline_report.py
+
+open-report:
+	@if command -v wslview >/dev/null 2>&1; then wslview reports/offline_demo_report.html; \
+	elif command -v xdg-open >/dev/null 2>&1; then xdg-open reports/offline_demo_report.html >/dev/null 2>&1 & \
+	else echo "Open reports/offline_demo_report.html in your browser."; fi
+
+demo: matrix report open-report
+
+clean-attachments:
+	@find data/output -maxdepth 1 -type f -name "attachment_*.txt" -print -delete | sed 's/^/removed: /' || true
+
+PYTHON?=.venv/bin/python
+export OFFLINE=1
+export PYTHONPATH=src
+
+.PHONY: qa lint format demo
+qa:
+	- black --check --diff . || true
+	- isort --check-only . || true
+	$(PYTHON) -m pytest -q -k 'not online'
 
 lint:
-	. .venv/bin/activate; python -m flake8
+	- black . || true
+	- isort . || true
 
-test-offline-venv: ensure-venv
-	. .venv/bin/activate; OFFLINE=1 PYTHONPATH=src pytest -q -k "not online"
+demo:
+	$(PYTHON) -m cli.sma demo
 
-fix-classifier: ensure-venv
-	. .venv/bin/activate; \
-	  python tools/fix_from_pretrained_order_v3.py; \
-	  PYTHONPATH=src pytest -q -k "not online"
 
-fix-quotation: ensure-venv
-	. .venv/bin/activate; \
-	  PYTHONPATH=src pytest -q -k "not online"
+PYTHON?=.venv/bin/python
+export OFFLINE=1
+export PYTHONPATH=src
 
-clean-light:
-	rm -rf .pytest_cache **/__pycache__ htmlcov .coverage* coverage.xml logs/* data/output/* || true
+.PHONY: contracts security sbom
+contracts:
+	$(PYTHON) -m pytest -q tests/contracts
 
-clean-heavy: clean-light
-	python -m pip cache purge || true
-	rm -rf ~/.cache/pip ~/.cache/huggingface ~/.cache/torch || true
+security:
+	@echo "[SEC] bandit 扫描（忽略 tests、data、.venv）"
+	- bandit -q -r -x tests,data,.venv .
+	@echo "[SEC] detect-secrets 扫描（若未安装会略过）"
+	- detect-secrets scan --all-files --exclude-files '.*(\.venv|\.git|data|artifacts|reports|archive).*' || true
+
+sbom:
+	@echo "[SBOM] 產生 CycloneDX SBOM (sbom.json)"
+	- python -m pip install -U cyclonedx-bom >/dev/null 2>&1 || true
+	- cyclonedx-py --format json --outfile sbom.json || cyclonedx-bom -e -o sbom.json || true
