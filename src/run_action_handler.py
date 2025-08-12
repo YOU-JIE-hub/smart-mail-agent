@@ -1,25 +1,28 @@
-#!/usr/bin/env python3
-# 檔案位置：src/run_action_handler.py
-# 模組用途：CLI 入口，包裝 action_handler 的執行
-
+# -*- coding: utf-8 -*-
+# !/usr/bin/env python3
 from __future__ import annotations
 
-import argparse
-import subprocess
+import os
+import sys
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="執行 Action Handler CLI")
-    parser.add_argument(
-        "--input", type=str, default="data/output/classify_result.json", help="分類結果 JSON"
-    )
-    parser.add_argument(
-        "--output", type=str, default="data/output/action_result.json", help="動作結果輸出 JSON"
-    )
-    args = parser.parse_args()
+    base = os.path.abspath(os.path.dirname(__file__))
+    if base not in sys.path:
+        sys.path.insert(0, base)
 
-    cmd = ["python", "-m", "action_handler", "--input", args.input, "--output", args.output]
-    subprocess.run(cmd, check=True)
+    import action_handler as ah  # type: ignore
+
+    try:
+        from patches.handle_safe_patch import handle as safe_handle  # type: ignore
+
+        ah.handle = safe_handle
+    except Exception:
+        pass
+
+    from action_handler import main as action_main  # type: ignore
+
+    action_main()
 
 
 if __name__ == "__main__":
