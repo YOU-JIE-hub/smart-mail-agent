@@ -1,0 +1,4 @@
+file,label,score,subject,reasons
+002_exec_attachment.json,suspect,7,Password reset,keyword:PASSWORD RESET | attachment:.js
+003_legit.json,legit,0,Quarterly meeting,
+001_obvious_spam.json,spam,13,GET RICH QUICK!!!,keyword:GET RICH QUICK | keyword:FREE | keyword:GIVEAWAY | keyword:CRYPTO
