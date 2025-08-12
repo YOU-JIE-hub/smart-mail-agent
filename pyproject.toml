@@ -1,3 +1,6 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
 #!/usr/bin/env python3
 # 檔案位置：pyproject.toml
 # 模組用途：定義 black / isort / flake8 / mypy 統一規範
@@ -34,3 +37,11 @@ warn_unused_ignores = true
 warn_return_any = false
 no_implicit_optional = true
 strict_optional = false
+
+[project.scripts]
+sma = "cli.sma:main"
+
+[project]
+name = "smart-mail-agent"
+version = "0.3.0"
+requires-python = ">=3.10"
