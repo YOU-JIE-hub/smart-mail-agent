@@ -29,7 +29,7 @@ def _escape_pdf_text(s: str) -> str:
 def _write_minimal_pdf(lines: List[str], out_path: Path) -> Path:
     # 產生一份 *有效* 的極簡 PDF（1 頁，內建 Helvetica 字型）
     # 版面：A4 (595 x 842 points)，字體 12pt，行距 14pt，自 (72, 800) 起逐行往下
-    header = b"%PDF-1.4\n%\xE2\xE3\xCF\xD3\n"
+    header = b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n"
     # 內容串
     content_lines = ["BT", "/F1 12 Tf", "14 TL", "72 800 Td"]
     for ln in lines:
