@@ -146,3 +146,21 @@ test_imap_connect.py
 DELETE
 FROM
 SELECT
+
+# keep selected generated reports for demo
+!reports/
+!reports/spam_report.html
+!reports/spam_demo.json
+
+# === allow selected reports/configs ===
+!reports/spam_scan.html
+!reports/spam_report.html
+!reports/spam_demo.json
+!configs/spam_rules.yaml
+
+# --- hardened ignore rules ---
+artifacts/
+reports/*
+!reports/spam_scan.html
+!reports/spam_scan.json
+!reports/spam_scan.csv
