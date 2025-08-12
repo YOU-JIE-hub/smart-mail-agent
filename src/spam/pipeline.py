@@ -1,38 +1,14 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 
-from .rules import score_email
-
-# 閾值：調整到能覆蓋測試期望
-THRESH_SPAM = 6
-THRESH_SUSPECT = 3
+from .rules import label_email, load_rules
 
 
-def analyze(mail: Dict[str, Any]) -> Dict[str, Any]:
-    sender = (mail.get("sender") or "").strip()
-    subject = mail.get("subject") or ""
-    content = mail.get("content") or ""
-    attachments = mail.get("attachments") or []
-
-    res = score_email(sender, subject, content, attachments)
-    score = int(res["score"])
-    reasons = list(res["reasons"])
-
-    if score >= THRESH_SPAM:
-        label = "spam"
-    elif score >= THRESH_SUSPECT:
-        label = "suspect"
-    else:
-        label = "legit"
-
-    return {
-        "label": label,
-        "score": score,
-        "reasons": reasons,
-        "normalized": {
-            "sender": sender,
-            "subject": subject,
-            "has_attachments": bool(attachments),
-        },
-    }
+def analyze(email: Dict[str, Any]) -> Dict[str, Any]:
+    sender = email.get("sender", "") or ""
+    subject = email.get("subject", "") or ""
+    content = email.get("content", "") or ""
+    attachments = email.get("attachments") or []
+    label, score, reasons = label_email(sender, subject, content, attachments)
+    return {"label": label, "score": int(score), "reasons": list(reasons), "subject": subject}
