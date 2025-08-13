@@ -1,24 +1,34 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import argparse, json, re, sys, time, uuid
+import argparse
+import json
+import re
+import sys
+import time
+import uuid
 from pathlib import Path
 from typing import Any, Dict, List
+
 
 def _read_json(p: str | Path) -> Dict[str, Any]:
     with open(p, "r", encoding="utf-8") as f:
         return json.load(f)
 
+
 def _write_json(p: str | Path, obj: Dict[str, Any]) -> None:
     with open(p, "w", encoding="utf-8") as f:
         json.dump(obj, f, ensure_ascii=False, indent=2)
 
+
 def _req_id() -> str:
     return uuid.uuid4().hex[:12]
+
 
 def _domain(addr: str) -> str:
     m = re.search(r"@([^>]+)$", addr or "")
     return (m.group(1).strip().lower() if m else "").strip()
+
 
 def decide_action(pred: str | None) -> str:
     mapping = {
@@ -30,7 +40,10 @@ def decide_action(pred: str | None) -> str:
     }
     return mapping.get((pred or "").strip().lower(), "reply_general")
 
-def build_response(obj: Dict[str, Any], simulate_failure: str | None, dry_run: bool) -> Dict[str, Any]:
+
+def build_response(
+    obj: Dict[str, Any], simulate_failure: str | None, dry_run: bool
+) -> Dict[str, Any]:
     rid = _req_id()
     pred = obj.get("predicted_label")
     action = decide_action(pred)
@@ -60,7 +73,9 @@ def build_response(obj: Dict[str, Any], simulate_failure: str | None, dry_run: b
         if simulate_failure:  # 只要帶了 simulate-failure 就走文字備援
             meta["simulate_failure"] = simulate_failure
             content = "PDF 生成失敗，附上文字版報價說明。"
-            attachments.append({"filename": "quote_fallback.txt", "size": len(content.encode("utf-8"))})
+            attachments.append(
+                {"filename": "quote_fallback.txt", "size": len(content.encode("utf-8"))}
+            )
     elif action == "sales_inquiry":
         subject = "[自動回覆] 商務詢問回覆"
         body = "我們已收到您的商務詢問，附件為需求摘要，稍後由業務與您聯繫。"
@@ -74,7 +89,9 @@ def build_response(obj: Dict[str, Any], simulate_failure: str | None, dry_run: b
         if re.search(r"down|宕機|無法使用|嚴重|故障", text, flags=re.I):
             meta["priority"] = "P1"
             meta["SLA_eta"] = "4h"
-            meta["cc"] = sorted(set((meta.get("cc") or []) + ["ops@company.example", "qa@company.example"]))
+            meta["cc"] = sorted(
+                set((meta.get("cc") or []) + ["ops@company.example", "qa@company.example"])
+            )
 
     out = {
         "action_name": action,
@@ -84,6 +101,7 @@ def build_response(obj: Dict[str, Any], simulate_failure: str | None, dry_run: b
         "meta": meta,
     }
     return out
+
 
 def main() -> int:
     ap = argparse.ArgumentParser()
@@ -104,11 +122,13 @@ def main() -> int:
     print(f"已輸出：{args.output}")
     return 0
 
+
 # [PATCH] top-level dry_run atexit
 try:
-    import atexit, json
-    from pathlib import Path as _P
     import argparse as _arg
+    import atexit
+    import json
+    from pathlib import Path as _P
 
     _p = _arg.ArgumentParser(add_help=False)
     _p.add_argument("--output")
@@ -133,4 +153,3 @@ except Exception:
 
 if __name__ == "__main__":
     sys.exit(main())
-
