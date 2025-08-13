@@ -14,6 +14,7 @@ def main() -> None:
 
     os.environ.setdefault("OFFLINE", "1")
 
+    # 1) 先嘗試路由補丁（英文/別名 → 標準動作）
     applied = False
     try:
         from patches.handle_router_patch import handle as router_handle  # type: ignore
@@ -23,6 +24,7 @@ def main() -> None:
     except Exception:
         pass
 
+    # 2) 失敗則退回安全補丁（附件/PDF 安全處理）
     if not applied:
         try:
             from patches.handle_safe_patch import handle as safe_handle  # type: ignore
@@ -32,6 +34,7 @@ def main() -> None:
         except Exception:
             pass
 
+    # 3) 仍未套用，提供最小內建 fallback，保證面試不會走錯路
     if not applied:
         _alias = {
             "send_quote": "send_quote",
