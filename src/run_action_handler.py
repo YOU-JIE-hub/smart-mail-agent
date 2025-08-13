@@ -8,8 +8,25 @@ import sys
 from pathlib import Path
 
 
+def _usage():
+    msg = (
+        "Usage: python -m src.run_action_handler --input in.json --output out.json [--dry-run] "
+        "[--simulate-failure pdf|smtp|db]\n"
+        "Notes: CLI 入口會對 send_quote / reply_faq / sales_inquiry / complaint 先行處理，\n"
+        "      其他意圖再交回原始 action_handler.main()。"
+    )
+    print(msg)
+
+
 def _parse_argv(argv: list[str]) -> dict:
-    m = {"--input": None, "--output": None, "--dry-run": False, "--simulate-failure": None}
+    m = {
+        "--input": None,
+        "--output": None,
+        "--dry-run": False,
+        "--simulate-failure": None,
+        "--help": False,
+        "-h": False,
+    }
     i = 0
     while i < len(argv):
         a = argv[i]
@@ -18,7 +35,7 @@ def _parse_argv(argv: list[str]) -> dict:
                 m[a] = argv[i + 1]
                 i += 2
                 continue
-        if a == "--dry-run":
+        if a in ("--dry-run", "--help", "-h"):
             m[a] = True
             i += 1
             continue
@@ -28,6 +45,7 @@ def _parse_argv(argv: list[str]) -> dict:
         "output": m["--output"],
         "dry_run": m["--dry-run"],
         "sim_fail": m["--simulate-failure"],
+        "help": (m["--help"] or m["-h"]),
     }
 
 
@@ -107,7 +125,6 @@ def _handle_locally(req: dict, sim_fail: str | None) -> dict | None:
 
 
 def _post_normalize(req: dict, res: dict, dry_run: bool, sim_fail: str | None) -> dict:
-    # 補 action_name、reply_* 前綴
     act = res.get("action_name") or res.get("action") or ""
     if act and ("action_name" not in res):
         res["action_name"] = act
@@ -116,7 +133,6 @@ def _post_normalize(req: dict, res: dict, dry_run: bool, sim_fail: str | None) -
         if not subj.startswith("[自動回覆] "):
             res["subject"] = "[自動回覆] " + (subj or "一般諮詢")
 
-    # 注入 flags
     if dry_run:
         res["dry_run"] = True
     if sim_fail:
@@ -124,7 +140,22 @@ def _post_normalize(req: dict, res: dict, dry_run: bool, sim_fail: str | None) -
         meta["simulate_failure"] = sim_fail
         res["meta"] = meta
 
-    # 契約化（寬鬆處理：若 pydantic 不在，也不影響流程）
+    try:
+        from observability.tracing import elapsed_ms, now_ms, uuid_str  # type: ignore
+
+        rid = uuid_str()
+        res.setdefault("request_id", rid)
+        start = now_ms()
+        res["duration_ms"] = elapsed_ms(start)
+        res.setdefault("intent", _alias((req.get("predicted_label") or "").strip().lower()))
+        if "confidence" in req:
+            try:
+                res["confidence"] = float(req["confidence"])
+            except Exception:
+                pass
+    except Exception:
+        pass
+
     try:
         from sma_types import ActionResult  # type: ignore
 
@@ -132,7 +163,6 @@ def _post_normalize(req: dict, res: dict, dry_run: bool, sim_fail: str | None) -
     except Exception:
         pass
 
-    # 套用 policy
     try:
         from policy_engine import apply_policies  # type: ignore
 
@@ -147,15 +177,38 @@ def main() -> None:
     base = os.path.abspath(os.path.dirname(__file__))
     if base not in sys.path:
         sys.path.insert(0, base)
-    os.environ.setdefault("OFFLINE", "1")
+
+    try:
+        from utils.env import get_bool  # type: ignore
+
+        if get_bool(["SMA_OFFLINE", "OFFLINE"], True):
+            os.environ.setdefault("OFFLINE", "1")
+    except Exception:
+        os.environ.setdefault("OFFLINE", "1")
 
     args = _parse_argv(sys.argv[1:])
+    if args.get("help"):
+        _usage()
+        return
+
     req = _read_json(args.get("input"))
     if isinstance(req, dict):
         local = _handle_locally(req, args.get("sim_fail"))
         if local is not None:
             res = _post_normalize(req, local, args.get("dry_run"), args.get("sim_fail"))
             _write_json(args.get("output"), res)
+            try:
+                from utils.jsonlog import jlog  # type: ignore
+
+                jlog(
+                    "action_completed",
+                    action=res.get("action_name"),
+                    subject=res.get("subject"),
+                    request_id=res.get("request_id"),
+                    duration_ms=res.get("duration_ms"),
+                )
+            except Exception:
+                pass
             try:
                 import logging
 
@@ -165,7 +218,6 @@ def main() -> None:
                 pass
             return
 
-    # 其餘交回原本流程（不強行後處理，以免影響既有邏輯）
     import action_handler  # type: ignore
 
     action_handler.main()

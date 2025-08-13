@@ -1,62 +1,33 @@
-PYTHON?=.venv/bin/python
-OFFLINE?=1
-export OFFLINE
-export PYTHONPATH=src
+.PHONY: setup test-offline demo-quote demo-faq demo-other e2e pack
 
-.PHONY: test-offline matrix report open-report demo clean-attachments
+setup:
+	python -m pip install -U pip
+	pip install -r requirements.txt
 
 test-offline:
-	$(PYTHON) -m pytest -q -k "not online"
+	OFFLINE=1 PYTHONPATH=src pytest -q -k "(not online)"
 
-matrix:
-	$(PYTHON) tools/run_actions_matrix.py
+demo-quote:
+	mkdir -p data/output
+	printf '%s' '{"subject":"please send quote","from":"alice@example.com","body":"need quotation","predicted_label":"send_quote","confidence":0.95,"attachments":[]}' > data/output/in.json
+	OFFLINE=1 PYTHONPATH=src python -m src.run_action_handler --input data/output/in.json --output data/output/out.json
+	@echo '---'; cat data/output/out.json
 
-report:
-	$(PYTHON) tools/generate_offline_report.py
+demo-faq:
+	mkdir -p data/output
+	printf '%s' '{"subject":"退貨流程？","from":"carol@example.com","body":"想了解退貨與退款流程","predicted_label":"reply_faq","confidence":0.90,"attachments":[]}' > data/output/in_faq.json
+	OFFLINE=1 PYTHONPATH=src python -m src.run_action_handler --input data/output/in_faq.json --output data/output/out_faq.json
+	@echo '---'; cat data/output/out_faq.json
 
-open-report:
-	@if command -v wslview >/dev/null 2>&1; then wslview reports/offline_demo_report.html; \
-	elif command -v xdg-open >/dev/null 2>&1; then xdg-open reports/offline_demo_report.html >/dev/null 2>&1 & \
-	else echo "Open reports/offline_demo_report.html in your browser."; fi
+demo-other:
+	mkdir -p data/output
+	printf '%s' '{"subject":"免費中獎","from":"x@spam.com","body":"點此領獎","predicted_label":"other","confidence":0.51,"attachments":[]}' > data/output/in_other.json
+	OFFLINE=1 PYTHONPATH=src python -m src.run_action_handler --input data/output/in_other.json --output data/output/out_other.json
+	@echo '---'; cat data/output/out_other.json
 
-demo: matrix report open-report
+e2e:
+	OFFLINE=1 PYTHONPATH=src pytest -q tests/e2e -k "label_routing_offline or cli_scripts or new_intents or cli_flags"
 
-clean-attachments:
-	@find data/output -maxdepth 1 -type f -name "attachment_*.txt" -print -delete | sed 's/^/removed: /' || true
-
-PYTHON?=.venv/bin/python
-export OFFLINE=1
-export PYTHONPATH=src
-
-.PHONY: qa lint format demo
-qa:
-	- black --check --diff . || true
-	- isort --check-only . || true
-	$(PYTHON) -m pytest -q -k 'not online'
-
-lint:
-	- black . || true
-	- isort . || true
-
-demo:
-	$(PYTHON) -m cli.sma demo
-
-
-PYTHON?=.venv/bin/python
-export OFFLINE=1
-export PYTHONPATH=src
-
-.PHONY: contracts security sbom
-contracts:
-	$(PYTHON) -m pytest -q tests/contracts
-
-security:
-	@echo "[SEC] bandit 扫描（忽略 tests、data、.venv）"
-	- bandit -q -r -x tests,data,.venv .
-	@echo "[SEC] detect-secrets 扫描（若未安装会略过）"
-	- detect-secrets scan --all-files --exclude-files '.*(\.venv|\.git|data|artifacts|reports|archive).*' || true
-
-sbom:
-	@echo "[SBOM] 產生 CycloneDX SBOM (sbom.json)"
-	- python -m pip install -U cyclonedx-bom >/dev/null 2>&1 || true
-	- cyclonedx-py --format json --outfile sbom.json || cyclonedx-bom -e -o sbom.json || true
+pack:
+	git tag -a v0.2.0-interview-pro -m "Observability + env unify + CLI help + Makefile"
+	git push origin v0.2.0-interview-pro
