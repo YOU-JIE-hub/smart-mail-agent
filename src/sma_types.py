@@ -1,33 +1,50 @@
+# -*- coding: utf-8 -*-
 from __future__ import annotations
 
-from typing import List, Literal, Optional
+from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 
 class AttachmentMeta(BaseModel):
-    path: str
-    exists: bool = True
-    size: Optional[int] = None
-    mime: Optional[str] = None
+    filename: Optional[str] = None
+    content_type: Optional[str] = None
+    path: Optional[str] = None
+    size: Optional[int] = None  # bytes
 
 
 class ActionResult(BaseModel):
-    # 統一回傳契約；向外仍可 dict 輸出
-    action: Literal[
-        "send_quote",
-        "reply_faq",
-        "reply_support",
-        "reply_general",
-        "reply_apology",
-        "sales",
-        "apply_info_change",
-    ]
     ok: bool = True
-    code: str = "OK"  # OK / INPUT_INVALID / EXTERNAL_FAIL / INTERNAL_ERROR
-    message: str = ""
-    output: Optional[str] = None
-    attachments: List[AttachmentMeta] = Field(default_factory=list)
+    action_name: str = Field(..., min_length=1)
+    subject: Optional[str] = None
+    body: Optional[str] = None
+    to: List[str] = Field(default_factory=list)
+    cc: List[str] = Field(default_factory=list)
+    bcc: List[str] = Field(default_factory=list)
+    attachments: List[Union[str, AttachmentMeta]] = Field(default_factory=list)
+
+    # observability
     request_id: Optional[str] = None
-    spent_ms: Optional[int] = None
-    version: str = "1.0"
+    duration_ms: Optional[int] = None
+    intent: Optional[str] = None
+    confidence: Optional[float] = None
+    warnings: List[str] = Field(default_factory=list)
+
+    # error channel
+    error_code: Optional[str] = None
+    error_msg: Optional[str] = None
+
+    # extension meta
+    meta: Dict[str, Any] = Field(default_factory=dict)
+
+    @validator("confidence")
+    def _clamp_conf(cls, v):
+        if v is None:
+            return v
+        try:
+            return max(0.0, min(1.0, float(v)))
+        except Exception:
+            return None
+
+    def to_dict(self) -> dict:
+        return self.dict(exclude_none=True)
