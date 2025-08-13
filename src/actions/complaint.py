@@ -1,65 +1,51 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 from __future__ import annotations
 
-import csv
-import re
-import time
-from pathlib import Path
 from typing import Any, Dict
 
-from utils.templater import render
+from src.utils.templater import render
 
-DATA_DIR = Path("data")
-LOG = DATA_DIR / "complaints" / "log.csv"
+SEVERITY_MAP = {
+    "high": ["惡劣", "退款", "法律", "投訴到主管機關", "崩潰", "無法使用", "嚴重"],
+    "med": ["很差", "非常失望", "體驗不好", "延遲", "卡頓"],
+    "low": ["不滿", "不便", "希望改善", "小問題"],
+}
 
 
-def _grade(body: str, subject: str) -> str:
-    text = f"{subject}\n{body}".lower()
-    high_kw = ("投訴", "檢舉", "法律", "惡劣", "退款", "退貨", "詐騙")
-    med_kw = ("不滿", "抱怨", "不便", "失望")
-    if (
-        any(k in text for k in high_kw)
-        or text.count("!") >= 3
-        or re.search(r"(very bad|terrible)", text)
-    ):
-        return "high"
-    if any(k in text for k in med_kw):
-        return "med"
+def _severity(body: str) -> str:
+    b = body or ""
+    for key, words in SEVERITY_MAP.items():
+        if any(w in b for w in words):
+            return key
     return "low"
 
 
-def _log(req: Dict[str, Any], severity: str) -> None:
-    LOG.parent.mkdir(parents=True, exist_ok=True)
-    new_file = not LOG.exists()
-    with LOG.open("a", newline="", encoding="utf-8") as f:
-        w = csv.writer(f)
-        if new_file:
-            w.writerow(["ts", "from", "subject", "severity"])
-        w.writerow(
-            [
-                time.strftime("%Y-%m-%d %H:%M:%S"),
-                req.get("from", ""),
-                req.get("subject", ""),
-                severity,
-            ]
-        )
-
-
-def handle(req: Dict[str, Any]) -> Dict[str, Any]:
-    sev = _grade(req.get("body", ""), req.get("subject", ""))
-    _log(req, sev)
-    tmpl = f"complaint_{sev}.j2"
-    body = render(tmpl, severity=sev, sender=req.get("from", ""), subject=req.get("subject", ""))
-    subj = (
-        "我們已收到您的反饋"
-        if sev == "low"
-        else ("我們已升級處理您的投訴" if sev == "med" else "高優先權處理：您的投訴已升級")
-    )
+def handle(
+    request: Dict[str, Any],
+    *,
+    request_id: str,
+    dry_run: bool = False,
+    simulate_failure: str | None = None,
+) -> Dict[str, Any]:
+    if simulate_failure == "template":
+        raise RuntimeError("E_TEMPLATE_SIMULATED")
+    body = request.get("body", "")
+    sev = _severity(body)
+    pri = {"high": "P1", "med": "P2", "low": "P3"}[sev]
+    eta = {"high": "24h", "med": "48h", "low": "72h"}[sev]
+    rendered = render(f"complaint_{sev}.j2", {"sender": request.get("sender"), "severity": sev})
+    intent, subject = "complaint", "收到您的意見與協助處理"
+    conf = float(request.get("confidence", -1.0))
     return {
         "ok": True,
-        "action_name": "complaint",
-        "subject": "[自動回覆] " + subj,
-        "body": body,
+        "action_name": intent,
+        "subject": subject,
+        "to": [request.get("sender")] if request.get("sender") else [],
+        "cc": [],
+        "body": rendered,
         "attachments": [],
-        "meta": {"severity": sev},
+        "meta": {"severity": sev, "priority": pri, "sla_eta": eta},
+        "request_id": request_id,
+        "intent": intent,
+        "confidence": conf,
     }
