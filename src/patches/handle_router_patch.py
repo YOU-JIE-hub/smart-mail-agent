@@ -4,10 +4,6 @@ from __future__ import annotations
 import importlib
 from typing import Any, Dict
 
-import action_handler as ah  # capture original before CLI patches
-
-_ORIG = getattr(ah, "handle", None)
-
 _ALIASES = {
     "business_inquiry": "sales_inquiry",
     "sales": "sales_inquiry",
@@ -17,6 +13,11 @@ _ALIASES = {
 
 def _normalize(label: str) -> str:
     return _ALIASES.get(label, label)
+
+
+def _get_orig():
+    mod = importlib.import_module("action_handler")
+    return getattr(mod, "_orig_handle", None)
 
 
 def handle(req: Dict[str, Any]) -> Dict[str, Any]:
@@ -29,6 +30,7 @@ def handle(req: Dict[str, Any]) -> Dict[str, Any]:
     if label == "complaint":
         return importlib.import_module("actions.complaint").handle(req)
 
-    if callable(_ORIG):
-        return _ORIG(req)
+    orig = _get_orig()
+    if callable(orig):
+        return orig(req)
     return {"ok": True, "action": "reply_general", "subject": "[自動回覆] 一般諮詢"}
