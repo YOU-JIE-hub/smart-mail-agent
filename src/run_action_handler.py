@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
+import importlib
 import os
 import sys
 
@@ -14,57 +15,33 @@ def main() -> None:
 
     os.environ.setdefault("OFFLINE", "1")  # 預設離線
 
-    # 在套補丁前，先備份原始 handle，供 router 安全委派
-    try:
-        setattr(ah, "_orig_handle", getattr(ah, "handle", None))
-    except Exception:
-        pass
+    # 取得原始 handle，供非新增意圖時委派
+    _orig = getattr(ah, "handle", None)
 
-    applied = False
-    # 1) 路由補丁
-    try:
-        from patches.handle_router_patch import handle as router_handle  # type: ignore
+    # 輕量 router：只攔截「我們新增的」intent，其餘交回原始 handle
+    _ALIASES = {
+        "business_inquiry": "sales_inquiry",
+        "sales": "sales_inquiry",
+        "complain": "complaint",
+    }
 
-        ah.handle = router_handle
-        applied = True
-    except Exception:
-        pass
+    def _router(req: dict):
+        label = (req.get("predicted_label") or "").strip().lower()
+        label = _ALIASES.get(label, label)
+        req["predicted_label"] = label
 
-    # 2) 安全補丁
-    if not applied:
-        try:
-            from patches.handle_safe_patch import handle as safe_handle  # type: ignore
+        if label == "sales_inquiry":
+            return importlib.import_module("actions.sales_inquiry").handle(req)
+        if label == "complaint":
+            return importlib.import_module("actions.complaint").handle(req)
 
-            ah.handle = safe_handle
-            applied = True
-        except Exception:
-            pass
+        if callable(_orig):
+            return _orig(req)
+        return {"ok": True, "action": "reply_general", "subject": "[自動回覆] 一般諮詢"}
 
-    # 3) 全面 fallback：標籤正規化後丟回原始 handle（若無原始，就走 reply_general）
-    if not applied:
-        _alias = {
-            "send_quote": "send_quote",
-            "reply_faq": "reply_faq",
-            "reply_support": "reply_support",
-            "apply_info_change": "apply_info_change",
-            "other": "reply_general",
-        }
-        _orig = getattr(ah, "_orig_handle", None) or getattr(ah, "handle", None)
-
-        def _fallback_handle(req: dict):
-            lbl = (req.get("predicted_label") or "").strip().lower()
-            req["predicted_label"] = _alias.get(lbl, lbl)
-            if callable(_orig):
-                return _orig(req)
-            return {"ok": True, "action": "reply_general", "subject": "[自動回覆] 一般諮詢"}
-
-        ah.handle = _fallback_handle
-
-    # 4) 最終包裝器：補 action_name、reply_* 主旨前綴
-    _selected = getattr(ah, "handle")
-
+    # 最終包裝器：補 action_name、為 reply_* 加上主旨前綴
     def _normalize_and_prefix(req: dict):
-        res = _selected(req)
+        res = _router(req)
         try:
             if isinstance(res, dict):
                 act = res.get("action_name") or res.get("action") or ""
