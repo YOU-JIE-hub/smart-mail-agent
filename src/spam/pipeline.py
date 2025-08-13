@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict
 
-from .rules import label_email, load_rules
+from .rules import label_email
 
 
 def analyze(email: Dict[str, Any]) -> Dict[str, Any]:
