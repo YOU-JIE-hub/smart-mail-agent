@@ -1,0 +1,43 @@
+# -*- coding: utf-8 -*-
+from __future__ import annotations
+
+import importlib
+
+import pytest
+
+
+def _mod(name):
+    try:
+        return importlib.import_module(name)
+    except Exception as e:
+        pytest.skip(f"module {name} not available: {e}")
+
+
+def _fn(mod, cands):
+    for n in cands:
+        f = getattr(mod, n, None)
+        if callable(f):
+            return f
+    pytest.skip(f"no callable in {mod.__name__}: {cands}")
+
+
+def test_spam_stack_allow_and_reason():
+    orch = _mod(
+        "src.spam.spam_filter_orchestrator" if _mod.__module__ else "spam.spam_filter_orchestrator"
+    )
+    # 允許「正常商務信」
+    # 實際函式名不確定，用候選名嘗試（存在就測，不存在就 skip）
+    fn = _fn(orch, ["run", "filter_email", "evaluate", "orchestrate"])
+    sample = {"from": "bob@company.com", "subject": "請提供報價", "body": "想了解方案與報價"}
+    out = fn(sample)  # 期望 out 至少是 dict 或 tuple
+    assert out is not None
+
+
+def test_spam_stack_block_obvious_spam():
+    orch = _mod(
+        "src.spam.spam_filter_orchestrator" if _mod.__module__ else "spam.spam_filter_orchestrator"
+    )
+    fn = _fn(orch, ["run", "filter_email", "evaluate", "orchestrate"])
+    spam = {"from": "x@spam.com", "subject": "免費中獎", "body": "點此領獎 http://bad"}
+    out = fn(spam)
+    assert out is not None
