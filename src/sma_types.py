@@ -23,6 +23,9 @@ class ActionResult(BaseModel):
     bcc: List[str] = Field(default_factory=list)
     attachments: List[Union[str, AttachmentMeta]] = Field(default_factory=list)
 
+    # flags
+    dry_run: Optional[bool] = None  # <-- 加入這行，讓 pydantic 不會濾掉
+
     # observability
     request_id: Optional[str] = None
     duration_ms: Optional[int] = None
