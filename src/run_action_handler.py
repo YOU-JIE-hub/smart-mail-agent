@@ -12,7 +12,13 @@ def main() -> None:
 
     import action_handler as ah  # type: ignore
 
-    os.environ.setdefault("OFFLINE", "1")
+    os.environ.setdefault("OFFLINE", "1")  # 預設離線
+
+    # 在套補丁前，先備份原始 handle，供 router 安全委派
+    try:
+        setattr(ah, "_orig_handle", getattr(ah, "handle", None))
+    except Exception:
+        pass
 
     applied = False
     # 1) 路由補丁
@@ -34,7 +40,7 @@ def main() -> None:
         except Exception:
             pass
 
-    # 3) fallback：把常見別名正規化
+    # 3) 全面 fallback：標籤正規化後丟回原始 handle（若無原始，就走 reply_general）
     if not applied:
         _alias = {
             "send_quote": "send_quote",
@@ -43,7 +49,7 @@ def main() -> None:
             "apply_info_change": "apply_info_change",
             "other": "reply_general",
         }
-        _orig = getattr(ah, "handle", None)
+        _orig = getattr(ah, "_orig_handle", None) or getattr(ah, "handle", None)
 
         def _fallback_handle(req: dict):
             lbl = (req.get("predicted_label") or "").strip().lower()
@@ -54,7 +60,7 @@ def main() -> None:
 
         ah.handle = _fallback_handle
 
-    # 4) 最終包裝器：統一輸出欄位，補 subject 前綴
+    # 4) 最終包裝器：補 action_name、reply_* 主旨前綴
     _selected = getattr(ah, "handle")
 
     def _normalize_and_prefix(req: dict):
@@ -62,10 +68,8 @@ def main() -> None:
         try:
             if isinstance(res, dict):
                 act = res.get("action_name") or res.get("action") or ""
-                # 補 action_name
                 if act and ("action_name" not in res):
                     res["action_name"] = act
-                # 補 subject 前綴
                 if act.startswith("reply_"):
                     subj = res.get("subject") or ""
                     if not subj.startswith("[自動回覆] "):
