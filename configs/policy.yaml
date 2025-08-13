@@ -1,0 +1,11 @@
+low_confidence_review:
+  threshold: 0.6
+  cc: [review@company.com]
+complaint_escalation:
+  sla_eta_high: "24h"
+  cc: [escalation@example.com]
+attachments_limit:
+  max_total_bytes: 5242880
+  cc: [filescreen@example.com]
+allow_domains:
+  domains: [partner.co, example.com]

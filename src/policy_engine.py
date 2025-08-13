@@ -1,71 +1,95 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 from __future__ import annotations
 
 import os
-from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List
 
 import yaml
 
-_DEFAULT = Path("config/policy.yaml")
+
+def _load_policy(path: str) -> Dict[str, Any]:
+    if not os.path.exists(path):
+        return {}
+    with open(path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
 
 
-def _get(d: dict, path: str, default=None):
-    cur: Any = d
-    for part in path.split("."):
-        if not isinstance(cur, dict) or part not in cur:
-            return default
-        cur = cur[part]
-    return cur
+def apply_policy(
+    result: Dict[str, Any], request: Dict[str, Any], policy_file: str
+) -> Dict[str, Any]:
+    policy = _load_policy(policy_file)
+    meta = result.setdefault("meta", {})
+    cc: List[str] = result.setdefault("cc", [])
 
+    # 低信心覆核（reply_faq）
+    low_conf = policy.get("low_confidence_review", {})
+    if (request.get("predicted_label") or "") == "reply_faq":
+        th = float(low_conf.get("threshold", 0.6))
+        conf = float(request.get("confidence", -1.0))
+        if conf >= 0 and conf < th:
+            meta["require_review"] = True
+            for addr in low_conf.get("cc", []):
+                if addr not in cc:
+                    cc.append(addr)
 
-def _match(rule_when: dict, req: dict, res: dict) -> bool:
-    intent = rule_when.get("intent")
-    if intent and (req.get("predicted_label") != intent and res.get("action_name") != intent):
-        return False
-    cb = rule_when.get("confidence_below")
-    if cb is not None and not (float(req.get("confidence") or -1) < float(cb)):
-        return False
-    meta = rule_when.get("meta") or {}
-    for k, v in meta.items():
-        if _get(res.get("meta", {}), k) != v:
-            return False
-    return True
-
-
-def _apply(rule_then: dict, res: dict) -> dict:
-    out = dict(res)  # shallow copy
-    meta = dict(out.get("meta") or {})
-    cc = list(out.get("cc") or [])
-
-    if rule_then.get("require_review"):
+    # 投訴升級（high）
+    esc = policy.get("complaint_escalation", {})
+    if result.get("action_name") == "complaint" and meta.get("severity") == "high":
+        meta.setdefault("priority", "P1")
+        meta.setdefault("sla_eta", esc.get("sla_eta_high", "24h"))
+        for addr in esc.get("cc", []):
+            if addr not in cc:
+                cc.append(addr)
         meta["require_review"] = True
-    if "priority" in rule_then:
-        meta["priority"] = rule_then["priority"]
 
-    for x in rule_then.get("add_cc") or []:
-        if x not in cc:
-            cc.append(x)
+    # 附件大小限制 → 人工覆核
+    att = policy.get("attachments_limit", {})
+    if att:
+        limit = int(att.get("max_total_bytes", 5 * 1024 * 1024))
+        total = sum(int(a.get("size_bytes") or 0) for a in request.get("attachments", []))
+        if total > limit:
+            meta["attachments_policy"] = "over_limit"
+            meta["require_review"] = True
+            for addr in att.get("cc", []):
+                if addr not in cc:
+                    cc.append(addr)
 
-    if cc:
-        out["cc"] = cc
-    if meta:
-        out["meta"] = meta
-    return out
+    # 白名單紀錄
+    wl = policy.get("allow_domains", {})
+    sender = (request.get("sender") or "").lower()
+    if "@" in sender and wl:
+        domain = sender.split("@", 1)[1]
+        if domain in (wl.get("domains") or []):
+            meta["whitelisted_sender"] = True
+
+    result["cc"] = cc
+    result["meta"] = meta
+    return result
 
 
-def apply_policies(req: dict, res: dict, path: str | os.PathLike = _DEFAULT) -> dict:
-    try:
-        p = Path(path)
-        if not p.exists():
-            return res
-        data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
-        rules = data.get("policies") or []
-        out = dict(res)
-        for r in rules:
-            if _match(r.get("when") or {}, req, out):
-                out = _apply(r.get("then") or {}, out)
-        return out
-    except Exception:
-        # 避免 policy 問題影響主流程
-        return res
+# 舊名相容
+def apply_policies(
+    result: Dict[str, Any], request: Dict[str, Any], policy_file: str
+) -> Dict[str, Any]:
+    return apply_policy(result, request, policy_file)
+
+
+__all__ = ["apply_policy", "apply_policies"]
+
+
+def apply_policies(*args, **kwargs):  # noqa: F811
+    import os
+
+    if len(args) == 2 and isinstance(args[0], dict) and isinstance(args[1], dict):
+        req, res = args
+        policy_file = os.getenv("SMA_POLICY_FILE", os.getenv("POLICY_FILE", "configs/policy.yaml"))
+        return apply_policy(res, req, policy_file)
+    elif len(args) == 3:
+        return apply_policy(*args)
+    else:
+        res = kwargs.get("result") or {}
+        req = kwargs.get("request") or {}
+        policy_file = kwargs.get("policy_file") or os.getenv(
+            "SMA_POLICY_FILE", os.getenv("POLICY_FILE", "configs/policy.yaml")
+        )
+        return apply_policy(res, req, policy_file)
