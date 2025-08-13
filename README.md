@@ -1,3 +1,5 @@
+[![CI](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/ci.yaml/badge.svg)](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/ci.yaml)
+
 # Smart Mail Agent
 
 可離線運行的郵件處理/自動化專案：
