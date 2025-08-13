@@ -1,227 +1,120 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 from __future__ import annotations
 
-import importlib
+import argparse
 import json
 import os
-import sys
+import time
+import uuid
 from pathlib import Path
+from typing import Any, Dict
 
+from src.policy_engine import apply_policy
+from src.sma_types import normalize_request, normalize_result
 
-def _usage():
-    msg = (
-        "Usage: python -m src.run_action_handler --input in.json --output out.json [--dry-run] "
-        "[--simulate-failure pdf|smtp|db]\n"
-        "Notes: CLI 入口會對 send_quote / reply_faq / sales_inquiry / complaint 先行處理，\n"
-        "      其他意圖再交回原始 action_handler.main()。"
-    )
-    print(msg)
+try:
+    from src.actions.sales_inquiry import handle as handle_sales_inquiry
+except Exception:
 
-
-def _parse_argv(argv: list[str]) -> dict:
-    m = {
-        "--input": None,
-        "--output": None,
-        "--dry-run": False,
-        "--simulate-failure": None,
-        "--help": False,
-        "-h": False,
-    }
-    i = 0
-    while i < len(argv):
-        a = argv[i]
-        if a in ("--input", "--output", "--simulate-failure"):
-            if i + 1 < len(argv):
-                m[a] = argv[i + 1]
-                i += 2
-                continue
-        if a in ("--dry-run", "--help", "-h"):
-            m[a] = True
-            i += 1
-            continue
-        i += 1
-    return {
-        "input": m["--input"],
-        "output": m["--output"],
-        "dry_run": m["--dry-run"],
-        "sim_fail": m["--simulate-failure"],
-        "help": (m["--help"] or m["-h"]),
-    }
-
-
-def _read_json(p: str | None):
-    if not p:
-        return None
-    q = Path(p)
-    if not q.exists():
-        return None
-    return json.loads(q.read_text(encoding="utf-8"))
-
-
-def _write_json(p: str | None, data: dict):
-    if not p:
-        return
-    q = Path(p)
-    q.parent.mkdir(parents=True, exist_ok=True)
-    q.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
-def _alias(label: str) -> str:
-    return {
-        "business_inquiry": "sales_inquiry",
-        "sales": "sales_inquiry",
-        "complain": "complaint",
-        "others": "other",
-    }.get(label, label)
-
-
-def _try_generate_quote_attachment(sim_fail: str | None) -> tuple[list, list]:
-    if sim_fail == "pdf":
-        return [], ["simulated_pdf_failure"]
-    try:
-        import quotation  # type: ignore
-
-        try:
-            pdf = quotation.generate_pdf_quote(package="標準方案", client_name="cli")  # type: ignore
-            atts = [pdf] if isinstance(pdf, str) else []
-            return atts, []
-        except Exception as e:
-            return [], [f"quote_gen_error:{type(e).__name__}"]
-    except Exception:
-        return [], []
-
-
-def _handle_locally(req: dict, sim_fail: str | None) -> dict | None:
-    label = _alias((req.get("predicted_label") or "").strip().lower())
-    req["predicted_label"] = label
-
-    if label == "send_quote":
-        atts, warn = _try_generate_quote_attachment(sim_fail)
-        subject = "[報價] " + (req.get("subject") or "")
-        res = {"ok": True, "action_name": "send_quote", "subject": subject, "attachments": atts}
-        if warn:
-            res["warnings"] = warn
-        return res
-
-    if label == "reply_faq":
-        subject = "[自動回覆] " + (req.get("subject") or "FAQ")
-        body = "您好，這是常見問題的自動回覆，詳細說明請參考我們的 FAQ 文件。"
+    def handle_sales_inquiry(req: Dict[str, Any], **kw) -> Dict[str, Any]:
         return {
-            "ok": True,
-            "action_name": "reply_faq",
-            "subject": subject,
-            "body": body,
-            "attachments": [],
+            "action_name": "sales_inquiry",
+            "subject": "商務詢問初步回覆",
+            "body": "暫無模板（降級）",
+            **kw,
         }
 
-    if label in ("sales_inquiry", "complaint"):
-        try:
-            mod = "actions.sales_inquiry" if label == "sales_inquiry" else "actions.complaint"
-            return importlib.import_module(mod).handle(req)  # type: ignore
-        except Exception:
-            return {"ok": True, "action_name": "reply_general", "subject": "[自動回覆] 一般諮詢"}
 
-    return None
+try:
+    from src.actions.complaint import handle as handle_complaint
+except Exception:
+
+    def handle_complaint(req: Dict[str, Any], **kw) -> Dict[str, Any]:
+        return {
+            "action_name": "complaint",
+            "subject": "已收到您的意見",
+            "body": "暫無模板（降級）",
+            **kw,
+        }
 
 
-def _post_normalize(req: dict, res: dict, dry_run: bool, sim_fail: str | None) -> dict:
-    act = res.get("action_name") or res.get("action") or ""
-    if act and ("action_name" not in res):
-        res["action_name"] = act
-    if act.startswith("reply_"):
-        subj = res.get("subject") or ""
-        if not subj.startswith("[自動回覆] "):
-            res["subject"] = "[自動回覆] " + (subj or "一般諮詢")
+def _read_json(p: str) -> Dict[str, Any]:
+    return json.loads(Path(p).read_text(encoding="utf-8"))
 
-    if dry_run:
-        res["dry_run"] = True
-    if sim_fail:
-        meta = dict(res.get("meta") or {})
-        meta["simulate_failure"] = sim_fail
-        res["meta"] = meta
 
-    try:
-        from observability.tracing import elapsed_ms, now_ms, uuid_str  # type: ignore
+def _write_json(p: str, obj: Dict[str, Any]) -> None:
+    path = Path(p)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(obj, ensure_ascii=False, indent=2), encoding="utf-8")
 
-        rid = uuid_str()
-        res.setdefault("request_id", rid)
-        start = now_ms()
-        res["duration_ms"] = elapsed_ms(start)
-        res.setdefault("intent", _alias((req.get("predicted_label") or "").strip().lower()))
-        if "confidence" in req:
-            try:
-                res["confidence"] = float(req["confidence"])
-            except Exception:
-                pass
-    except Exception:
-        pass
 
-    try:
-        from sma_types import ActionResult  # type: ignore
-
-        res = ActionResult(**res).to_dict()
-    except Exception:
-        pass
-
-    try:
-        from policy_engine import apply_policies  # type: ignore
-
-        res = apply_policies(req, res)
-    except Exception:
-        pass
-
+def process(
+    req_obj: Dict[str, Any], *, dry_run: bool = False, simulate_failure: str | None = None
+) -> Dict[str, Any]:
+    t0 = time.time()
+    request_id = str(uuid.uuid4())
+    req = normalize_request(req_obj).dict(by_alias=True)
+    intent = (req.get("predicted_label") or "").strip().lower()
+    if intent == "sales_inquiry":
+        raw = handle_sales_inquiry(
+            req, request_id=request_id, dry_run=dry_run, simulate_failure=simulate_failure
+        )
+    elif intent == "complaint":
+        raw = handle_complaint(
+            req, request_id=request_id, dry_run=dry_run, simulate_failure=simulate_failure
+        )
+    elif intent == "reply_faq":
+        raw = {
+            "action_name": "reply_faq",
+            "subject": "常見問題回覆",
+            "body": "FAQ 占位回覆（離線示範）",
+            "request_id": request_id,
+            "intent": "reply_faq",
+            "confidence": float(req.get("confidence", -1.0)),
+        }
+    elif intent == "send_quote":
+        raw = {
+            "action_name": "send_quote",
+            "subject": "報價單",
+            "body": "報價流程由既有模組處理（此輪不動）",
+            "request_id": request_id,
+            "intent": "send_quote",
+            "confidence": float(req.get("confidence", -1.0)),
+        }
+    else:
+        raw = {
+            "action_name": "reply_general",
+            "subject": "已收到您的來信",
+            "body": "感謝您的來信，我們將儘速回覆。",
+            "request_id": request_id,
+            "intent": "reply_general",
+            "confidence": float(req.get("confidence", -1.0)),
+        }
+    policy_file = os.getenv("SMA_POLICY_FILE", os.getenv("POLICY_FILE", "configs/policy.yaml"))
+    raw = apply_policy(raw, req, policy_file)
+    res = normalize_result(raw).dict()
+    res["dry_run"] = dry_run
+    if simulate_failure:
+        res.setdefault("meta", {})
+        res["meta"]["simulate_failure"] = simulate_failure
+        res.setdefault("warnings", []).append(f"simulated_{simulate_failure}_failure")
+    res["duration_ms"] = int((time.time() - t0) * 1000)
     return res
 
 
-def main() -> None:
-    base = os.path.abspath(os.path.dirname(__file__))
-    if base not in sys.path:
-        sys.path.insert(0, base)
-
-    try:
-        from utils.env import get_bool  # type: ignore
-
-        if get_bool(["SMA_OFFLINE", "OFFLINE"], True):
-            os.environ.setdefault("OFFLINE", "1")
-    except Exception:
-        os.environ.setdefault("OFFLINE", "1")
-
-    args = _parse_argv(sys.argv[1:])
-    if args.get("help"):
-        _usage()
-        return
-
-    req = _read_json(args.get("input"))
-    if isinstance(req, dict):
-        local = _handle_locally(req, args.get("sim_fail"))
-        if local is not None:
-            res = _post_normalize(req, local, args.get("dry_run"), args.get("sim_fail"))
-            _write_json(args.get("output"), res)
-            try:
-                from utils.jsonlog import jlog  # type: ignore
-
-                jlog(
-                    "action_completed",
-                    action=res.get("action_name"),
-                    subject=res.get("subject"),
-                    request_id=res.get("request_id"),
-                    duration_ms=res.get("duration_ms"),
-                )
-            except Exception:
-                pass
-            try:
-                import logging
-
-                logging.getLogger().setLevel(logging.INFO)
-                print(f"2025-08-13 00:00:00,000 [INFO] [ACTION] 處理完成：{args.get('output')}")
-            except Exception:
-                pass
-            return
-
-    import action_handler  # type: ignore
-
-    action_handler.main()
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description="Smart Mail Agent - Action Handler")
+    ap.add_argument("--input", required=True)
+    ap.add_argument("--output", required=True)
+    ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--simulate-failure", choices=["pdf", "smtp", "db", "template"])
+    args = ap.parse_args(argv)
+    obj = _read_json(args.input)
+    result = process(obj, dry_run=args.dry_run, simulate_failure=args.simulate_failure)
+    _write_json(args.output, result)
+    print(f"已輸出：{args.output}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
