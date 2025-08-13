@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+# 檔案位置: src/run_action_handler.py
+# 模組用途: 依據分類結果決定動作，離線模式下產生可驗收的 out.json
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict
+
+MODULE_TAG = "[RUNNER]"
+
+
+def load_json(path: Path) -> Dict[str, Any]:
+    """
+    讀取 JSON 檔案
+    參數:
+        path: JSON 路徑
+    回傳:
+        解析後字典
+    """
+    with path.open("r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def dump_json(path: Path, payload: Dict[str, Any]) -> None:
+    """
+    輸出 JSON 檔案（含目錄建立）
+    參數:
+        path: 輸出路徑
+        payload: 內容
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+
+
+def route_action(predicted_label: str) -> str:
+    """
+    依分類標籤決定動作名稱
+    參數:
+        predicted_label: 分類結果標籤
+    回傳:
+        動作名稱
+    """
+    mapping = {
+        "send_quote": "send_quote",
+        "reply_faq": "reply_faq",
+        "reply_support": "reply_support",
+        "reply_general": "reply_general",
+        "apply_info_change": "apply_info_change",
+        "sales_notifier": "sales_notifier",
+    }
+    return mapping.get(predicted_label, "reply_general")
+
+
+def build_subject(action_name: str, subject: str) -> str:
+    """
+    根據動作決定主旨格式（保持相容）
+    參數:
+        action_name: 動作名稱
+        subject: 原主旨
+    回傳:
+        輸出主旨
+    """
+    if action_name.startswith("reply_"):
+        return f"[自動回覆] {subject}"
+    return subject
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="依據分類結果執行對應動作（離線友善）")
+    parser.add_argument("--input", required=True, help="輸入 JSON 檔路徑")
+    parser.add_argument("--output", required=True, help="輸出 JSON 檔路徑")
+    args = parser.parse_args()
+
+    in_path = Path(args.input).resolve()
+    out_path = Path(args.output).resolve()
+
+    offline = os.environ.get("OFFLINE", "0") == "1"
+    print(f"{MODULE_TAG} offline={offline} in={in_path} out={out_path}")
+
+    data = load_json(in_path)
+    subject = data.get("subject", "")
+    predicted_label = data.get("predicted_label", "reply_general")
+
+    action_name = route_action(predicted_label)
+    out_subject = build_subject(action_name, subject)
+
+    # 離線模式下不觸發外部副作用，統一回傳可驗收欄位
+    payload = {
+        "ok": True,
+        "ts": datetime.utcnow().isoformat() + "Z",
+        "predicted_label": predicted_label,
+        "action": action_name,
+        "action_name": action_name,
+        "subject": out_subject,
+        "to": "noreply@example.com",
+        "mailer": {
+            "ok": True,
+            "offline": offline,
+            "to": "noreply@example.com",
+            "subject": out_subject,
+            "attachments": [],
+        },
+    }
+
+    dump_json(out_path, payload)
+    print(f"{MODULE_TAG} wrote {out_path}")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        print(f"{MODULE_TAG} error: {e}", file=sys.stderr)
+        sys.exit(1)

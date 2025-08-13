@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# !/usr/bin/env python3
 from __future__ import annotations
 
 import os
@@ -13,12 +12,24 @@ def main() -> None:
 
     import action_handler as ah  # type: ignore
 
-    try:
-        from patches.handle_safe_patch import handle as safe_handle  # type: ignore
+    os.environ.setdefault("OFFLINE", "1")
 
-        ah.handle = safe_handle
+    patched = False
+    try:
+        from patches.handle_router_patch import handle as router_handle  # type: ignore
+
+        ah.handle = router_handle
+        patched = True
     except Exception:
-        pass
+        patched = False
+
+    if not patched:
+        try:
+            from patches.handle_safe_patch import handle as safe_handle  # type: ignore
+
+            ah.handle = safe_handle
+        except Exception:
+            pass
 
     from action_handler import main as action_main  # type: ignore
 

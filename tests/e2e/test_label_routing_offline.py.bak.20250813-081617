@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+# 檔案位置: tests/e2e/test_label_routing_offline.py
+# 測試目的: 驗證 predicted_label → action_name 路由正確，離線模式可執行
+
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+
+def run_cli(tmpdir: Path, payload: dict) -> dict:
+    in_path = tmpdir / "in.json"
+    out_path = tmpdir / "out.json"
+    in_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    env = os.environ.copy()
+    env["OFFLINE"] = "1"
+    env["PYTHONPATH"] = str(Path("src").resolve())
+    cmd = [
+        sys.executable,
+        "-m",
+        "src.run_action_handler",
+        "--input",
+        str(in_path),
+        "--output",
+        str(out_path),
+    ]
+    subprocess.run(cmd, check=True, env=env)
+    return json.loads(out_path.read_text(encoding="utf-8"))
+
+
+def test_route_send_quote(tmp_path: Path):
+    payload = {
+        "subject": "API 串接報價",
+        "from": "biz@example.com",
+        "body": "請提供 API 串接報價與交期",
+        "predicted_label": "send_quote",
+        "confidence": 0.88,
+        "attachments": [],
+    }
+    out = run_cli(tmp_path, payload)
+    assert out["action_name"] == "send_quote"
+
+
+def test_route_reply_faq(tmp_path: Path):
+    payload = {
+        "subject": "退貨流程？",
+        "from": "carol@example.com",
+        "body": "想了解退貨與退款流程",
+        "predicted_label": "reply_faq",
+        "confidence": 0.90,
+        "attachments": [],
+    }
+    out = run_cli(tmp_path, payload)
+    assert out["action_name"] == "reply_faq"
+    assert out["subject"].startswith("[自動回覆] ")
+
+
+def test_route_default_other_to_reply_general(tmp_path: Path):
+    payload = {
+        "subject": "免費中獎",
+        "from": "x@spam.com",
+        "body": "點此領獎",
+        "predicted_label": "other",
+        "confidence": 0.51,
+        "attachments": [],
+    }
+    out = run_cli(tmp_path, payload)
+    assert out["action_name"] == "reply_general"

@@ -44,20 +44,3 @@ cat data/output/out.json
 # 僅執行不依賴外網的測試與 E2E
 OFFLINE=1 PYTHONPATH=src pytest -q -k "not online or e2e"
 <!-- E2E_OFFLINE:END -->
-
-<!-- INTERVIEW_QUICKCHECK:START -->
-### 面試快檢清單
-- 一行離線測：`OFFLINE=1 PYTHONPATH=src pytest -q -k "not online or e2e"`
-- 一行 CLI demo：
-  ```bash
-  mkdir -p data/output && cat > data/output/in.json <<'JSON'
-  {"subject":"please send quote","from":"alice@example.com","body":"need quotation","predicted_label":"send_quote","confidence":0.95,"attachments":[]}
-  JSON
-  OFFLINE=1 PYTHONPATH=src python -m src.run_action_handler --input data/output/in.json --output data/output/out.json && cat data/output/out.json
-  ```
-<!-- INTERVIEW_QUICKCHECK:END -->
-
-<!-- CI_STATUS:START -->
-### CI 狀態（離線）
-已附 `Interview (offline)` workflow，對所有分支/PR 執行 `OFFLINE=1 pytest -q -k "not online or e2e"`。
-<!-- CI_STATUS:END -->
