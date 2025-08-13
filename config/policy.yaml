@@ -1,0 +1,17 @@
+policies:
+  - when:
+      intent: reply_faq
+      confidence_below: 0.6
+    then:
+      require_review: true
+      add_cc:
+        - review@company.com
+
+  - when:
+      intent: complaint
+      meta:
+        severity: high
+    then:
+      add_cc:
+        - escalations@company.com
+      priority: P1
