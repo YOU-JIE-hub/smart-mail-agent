@@ -5,9 +5,13 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-TEMPLATE_DIR = Path(__file__).resolve().parents[1] / "templates"
+_THIS = Path(__file__).resolve()
+SRC_DIR = _THIS.parents[1]  # .../src
+ROOT_DIR = SRC_DIR.parent  # repo root
+SEARCH = [ROOT_DIR / "templates", SRC_DIR / "templates"]
+
 _env = Environment(
-    loader=FileSystemLoader(str(TEMPLATE_DIR)), autoescape=select_autoescape(["html", "xml"])
+    loader=FileSystemLoader([str(p) for p in SEARCH]), autoescape=select_autoescape(["html", "xml"])
 )
 
 
