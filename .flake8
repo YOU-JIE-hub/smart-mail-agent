@@ -2,5 +2,6 @@
 max-line-length = 140
 extend-ignore = E203, W503
 per-file-ignores =
+    src/cli/sma.py: E501
     tools/metrics_daily.py:F821
 exclude = .git,__pycache__,backups,.venv,dist,build,.pytest_cache
