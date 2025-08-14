@@ -1,17 +1,6 @@
 [flake8]
-max-line-length = 220
-extend-ignore = E203,W503
-exclude = .git,__pycache__,.venv,dist,build,htmlcov,.mypy_cache,.pytest_cache,logs,data/output,assets/fonts,backups
+max-line-length = 120
+extend-ignore = E203, W503
+exclude = .git, .venv, venv, dist, build, backups, .mypy_cache, __pycache__
 per-file-ignores =
-    tests/*: D,E402,F401
-    cli/*: E402
-    pipeline/*: E402
-    src/utils/imap_folder_detector.py: E402
-    tools/verify_pdf_degrade.py: E402
-    tools/metrics_daily.py: F821
-    bootstrap_project.py: E501
-    src/cli/sma.py: E501
-    src/run_action_handler.py: F811,E501
-    src/utils/pdf_safe.py: E501
-    tools/generate_offline_report.py: E501
-    tools/generate_spam_report.py: E501
+    src/smart_mail_agent/utils/imap_folder_detector.py:E402
