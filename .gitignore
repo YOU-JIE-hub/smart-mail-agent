@@ -24,3 +24,14 @@ backups/
 # Local-only
 .env
 .backup/
+$BIN/
+artifacts/
+assets/fonts/*.otf
+data/
+logs/
+logs.out
+model/
+output/
+reports/
+sitecustomize.py
+*.bak
