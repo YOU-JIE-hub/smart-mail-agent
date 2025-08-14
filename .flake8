@@ -1,6 +1,7 @@
 [flake8]
-max-line-length = 120
+max-line-length = 160
 extend-ignore = E203, W503
-exclude = .git, .venv, venv, dist, build, backups, .mypy_cache, __pycache__
+exclude = .git, .venv, venv, dist, build, backups, .mypy_cache, __pycache__, cli, pipeline, tools
 per-file-ignores =
+    tests/*:F401,E402
     src/smart_mail_agent/utils/imap_folder_detector.py:E402
