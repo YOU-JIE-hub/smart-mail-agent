@@ -1,17 +1,16 @@
-# Smart Mail Agent（面試展示版）
-狀態徽章：見 GitHub Actions CI
+# Smart Mail Agent
 
-快速開始（步驟）：
-1. 建立 venv 與安裝依賴（requirements.txt、requirements-dev.txt）
-2. 執行 `make demo-all` 產生範例輸出
-3. 執行 `make show-summary` 檢視摘要
-4. 離線 E2E：`OFFLINE=1 PYTHONPATH=src pytest -q tests/e2e`
+[![Release](https://img.shields.io/github/v/release/YOU-JIE-hub/smart-mail-agent?include_prereleases&label=release)](https://github.com/YOU-JIE-hub/smart-mail-agent/releases)
+[![Downloads](https://img.shields.io/github/downloads/YOU-JIE-hub/smart-mail-agent/total.svg?label=downloads)](https://github.com/YOU-JIE-hub/smart-mail-agent/releases)
 
-策略亮點：
-- 投訴 P1 自動 CC + SLA，輸出保證含 meta.next_step
-- `--dry-run`：頂層與 meta 同步 dry_run=true
-- JSONL 日誌永不拋例外；輸出含 logged_path
+單一命名空間 `smart_mail_agent`，並保留 `utils/*`、`src/sma_types.py`、`src/policy_engine.py`、`src/actions/__init__.py`、`src/utils/*` 作為舊匯入相容層。
 
-中文 PDF 字型（可選）：
-- FONT_PATH=assets/fonts/NotoSansTC-Regular.ttf
-- PDF_FONT_FALLBACK=1
+## 開發
+python3 -m venv .venv && source .venv/bin/activate
+python -m pip install -U pip
+python -m pip install -e "."
+pytest -q
+
+## 打包
+python -m pip install -U build
+python -m build
