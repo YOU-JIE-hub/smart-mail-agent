@@ -1,8 +1,12 @@
 import json
-import os  # noqa: F401
 
 from datasets import Dataset
-from transformers import AutoModelForSequenceClassification, AutoTokenizer, Trainer, TrainingArguments
+from transformers import (
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    Trainer,
+    TrainingArguments,
+)
 
 # 類別對應（順序需與原標籤一致）
 LABELS = ["請求技術支援", "申請修改資訊", "詢問流程或規則", "投訴與抱怨", "業務接洽或報價", "其他"]
@@ -15,7 +19,7 @@ MODEL_OUT = "model/roberta-zh-checkpoint"
 PRETRAINED_MODEL = "bert-base-chinese"
 
 # 載入資料
-with open(DATA_PATH, "r", encoding="utf-8") as f:
+with open(DATA_PATH, encoding="utf-8") as f:
     raw_data = json.load(f)
 for row in raw_data:
     row["label"] = label2id[row["label"]]
@@ -39,9 +43,7 @@ def tokenize(batch):
 encoded_dataset = dataset.map(tokenize)
 
 # 模型初始化
-model = AutoModelForSequenceClassification.from_pretrained(
-    PRETRAINED_MODEL, num_labels=len(LABELS), label2id=label2id, id2label=id2label
-)
+model = AutoModelForSequenceClassification.from_pretrained(PRETRAINED_MODEL, num_labels=len(LABELS), label2id=label2id, id2label=id2label)
 
 # 訓練參數
 args = TrainingArguments(

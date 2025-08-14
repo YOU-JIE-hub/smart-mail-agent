@@ -1,13 +1,12 @@
+from __future__ import annotations
+
 #!/usr/bin/env python3
 # 檔案位置：src/log_writer.py
 # 模組用途：統一寫入 emails_log.db 的工具（企業級欄位與穩定介面）
-from __future__ import annotations
-
 import logging
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
 
 # 統一日誌格式
 logger = logging.getLogger("log_writer")
@@ -45,11 +44,11 @@ def log_to_db(
     subject: str,
     content: str = "",
     summary: str = "",
-    predicted_label: Optional[str] = None,
-    confidence: Optional[float] = None,
+    predicted_label: str | None = None,
+    confidence: float | None = None,
     action: str = "",
     error: str = "",
-    db_path: Optional[Path] = None,
+    db_path: Path | None = None,
 ) -> int:
     """寫入一筆處理紀錄到 emails_log.db。
 

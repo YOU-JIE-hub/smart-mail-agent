@@ -4,10 +4,9 @@
 
 import re
 from email import message_from_string
-from typing import Dict
 
 
-def extract_features(raw_email: str) -> Dict[str, int]:
+def extract_features(raw_email: str) -> dict[str, int]:
     """
     從原始 Email 內文中抽取特徵向量，用於垃圾郵件偵測模型。
 

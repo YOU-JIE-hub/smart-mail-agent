@@ -5,6 +5,7 @@
 - pytest.ini：加入 pytest -m online 的標記說明
 - Makefile：新增 smtp-test-online 目標
 """
+
 from __future__ import annotations
 
 import re
@@ -76,11 +77,7 @@ else:
 
 # 3) Makefile 增加 smtp-test-online 目標
 mk = ROOT / "Makefile"
-target = (
-    "\n.PHONY: smtp-test-online\n"
-    "smtp-test-online:\n"
-    "\tOFFLINE=0 PYTHONPATH=src .venv/bin/pytest -q -m online -k mailer_online -s\n"
-)
+target = "\n.PHONY: smtp-test-online\nsmtp-test-online:\n\tOFFLINE=0 PYTHONPATH=src .venv/bin/pytest -q -m online -k mailer_online -s\n"
 if mk.exists():
     t = mk.read_text(encoding="utf-8")
     if "smtp-test-online:" not in t:

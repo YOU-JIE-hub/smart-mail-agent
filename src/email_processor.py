@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 # 檔案位置：src/email_processor.py
 # 模組用途：主流程入口，整合垃圾信過濾 → 意圖分類 → 執行對應行動模組
-
 import argparse
 import json
 import os
-import sys  # noqa: F401
 
 from dotenv import load_dotenv
 
@@ -53,7 +51,7 @@ def main():
         return
 
     try:
-        with open(input_path, "r", encoding="utf-8") as f:
+        with open(input_path, encoding="utf-8") as f:
             data = json.load(f)
     except Exception as e:
         logger.error(f"[Pipeline] 無法讀取 JSON：{e}")
@@ -67,7 +65,7 @@ def main():
         result = spam_filter.is_legit(subject, body, sender)
 
         if not result["allow"]:
-            logger.warning(f"[Spam] 被過濾：階段 {result.get('stage') or result.get('engine','blocked')}")
+            logger.warning(f"[Spam] 被過濾：階段 {result.get('stage') or result.get('engine', 'blocked')}")
             data.update({"label": "spam", "predicted_label": "spam", "confidence": 0.0, "summary": ""})
             write_classification_result(data, input_path)
             write_log(

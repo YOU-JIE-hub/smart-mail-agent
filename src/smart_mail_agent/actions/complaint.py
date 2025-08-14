@@ -1,11 +1,13 @@
+from __future__ import annotations
+
+import json
+import sys
+
 #!/usr/bin/env python3
 # 檔案位置：src/actions/complaint.py
 # 模組用途：處理投訴；計算嚴重度並輸出 SLA_eta / priority / next_step
-
-from __future__ import annotations
-
 import uuid
-from typing import Any, Dict
+from typing import Any
 
 ACTION_NAME = "complaint"
 
@@ -46,7 +48,7 @@ def _sla_priority(severity: str) -> tuple[str, str]:
     return ("3d", "P3")
 
 
-def execute(request: Dict[str, Any], context: Dict[str, Any] | None = None) -> Dict[str, Any]:
+def execute(request: dict[str, Any], context: dict[str, Any] | None = None) -> dict[str, Any]:
     subject = str(request.get("subject") or "")
     body = str(request.get("body") or "")
     sev = _severity(subject + "\n" + body)

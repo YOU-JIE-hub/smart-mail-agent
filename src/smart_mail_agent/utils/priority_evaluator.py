@@ -2,7 +2,7 @@
 # 檔案位置：src/utils/priority_evaluator.py
 # 模組用途：根據主旨、內容、分類與信心分數，評估技術工單的優先等級
 
-from typing import Literal, Optional
+from typing import Literal
 
 from utils.logger import logger
 
@@ -34,8 +34,8 @@ def contains_critical_keywords(text: str) -> bool:
 def evaluate_priority(
     subject: str,
     content: str,
-    sender: Optional[str] = None,
-    category: Optional[str] = None,
+    sender: str | None = None,
+    category: str | None = None,
     confidence: float = 0.0,
 ) -> PriorityLevel:
     """

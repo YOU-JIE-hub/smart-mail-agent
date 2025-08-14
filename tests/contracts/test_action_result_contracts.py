@@ -31,10 +31,7 @@ def test_contracts_matrix_schema(_ensure_matrix):
             "code": c.get("code", "OK"),
             "message": c.get("message", ""),
             "output": c.get("output"),
-            "attachments": [
-                (AttachmentMeta(path=a, exists=True).model_dump() if isinstance(a, str) else a)
-                for a in (c.get("attachments") or [])
-            ],
+            "attachments": [(AttachmentMeta(path=a, exists=True).model_dump() if isinstance(a, str) else a) for a in (c.get("attachments") or [])],
             "request_id": c.get("request_id"),
             "spent_ms": c.get("spent_ms"),
         }

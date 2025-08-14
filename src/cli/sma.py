@@ -5,20 +5,20 @@ import csv
 import html
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from spam.pipeline import analyze
 from spam.rules import load_rules
 
 
-def _read_json(p: Path) -> Dict[str, Any]:
+def _read_json(p: Path) -> dict[str, Any]:
     return json.loads(p.read_text(encoding="utf-8"))
 
 
-def _read_eml(p: Path) -> Dict[str, Any]:
+def _read_eml(p: Path) -> dict[str, Any]:
     # 超輕量 .eml 解析：抓 From/Subject 與全文；附件略過（非關鍵）
     sender, subject = "", ""
-    content_lines: List[str] = []
+    content_lines: list[str] = []
     for line in p.read_text(errors="ignore", encoding="utf-8").splitlines():
         if line.lower().startswith("from:"):
             sender = line.split(":", 1)[1].strip()
@@ -34,9 +34,9 @@ def _read_eml(p: Path) -> Dict[str, Any]:
     }
 
 
-def spam_scan(inbox: Path, out_dir: Path) -> Dict[str, Any]:
+def spam_scan(inbox: Path, out_dir: Path) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
-    rows: List[Dict[str, Any]] = []
+    rows: list[dict[str, Any]] = []
     for ext in ("*.json", "*.eml"):
         for f in inbox.rglob(ext):
             try:
@@ -78,16 +78,14 @@ def spam_scan(inbox: Path, out_dir: Path) -> Dict[str, Any]:
     for r in rows:
         reasons = " | ".join(html.escape(x) for x in r.get("reasons", []))
         table_rows.append(
-            f"<tr><td>{html.escape(r.get('file',''))}</td><td>{html.escape(str(r.get('label','')))}</td><td>{int(r.get('score',0))}</td><td>{html.escape(r.get('subject',''))}</td><td>{reasons}</td></tr>"
+            f"<tr><td>{html.escape(r.get('file', ''))}</td><td>{html.escape(str(r.get('label', '')))}</td><td>{int(r.get('score', 0))}</td><td>{html.escape(r.get('subject', ''))}</td><td>{reasons}</td></tr>"
         )
     html_doc = (
         "<!doctype html><meta charset='utf-8'><title>Spam Scan Report</title>"
         "<style>body{font-family:system-ui,Segoe UI,Arial} table{border-collapse:collapse;width:100%} th,td{border:1px solid #ddd;padding:6px} th{background:#fafafa;text-align:left}</style>"
         "<h2>Spam Scan Report</h2>"
         f"<p>Total: {len(rows)}</p>"
-        "<table><tr><th>File</th><th>Label</th><th>Score</th><th>Subject</th><th>Reasons</th></tr>"
-        + "".join(table_rows)
-        + "</table>"
+        "<table><tr><th>File</th><th>Label</th><th>Score</th><th>Subject</th><th>Reasons</th></tr>" + "".join(table_rows) + "</table>"
     )
     html_path.write_text(html_doc, encoding="utf-8")
     return {

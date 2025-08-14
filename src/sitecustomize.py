@@ -1,7 +1,8 @@
-# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import sys
+
+# -*- coding: utf-8 -*-
 from pathlib import Path
 
 BASE = Path(__file__).resolve().parent

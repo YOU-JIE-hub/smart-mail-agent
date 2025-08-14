@@ -5,14 +5,14 @@
 import re
 import sqlite3
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 from utils.logger import logger
 
 DB_PATH: str = "data/users.db"  # 可由外部 CLI 或環境變數注入路徑
 
 
-def extract_fields(content: str) -> Dict[str, Any]:
+def extract_fields(content: str) -> dict[str, Any]:
     """
     從信件內容中擷取聯絡資料欄位（電話與地址）
 
@@ -34,7 +34,7 @@ def extract_fields(content: str) -> Dict[str, Any]:
     return fields
 
 
-def update_user_info(email: str, content: str, db_path: str = DB_PATH) -> Dict[str, Any]:
+def update_user_info(email: str, content: str, db_path: str = DB_PATH) -> dict[str, Any]:
     """
     依據信件內容比對與更新使用者資料，若有異動則寫入 diff_log
 
@@ -62,7 +62,7 @@ def update_user_info(email: str, content: str, db_path: str = DB_PATH) -> Dict[s
         old_data = {"phone": row[0], "address": row[1]}
         new_fields = extract_fields(content)
 
-        changed: Dict[str, Dict[str, Any]] = {}
+        changed: dict[str, dict[str, Any]] = {}
         for key, new_val in new_fields.items():
             if key in old_data and new_val != old_data[key]:
                 changed[key] = {"old": old_data[key], "new": new_val}

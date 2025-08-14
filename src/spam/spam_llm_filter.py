@@ -1,9 +1,8 @@
+import os
+
 #!/usr/bin/env python3
 # 檔案位置：src/spam/spam_llm_filter.py
 # 模組用途：使用 OpenAI GPT 模型判斷信件是否具詐騙/釣魚嫌疑（L2）
-
-import os
-
 from dotenv import load_dotenv
 from openai import OpenAI, OpenAIError
 
@@ -36,12 +35,7 @@ class SpamLLMFilter:
         """
         try:
             full_text = f"主旨：{subject}\n內容：{content}".strip()
-            prompt = (
-                "判斷以下郵件是否為詐騙信或社交工程釣魚信。\n"
-                "如果你判斷為【正常信件】，請回：OK\n"
-                "如果你判斷為【可能詐騙或釣魚】，請回：SUSPICIOUS\n\n"
-                f"{full_text}"
-            )
+            prompt = f"判斷以下郵件是否為詐騙信或社交工程釣魚信。\n如果你判斷為【正常信件】，請回：OK\n如果你判斷為【可能詐騙或釣魚】，請回：SUSPICIOUS\n\n{full_text}"
 
             response = self.client.chat.completions.create(
                 model=self.model,

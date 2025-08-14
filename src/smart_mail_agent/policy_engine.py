@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, Iterable, Optional
+from collections.abc import Iterable
+from typing import Any
 
 import yaml
 
 
-def _sum_attachments_size(att: Optional[Iterable[dict]]) -> int:
+def _sum_attachments_size(att: Iterable[dict] | None) -> int:
     total = 0
     for a in att or []:
         try:
@@ -16,13 +17,13 @@ def _sum_attachments_size(att: Optional[Iterable[dict]]) -> int:
     return total
 
 
-def _from_domain(addr: Optional[str]) -> Optional[str]:
+def _from_domain(addr: str | None) -> str | None:
     if not addr or "@" not in addr:
         return None
     return addr.split("@", 1)[1].lower()
 
 
-def _detect_roles(a: Dict[str, Any], b: Dict[str, Any]) -> tuple[Dict[str, Any], Dict[str, Any]]:
+def _detect_roles(a: dict[str, Any], b: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     """回傳 (result, request)；自動判別參數順序以相容舊測試。"""
     score_a = int(bool(a.get("action_name") or a.get("ok") or a.get("code")))
     score_b = int(bool(b.get("action_name") or b.get("ok") or b.get("code")))
@@ -36,7 +37,7 @@ def _detect_roles(a: Dict[str, Any], b: Dict[str, Any]) -> tuple[Dict[str, Any],
     return a, b
 
 
-def apply_policies(x: Dict[str, Any], y: Dict[str, Any], policy_path: str = "config/policy.yaml") -> Dict[str, Any]:
+def apply_policies(x: dict[str, Any], y: dict[str, Any], policy_path: str = "config/policy.yaml") -> dict[str, Any]:
     """
     低信心簽審（預設閾值 0.6；可在 YAML low_confidence_review.threshold 覆蓋）
     - 若低於閾值：result.meta.require_review=True，並合併 cc。
@@ -53,7 +54,7 @@ def apply_policies(x: Dict[str, Any], y: Dict[str, Any], policy_path: str = "con
 
     try:
         if os.path.exists(policy_path):
-            rules = yaml.safe_load(open(policy_path, "r", encoding="utf-8")) or {}
+            rules = yaml.safe_load(open(policy_path, encoding="utf-8")) or {}
             lcr = rules.get("low_confidence_review") or {}
             threshold = float(lcr.get("threshold", threshold))
             yaml_cc = list(lcr.get("cc") or [])
@@ -74,6 +75,6 @@ def apply_policies(x: Dict[str, Any], y: Dict[str, Any], policy_path: str = "con
     return res
 
 
-def apply_policy(result: Dict[str, Any], message: Dict[str, Any], context: Optional[str] = None) -> Dict[str, Any]:
+def apply_policy(result: dict[str, Any], message: dict[str, Any], context: str | None = None) -> dict[str, Any]:
     """單筆策略代理到 apply_policies。"""
     return apply_policies(result, message, context or "config/policy.yaml")

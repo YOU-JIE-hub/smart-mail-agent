@@ -1,10 +1,8 @@
+from __future__ import annotations
+
 #!/usr/bin/env python3
 # 檔案位置：src/spam/spam_filter_orchestrator.py
 # 模組用途：離線安全替身的垃圾信總管（不連網、不載模型），精準對齊測試期望輸出
-
-from __future__ import annotations
-
-from typing import Dict
 
 
 class HeuristicClassifier:
@@ -35,7 +33,7 @@ class HeuristicClassifier:
         "博彩",
     )
 
-    def predict(self, subject: str = "", body: str = "", sender: str = "") -> Dict[str, object]:
+    def predict(self, subject: str = "", body: str = "", sender: str = "") -> dict[str, object]:
         subj = (subject or "").strip()
         cont = (body or "").strip()
         text = f"{subj} {cont}".lower()
@@ -106,13 +104,13 @@ class SpamFilterOrchestrator:
     def __init__(self) -> None:
         self.clf = HeuristicClassifier()
 
-    def analyze(self, subject: str = "", content: str = "", sender: str = "") -> Dict[str, object]:
+    def analyze(self, subject: str = "", content: str = "", sender: str = "") -> dict[str, object]:
         return self.clf.predict(subject=subject, body=content, sender=sender)
 
-    def is_spam(self, subject: str = "", content: str = "", sender: str = "") -> Dict[str, object]:
+    def is_spam(self, subject: str = "", content: str = "", sender: str = "") -> dict[str, object]:
         return self.analyze(subject, content, sender)
 
-    def is_legit(self, subject: str = "", content: str = "", sender: str = "") -> Dict[str, object]:
+    def is_legit(self, subject: str = "", content: str = "", sender: str = "") -> dict[str, object]:
         return self.analyze(subject, content, sender)
 
 

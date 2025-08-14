@@ -5,8 +5,6 @@ import os
 import tempfile
 from unittest import mock
 
-import pytest
-
 import send_with_attachment as swa
 
 
@@ -16,7 +14,7 @@ def test_send_with_attachment_cli_success(mock_send):
     mock_send.return_value = True
 
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-        content = "%PDF-1.4\n% 測試內容\n".encode("utf-8")
+        content = "%PDF-1.4\n% 測試內容\n".encode()
         tmp.write(content)
         tmp_path = tmp.name
 

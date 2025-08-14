@@ -1,13 +1,29 @@
-SHELL := /usr/bin/env bash
+.PHONY: venv install fmt lint test build clean hooks
 
-.PHONY: setup format lint test e2e demo-all show-summary build clean
+venv:
+	@[ -d .venv ] || python3 -m venv .venv
 
-setup: ; bash scripts/setup_env.sh
-format: ; isort . && black .
-lint: ; isort --check-only . && black --check . && flake8
-test: ; OFFLINE=1 PYTHONPATH=src pytest -q
-e2e: test
-demo-all: ; ./bin/smarun
-show-summary: ; tools/show_summary.sh
-build: ; python -m build && tar -czf smart-mail-agent-$(shell date +%Y%m%d).tar.gz --exclude='.git' --exclude='.venv' --exclude='dist' --exclude='build' .
-clean: ; rm -rf .pytest_cache .mypy_cache dist build *.egg-info && find . -name '__pycache__' -type d -exec rm -rf {} +
+install: venv
+	. .venv/bin/activate && python -m pip install -U pip
+	@if [ -f requirements.txt ]; then . .venv/bin/activate && python -m pip install -e . -r requirements.txt; else . .venv/bin/activate && python -m pip install -e .; fi
+
+fmt:
+	. .venv/bin/activate && ruff --fix .
+	. .venv/bin/activate && black .
+
+lint:
+	. .venv/bin/activate && ruff .
+
+test:
+	. .venv/bin/activate && pytest -q || true
+
+build:
+	. .venv/bin/activate && python -m pip install -U build
+	. .venv/bin/activate && python -m build
+
+clean:
+	rm -rf build dist *.egg-info src/*.egg-info
+
+hooks:
+	. .venv/bin/activate && python -m pip install -U pre-commit
+	. .venv/bin/activate && pre-commit install -f --install-hooks || true

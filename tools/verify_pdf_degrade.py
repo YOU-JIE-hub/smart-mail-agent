@@ -13,7 +13,7 @@ for p in (ROOT, SRC):
     if sp not in sys.path:
         sys.path.insert(0, sp)
 
-from src.utils.pdf_safe import write_pdf_or_txt
+from utils.pdf_safe import write_pdf_or_txt
 
 
 @contextmanager

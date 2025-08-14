@@ -1,7 +1,6 @@
 # 檔案位置：tests/test_mailer.py
 # 測試模組：utils.mailer.py - 寄送帶附件的郵件功能
 
-import os
 from unittest.mock import patch
 
 import pytest

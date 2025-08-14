@@ -43,10 +43,7 @@ def main() -> None:
 
     # 3) 若沒有提交，建立 main 與首個提交
     # 檢查是否已有 commit
-    has_commit = (
-        subprocess.run(["git", "rev-parse", "HEAD"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
-        == 0
-    )
+    has_commit = subprocess.run(["git", "rev-parse", "HEAD"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
     if not has_commit:
         # 設定預設分支為 main（僅空 repo 有效）
         try:

@@ -1,8 +1,8 @@
+import os
+
 #!/usr/bin/env python3
 # 檔案位置：src/utils/pdf_generator.py
 # 模組用途：產出異動紀錄 PDF，支援中文顯示與系統字型錯誤備援處理
-
-import os
 from datetime import datetime
 from pathlib import Path
 

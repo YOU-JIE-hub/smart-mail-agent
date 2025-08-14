@@ -14,7 +14,7 @@ def run(args):
     clf = SpamBertClassifier(args.model)
 
     try:
-        with open(args.json, "r", encoding="utf-8") as f:
+        with open(args.json, encoding="utf-8") as f:
             data = json.load(f)
     except Exception as e:
         logger.error(f"無法讀取 JSON 檔案：{e}")

@@ -6,10 +6,10 @@ import json
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 
-def _iter_logs(log_dir: Path) -> List[Path]:
+def _iter_logs(log_dir: Path) -> list[Path]:
     return sorted(log_dir.glob("sma-*.jsonl"))
 
 
@@ -26,9 +26,7 @@ def main() -> int:
         print("no logs found", file=sys.stderr)
         return 0
 
-    metrics: Dict[str, Dict[str, Dict[str, Any]]] = defaultdict(
-        lambda: defaultdict(lambda: {"count": 0, "ok": 0, "fail": 0, "dur_sum": 0, "dur_cnt": 0})
-    )
+    metrics: dict[str, dict[str, dict[str, Any]]] = defaultdict(lambda: defaultdict(lambda: {"count": 0, "ok": 0, "fail": 0, "dur_sum": 0, "dur_cnt": 0}))
 
     for fp in files:
         with fp.open("r", encoding="utf-8") as f:
@@ -62,7 +60,7 @@ def main() -> int:
         rows = ["date,intent,count,ok,fail,avg_duration_ms"]
         for intent, m in sorted(intents.items()):
             avg = (m["dur_sum"] / m["dur_cnt"]) if m["dur_cnt"] else 0
-            rows.append(f"{day},{intent},{m[count]},{m[ok]},{m[fail]},{int(avg)}")
+            rows.append(f"{day},{intent},{m['count']},{m['ok']},{m['fail']},{int(avg)}")
         out.write_text("\n".join(rows) + "\n", encoding="utf-8")
         print(f"已輸出：{out}")
     return 0

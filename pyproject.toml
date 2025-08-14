@@ -1,41 +1,41 @@
 [build-system]
-requires = ["setuptools>=68","wheel"]
+requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "smart-mail-agent"
-version = "0.3.1"
-description = "AI + RPA 郵件自動處理展示專案（面試版）"
+version = "0.4.1"
+description = "AI + RPA smart mail processing with CLI entrypoints and packaging"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { file = "LICENSE" }
-authors = [{ name="YOU-JIE" }]
-keywords = ["email","NLP","automation","RPA"]
+license = "MIT"
+authors = [{name="YOU-JIE"}]
 dependencies = []
 
+[project.urls]
+Homepage = "https://github.com/YOU-JIE-hub/smart-mail-agent"
+
+[project.scripts]
+sma = "smart_mail_agent.cli.sma:main"
+sma-run = "smart_mail_agent.cli.sma_run:main"
+sma-spamcheck = "smart_mail_agent.cli.sma_spamcheck:main"
+
 [tool.setuptools]
-package-dir = {""="src"}
-packages = ["utils","actions"]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["smart_mail_agent*"]
 
 [tool.black]
-line-length = 120
+line-length = 200
 target-version = ["py310"]
-exclude = '''
-(
-  /(\.git|\.venv|dist|build|htmlcov|\.mypy_cache|\.pytest_cache)/
-  | ^/logs/
-  | ^/data/output/
-  | ^/assets/fonts/
-  | ^/backups/
-)
-'''
 
-[tool.isort]
-profile = "black"
-line_length = 120
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-use_parentheses = true
-ensure_newline_before_comments = true
-skip = [".venv","dist","build","htmlcov",".mypy_cache",".pytest_cache","backups","logs","data/output","assets/fonts"]
+[tool.ruff]
+line-length = 200
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E","F","I","B","UP","ISC","C90"]
+ignore = ["E402","E501","C901","B007","UP038","F401","F403","ISC001","B034"]

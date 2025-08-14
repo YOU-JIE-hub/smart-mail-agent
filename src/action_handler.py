@@ -1,14 +1,14 @@
-#!/usr/bin/env python3
-# 檔案位置：src/action_handler.py
 from __future__ import annotations
 
+#!/usr/bin/env python3
+# 檔案位置：src/action_handler.py
 import argparse
 import json
 import logging
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 LOGGER_NAME = "ACTION"
 logging.basicConfig(
@@ -84,7 +84,7 @@ TEMPLATES = {
 }
 
 
-def _addr_book() -> Dict[str, str]:
+def _addr_book() -> dict[str, str]:
     return {
         "from": os.getenv("SMTP_FROM", "noreply@example.com"),
         "reply_to": os.getenv("REPLY_TO", "service@example.com"),
@@ -96,7 +96,7 @@ def _offline() -> bool:
     return os.getenv("OFFLINE", "1") == "1"
 
 
-def _send(to_addr: str, subject: str, body: str, attachments: Optional[list[str]] = None) -> Any:
+def _send(to_addr: str, subject: str, body: str, attachments: list[str] | None = None) -> Any:
     """相容新版與舊版 mailer 簽名；OFFLINE 直接回成功。"""
     if _offline():
         return {
@@ -109,22 +109,20 @@ def _send(to_addr: str, subject: str, body: str, attachments: Optional[list[str]
     # 優先嘗試新版（recipient/body_html/attachment_path）
     try:
         first_path = (attachments or [None])[0]
-        return send_email_with_attachment(  # type: ignore
-            recipient=to_addr, subject=subject, body_html=body, attachment_path=first_path
-        )
+        return send_email_with_attachment(recipient=to_addr, subject=subject, body_html=body, attachment_path=first_path)  # type: ignore
     except TypeError:
         # 回退到舊版（to_addr/body/attachments）
         return send_email_with_attachment(to_addr, subject, body, attachments=attachments or [])  # type: ignore
 
 
-def _action_send_quote(payload: Dict[str, Any]) -> Dict[str, Any]:
-    subject = f"[報價] {payload.get('subject','').strip()}"
+def _action_send_quote(payload: dict[str, Any]) -> dict[str, Any]:
+    subject = f"[報價] {payload.get('subject', '').strip()}"
     body = TEMPLATES["send_quote_body"].format(subject=payload.get("subject", ""))
     attach = _ensure_attachment(
         Path("data/output"),
         "報價單",
         [
-            f"客戶主旨：{payload.get('subject','')}",
+            f"客戶主旨：{payload.get('subject', '')}",
             "項目A：單價 1000，數量 1，金額 1000",
             "項目B：單價 500，數量 2，金額 1000",
             "總計（未稅）：2000",
@@ -142,8 +140,8 @@ def _action_send_quote(payload: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def _action_reply_support(payload: Dict[str, Any]) -> Dict[str, Any]:
-    subject = f"[支援回覆] {payload.get('subject','').strip()}"
+def _action_reply_support(payload: dict[str, Any]) -> dict[str, Any]:
+    subject = f"[支援回覆] {payload.get('subject', '').strip()}"
     body = TEMPLATES["reply_support"].format(subject=payload.get("subject", ""), content=payload.get("content", ""))
     to_addr = payload.get("sender") or _addr_book()["from"]
     resp = _send(to_addr, subject, body)
@@ -156,8 +154,8 @@ def _action_reply_support(payload: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def _action_apply_info_change(payload: Dict[str, Any]) -> Dict[str, Any]:
-    subject = f"[資料更新受理] {payload.get('subject','').strip()}"
+def _action_apply_info_change(payload: dict[str, Any]) -> dict[str, Any]:
+    subject = f"[資料更新受理] {payload.get('subject', '').strip()}"
     body = TEMPLATES["apply_info_change"].format(subject=payload.get("subject", ""), content=payload.get("content", ""))
     to_addr = payload.get("sender") or _addr_book()["from"]
     resp = _send(to_addr, subject, body)
@@ -170,16 +168,16 @@ def _action_apply_info_change(payload: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def _action_reply_faq(payload: Dict[str, Any]) -> Dict[str, Any]:
-    subject = f"[流程說明] {payload.get('subject','').strip()}"
+def _action_reply_faq(payload: dict[str, Any]) -> dict[str, Any]:
+    subject = f"[流程說明] {payload.get('subject', '').strip()}"
     body = TEMPLATES["reply_faq"].format(faq_text="退款流程：填寫申請表 → 審核 3–5 個工作天 → 原路退回。")
     to_addr = payload.get("sender") or _addr_book()["from"]
     resp = _send(to_addr, subject, body)
     return {"ok": True, "action": "reply_faq", "subject": subject, "to": to_addr, "mailer": resp}
 
 
-def _action_reply_apology(payload: Dict[str, Any]) -> Dict[str, Any]:
-    subject = f"[致歉回覆] {payload.get('subject','').strip()}"
+def _action_reply_apology(payload: dict[str, Any]) -> dict[str, Any]:
+    subject = f"[致歉回覆] {payload.get('subject', '').strip()}"
     body = TEMPLATES["reply_apology"].format(subject=payload.get("subject", ""))
     to_addr = payload.get("sender") or _addr_book()["from"]
     resp = _send(to_addr, subject, body)
@@ -192,8 +190,8 @@ def _action_reply_apology(payload: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def _action_reply_general(payload: Dict[str, Any]) -> Dict[str, Any]:
-    subject = f"[自動回覆] {payload.get('subject','').strip()}"
+def _action_reply_general(payload: dict[str, Any]) -> dict[str, Any]:
+    subject = f"[自動回覆] {payload.get('subject', '').strip()}"
     body = TEMPLATES["reply_general"].format(subject=payload.get("subject", ""))
     to_addr = payload.get("sender") or _addr_book()["from"]
     resp = _send(to_addr, subject, body)
@@ -220,7 +218,7 @@ def decide_action(label: str) -> str:
     return LABEL_ACTION_MAP.get(label, "reply_general")
 
 
-def handle(payload: Dict[str, Any]) -> Dict[str, Any]:
+def handle(payload: dict[str, Any]) -> dict[str, Any]:
     label = payload.get("predicted_label") or payload.get("label") or "其他"
     action_name = decide_action(label)
     fn = ACTION_DISPATCHER.get(action_name, _action_reply_general)
@@ -235,7 +233,7 @@ def handle(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 
 # 介面別名：讓 email_processor 可 from action_handler import route_action
-def route_action(label: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+def route_action(label: str, payload: dict[str, Any]) -> dict[str, Any]:
     payload = dict(payload or {})
     payload.setdefault("predicted_label", label)
     return handle(payload)

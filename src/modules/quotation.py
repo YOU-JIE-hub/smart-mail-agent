@@ -1,10 +1,10 @@
-#!/usr/bin/env python3
 from __future__ import annotations
 
 import os
+
+#!/usr/bin/env python3
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
 
 PKG_BASIC = "基礎"
 PKG_PRO = "專業"
@@ -18,7 +18,7 @@ DEFAULT_FONT_PATH = os.getenv("FONT_TTF_PATH", "assets/fonts/NotoSansTC-Regular.
 DEFAULT_OUT_DIR = Path("data/output")
 
 
-def choose_package(subject: str, content: str) -> Dict[str, object]:
+def choose_package(subject: str, content: str) -> dict[str, object]:
     """
     回傳格式：{"package": <基礎/專業/企業>, "needs_manual": <bool>}
     - 先判專業，再判企業，最後才是基礎
@@ -34,7 +34,7 @@ def choose_package(subject: str, content: str) -> Dict[str, object]:
     return {"package": pkg, "needs_manual": (pkg == PKG_BASIC)}
 
 
-def _render_pdf(path: Path, title: str, lines: List[str]) -> str:
+def _render_pdf(path: Path, title: str, lines: list[str]) -> str:
     """優先用 reportlab；缺字型退回 Helvetica，不丟錯。"""
     from reportlab.lib.pagesizes import A4  # type: ignore
     from reportlab.pdfgen import canvas  # type: ignore
@@ -71,10 +71,10 @@ def _render_pdf(path: Path, title: str, lines: List[str]) -> str:
 
 
 def generate_pdf_quote(
-    out_dir: Optional[os.PathLike | str] = None,
+    out_dir: os.PathLike | str | None = None,
     *,
-    package: Optional[str] = None,
-    client_name: Optional[str] = None,
+    package: str | None = None,
+    client_name: str | None = None,
 ) -> str:
     """
     相容兩種用法：
