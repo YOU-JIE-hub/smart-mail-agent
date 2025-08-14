@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import mimetypes
 import os
-import smtplib  # 重要：用模組層級，讓 tests 的 patch("utils.mailer.smtplib.SMTP_SSL") 能命中
+import smtplib
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -20,15 +20,12 @@ def validate_smtp_config(cfg: Optional[Dict[str, Any]] = None) -> Dict[str, Any]
     host = _env(cfg, "SMTP_HOST")
     port_raw = _env(cfg, "SMTP_PORT")
     sender = _env(cfg, "SMTP_FROM") or user
-
     try:
         port = int(port_raw) if port_raw is not None else 0
     except Exception:
         port = 0
-
     if not (user and pwd and host and port):
         raise ValueError("SMTP 設定錯誤：缺少必要欄位")
-
     return {"user": user, "password": pwd, "host": host, "port": port, "sender": sender}
 
 
@@ -40,12 +37,10 @@ def send_email_with_attachment(
     cfg: Optional[Dict[str, Any]] = None,
 ) -> bool:
     conf = validate_smtp_config(cfg)
-
     p = Path(attachment_path)
     if not p.exists():
         raise FileNotFoundError(str(p))
 
-    # 準備信件
     msg = MIMEMultipart()
     msg["From"] = conf["sender"]
     msg["To"] = recipient
@@ -59,9 +54,8 @@ def send_email_with_attachment(
     part.add_header("Content-Disposition", "attachment", filename=p.name)
     msg.attach(part)
 
-    # 傳送（465 使用 SMTP_SSL；其他連接埠預設 STARTTLS）
     if conf["port"] == 465:
-        with smtplib.SMTP_SSL(conf["host"], conf["port"]) as s:  # 讓測試可 patch 命中
+        with smtplib.SMTP_SSL(conf["host"], conf["port"]) as s:
             s.login(conf["user"], conf["password"])
             s.sendmail(conf["sender"], [recipient], msg.as_string())
     else:
@@ -71,5 +65,4 @@ def send_email_with_attachment(
                 s.starttls()
             s.login(conf["user"], conf["password"])
             s.sendmail(conf["sender"], [recipient], msg.as_string())
-
     return True
