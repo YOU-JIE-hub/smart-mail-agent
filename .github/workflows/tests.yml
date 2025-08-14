@@ -22,7 +22,7 @@ env:
 
 jobs:
   unit:
-    if: github.event_name != 'schedule'  # 排程時只跑 e2e，省 CI
+    if: github.event_name != 'schedule'  # 排程時省 CI，只跑 e2e
     name: unit & contracts (fast)
     runs-on: ubuntu-latest
     steps:
@@ -40,8 +40,8 @@ jobs:
 
   e2e:
     name: e2e (online & heavy)
+    if: github.event_name != 'pull_request'  # PR 不跑 e2e，避免大量下載
     needs: [unit]
-    if: github.event_name != 'pull_request'  # PR 不跑 e2e，避免拉大鏡像
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
