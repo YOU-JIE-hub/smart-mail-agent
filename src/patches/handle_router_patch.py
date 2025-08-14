@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
 from __future__ import annotations
 
+# -*- coding: utf-8 -*-
 import importlib
-from typing import Any, Dict
+from typing import Any
 
 _ALIASES = {
     "business_inquiry": "sales_inquiry",
@@ -20,7 +20,7 @@ def _get_orig():
     return getattr(mod, "_orig_handle", None)
 
 
-def handle(req: Dict[str, Any]) -> Dict[str, Any]:
+def handle(req: dict[str, Any]) -> dict[str, Any]:
     label = (req.get("predicted_label") or "").strip().lower()
     label = _normalize(label)
     req["predicted_label"] = label

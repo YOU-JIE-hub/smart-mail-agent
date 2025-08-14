@@ -18,7 +18,7 @@ def main():
     for line in lines:
         if not line or line.startswith("#"):
             continue
-        name = re.split(r"[<>=!~ ]", line, 1)[0].lower()
+        name = re.split(r"[<>=!~ ]", line, maxsplit=1)[0].lower()
         # 保留最後一次宣告
         pkgs[name] = line
     cleaned = sorted(pkgs.values(), key=lambda s: s.lower())

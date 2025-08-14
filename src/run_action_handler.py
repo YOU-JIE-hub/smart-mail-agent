@@ -1,6 +1,6 @@
-#!/usr/bin/env python3
 from __future__ import annotations
 
+#!/usr/bin/env python3
 import argparse
 import json
 import re
@@ -8,15 +8,15 @@ import sys
 import time
 import uuid
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 
-def _read_json(p: str | Path) -> Dict[str, Any]:
-    with open(p, "r", encoding="utf-8") as f:
+def _read_json(p: str | Path) -> dict[str, Any]:
+    with open(p, encoding="utf-8") as f:
         return json.load(f)
 
 
-def _write_json(p: str | Path, obj: Dict[str, Any]) -> None:
+def _write_json(p: str | Path, obj: dict[str, Any]) -> None:
     with open(p, "w", encoding="utf-8") as f:
         json.dump(obj, f, ensure_ascii=False, indent=2)
 
@@ -41,14 +41,14 @@ def decide_action(pred: str | None) -> str:
     return mapping.get((pred or "").strip().lower(), "reply_general")
 
 
-def build_response(obj: Dict[str, Any], simulate_failure: str | None, dry_run: bool) -> Dict[str, Any]:
+def build_response(obj: dict[str, Any], simulate_failure: str | None, dry_run: bool) -> dict[str, Any]:
     rid = _req_id()
     pred = obj.get("predicted_label")
     action = decide_action(pred)
-    attachments: List[Dict[str, Any]] = []
+    attachments: list[dict[str, Any]] = []
     subject = "[自動回覆] 通知"
     body = "處理完成。"
-    meta: Dict[str, Any] = {"request_id": rid, "dry_run": dry_run, "duration_ms": 0}
+    meta: dict[str, Any] = {"request_id": rid, "dry_run": dry_run, "duration_ms": 0}
 
     # 策略：附件超限 -> require_review + CC support
     max_bytes = 5 * 1024 * 1024
@@ -76,7 +76,7 @@ def build_response(obj: Dict[str, Any], simulate_failure: str | None, dry_run: b
         subject = "[自動回覆] 商務詢問回覆"
         body = "我們已收到您的商務詢問，附件為需求摘要，稍後由業務與您聯繫。"
         meta["next_step"] = "安排需求澄清會議並由業務跟進"
-        md = f"# 商務詢問摘要（{rid}）\n\n- 來信主旨：{obj.get('subject','')}\n- 來信者：{obj.get('from','')}\n- 內文：\n{obj.get('body','')}\n"
+        md = f"# 商務詢問摘要（{rid}）\n\n- 來信主旨：{obj.get('subject', '')}\n- 來信者：{obj.get('from', '')}\n- 內文：\n{obj.get('body', '')}\n"
         attachments.append({"filename": f"needs_summary_{rid}.md", "size": len(md.encode("utf-8"))})
     elif action == "complaint":
         subject = "[自動回覆] 投訴受理通知"
@@ -163,12 +163,7 @@ try:
                 if _out.exists():
                     _d = _j2.loads(_out.read_text(encoding="utf-8"))
                     _meta = _d.get("meta") or {}
-                    if (
-                        _d.get("action_name") == "complaint"
-                        and isinstance(_meta, dict)
-                        and _meta.get("priority") == "P1"
-                        and not _meta.get("next_step")
-                    ):
+                    if _d.get("action_name") == "complaint" and isinstance(_meta, dict) and _meta.get("priority") == "P1" and not _meta.get("next_step"):
                         _meta["next_step"] = "啟動P1流程：建立 incident/bridge，通知 OPS/QA，SLA 4h 內回覆客戶"
                         _d["meta"] = _meta
                         _out.write_text(_j2.dumps(_d, ensure_ascii=False, indent=2), encoding="utf-8")

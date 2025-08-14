@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # 檔案位置：src/send_with_attachment.py
 # 模組用途：寄送 Email（支援 HTML 內文、附件、錯誤處理、環境參數與 log 紀錄）
-
 import argparse
 import os
 import smtplib
@@ -113,9 +112,7 @@ def main():
 
     args = parser.parse_args()
 
-    result = send_email_with_attachment(
-        recipient=args.to, subject=args.subject, body_html=args.body, attachment_path=args.file
-    )
+    result = send_email_with_attachment(recipient=args.to, subject=args.subject, body_html=args.body, attachment_path=args.file)
 
     if result:
         print("郵件已成功寄出")

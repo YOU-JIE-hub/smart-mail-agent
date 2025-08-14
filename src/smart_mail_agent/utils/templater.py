@@ -1,13 +1,12 @@
-#!/usr/bin/env python3
 from __future__ import annotations
 
+#!/usr/bin/env python3
 from pathlib import Path
-from typing import List
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 
-def _template_dirs() -> List[str]:
+def _template_dirs() -> list[str]:
     here = Path(__file__).resolve()
     roots = [
         here.parents[2],  # repo root

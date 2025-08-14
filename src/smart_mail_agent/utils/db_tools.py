@@ -3,12 +3,11 @@
 # 模組用途：用於查詢 SQLite 使用者資料表（get by email / get all）
 
 import sqlite3
-from typing import Dict, List, Optional
 
 from utils.logger import logger
 
 
-def get_user_by_email(db_path: str, email: str) -> Optional[Dict]:
+def get_user_by_email(db_path: str, email: str) -> dict | None:
     """
     根據 email 查詢單一使用者資料
 
@@ -48,7 +47,7 @@ def get_user_by_email(db_path: str, email: str) -> Optional[Dict]:
         return None
 
 
-def get_all_users(db_path: str) -> List[Dict]:
+def get_all_users(db_path: str) -> list[dict]:
     """
     查詢所有使用者資料
 

@@ -1,12 +1,13 @@
-# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import datetime as dt
+from collections.abc import Sequence
+
+# -*- coding: utf-8 -*-
 from pathlib import Path
-from typing import List, Optional, Sequence
 
 
-def _find_font(candidates: Sequence[str]) -> Optional[Path]:
+def _find_font(candidates: Sequence[str]) -> Path | None:
     extra = [
         "/usr/share/fonts/opentype/noto/NotoSansCJKTC-Regular.otf",
         "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
@@ -26,7 +27,7 @@ def _escape_pdf_text(s: str) -> str:
     return "".join(ch if 32 <= ord(ch) <= 126 else "?" for ch in s)
 
 
-def _write_minimal_pdf(lines: List[str], out_path: Path) -> Path:
+def _write_minimal_pdf(lines: list[str], out_path: Path) -> Path:
     # 產生一份 *有效* 的極簡 PDF（1 頁，內建 Helvetica 字型）
     # 版面：A4 (595 x 842 points)，字體 12pt，行距 14pt，自 (72, 800) 起逐行往下
     header = b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n"
@@ -53,19 +54,9 @@ def _write_minimal_pdf(lines: List[str], out_path: Path) -> Path:
     # 2: Pages
     xref.append(add_obj(b"2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n"))
     # 3: Page
-    xref.append(
-        add_obj(
-            b"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n"
-        )
-    )
+    xref.append(add_obj(b"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n"))
     # 4: Contents (stream)
-    stream = (
-        b"4 0 obj\n<< /Length "
-        + str(len(content_bytes)).encode("ascii")
-        + b" >>\nstream\n"
-        + content_bytes
-        + b"endstream\nendobj\n"
-    )
+    stream = b"4 0 obj\n<< /Length " + str(len(content_bytes)).encode("ascii") + b" >>\nstream\n" + content_bytes + b"endstream\nendobj\n"
     xref.append(add_obj(stream))
     # 5: Font
     xref.append(add_obj(b"5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n"))
@@ -74,7 +65,7 @@ def _write_minimal_pdf(lines: List[str], out_path: Path) -> Path:
     xref_start = len(header) + sum(len(x) for x in objs)
     xref_table = [b"xref\n0 6\n", b"0000000000 65535 f \n"]
     for off in xref:
-        xref_table.append(("{:010d} 00000 n \n".format(off)).encode("ascii"))
+        xref_table.append((f"{off:010d} 00000 n \n").encode("ascii"))
     xref_bytes = b"".join(xref_table)
     trailer = b"trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n" + str(xref_start).encode("ascii") + b"\n%%EOF\n"
 
@@ -89,10 +80,10 @@ def _write_minimal_pdf(lines: List[str], out_path: Path) -> Path:
 
 
 def write_pdf_or_txt(
-    lines: List[str],
+    lines: list[str],
     out_dir: Path = Path("data/output"),
     basename: str = "attachment",
-    font_candidates: Optional[Sequence[str]] = None,
+    font_candidates: Sequence[str] | None = None,
 ) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     ts = dt.datetime.now().strftime("%Y%m%d_%H%M%S")

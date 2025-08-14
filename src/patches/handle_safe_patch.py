@@ -1,10 +1,11 @@
-# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import os
 import sys
+
+# -*- coding: utf-8 -*-
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 BASE = Path(__file__).resolve().parents[1]
 for p in (BASE, BASE.parent):
@@ -18,12 +19,12 @@ except Exception:
     from src.action_handler import handle as _orig_handle  # type: ignore
 
 try:
-    from src.utils.pdf_safe import write_pdf_or_txt
+    from utils.pdf_safe import write_pdf_or_txt
 except Exception:
     from utils.pdf_safe import write_pdf_or_txt  # type: ignore
 
 
-def _attachments_ok(att_list: List[str] | None) -> bool:
+def _attachments_ok(att_list: list[str] | None) -> bool:
     if not att_list:
         return False
     for a in att_list:
@@ -33,7 +34,7 @@ def _attachments_ok(att_list: List[str] | None) -> bool:
     return True
 
 
-def handle(payload: Dict[str, Any]) -> Dict[str, Any]:
+def handle(payload: dict[str, Any]) -> dict[str, Any]:
     os.environ.setdefault("OFFLINE", "1")
     res = _orig_handle(payload)
     if (res or {}).get("action") == "send_quote":

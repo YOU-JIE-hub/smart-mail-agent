@@ -10,7 +10,7 @@ from spam.spam_filter_orchestrator import SpamFilterOrchestrator
 
 
 def run_single(json_path: str, model_path: str):
-    with open(json_path, "r", encoding="utf-8") as f:
+    with open(json_path, encoding="utf-8") as f:
         data = json.load(f)
 
     subject = data.get("subject", "")

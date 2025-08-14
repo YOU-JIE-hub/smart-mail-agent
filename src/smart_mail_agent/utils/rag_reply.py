@@ -1,9 +1,8 @@
+import os
+
 #!/usr/bin/env python3
 # 檔案位置：src/utils/rag_reply.py
 # 模組用途：使用 GPT 模型 + FAQ 知識庫進行回應生成（中文 Retrieval-Augmented Generation）
-
-import os
-
 from dotenv import load_dotenv
 from openai import OpenAI, OpenAIError
 
@@ -24,7 +23,7 @@ def load_faq_knowledge(faq_path: str) -> str:
         return ""
 
     try:
-        with open(faq_path, "r", encoding="utf-8") as f:
+        with open(faq_path, encoding="utf-8") as f:
             return f.read()
     except Exception as e:
         logger.error(f"[rag_reply] FAQ 讀取錯誤：{e}")
@@ -45,12 +44,7 @@ def generate_rag_reply(query: str, faq_path: str, model: str = "gpt-3.5-turbo") 
         if not faq:
             return "很抱歉，目前無法提供對應資料。"
 
-        prompt = (
-            "你是客服助理，請根據以下 FAQ 資訊與提問內容，提供簡潔清楚的回覆：\n\n"
-            f"【FAQ】\n{faq}\n\n"
-            f"【提問】\n{query}\n\n"
-            "請以繁體中文回答，回覆不可重複 FAQ 原文，請使用簡明語氣說明即可。"
-        )
+        prompt = f"你是客服助理，請根據以下 FAQ 資訊與提問內容，提供簡潔清楚的回覆：\n\n【FAQ】\n{faq}\n\n【提問】\n{query}\n\n請以繁體中文回答，回覆不可重複 FAQ 原文，請使用簡明語氣說明即可。"
 
         client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         response = client.chat.completions.create(

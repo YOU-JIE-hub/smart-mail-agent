@@ -6,8 +6,6 @@ import os
 import sqlite3
 import tempfile
 
-import pytest
-
 from modules.quote_logger import ensure_db_exists, log_quote
 
 

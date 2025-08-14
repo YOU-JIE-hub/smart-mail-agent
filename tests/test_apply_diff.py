@@ -3,7 +3,6 @@
 # 測試目標：update_user_info() 函式，能正確比對使用者資料異動並更新 DB + diff_log
 
 import sqlite3
-from datetime import datetime
 from pathlib import Path
 
 import pytest

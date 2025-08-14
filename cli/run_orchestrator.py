@@ -26,7 +26,7 @@ if not os.path.isdir(model_path):
 if not os.path.isfile(input_path):
     raise FileNotFoundError(f"找不到輸入檔案：{input_path}")
 
-with open(input_path, "r", encoding="utf-8") as f:
+with open(input_path, encoding="utf-8") as f:
     mail = json.load(f)
 
 subject = mail.get("subject", "")

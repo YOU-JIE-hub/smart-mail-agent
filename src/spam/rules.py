@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 try:
     import yaml  # type: ignore
@@ -16,7 +16,7 @@ _CACHE = {"mtime": None, "rules": None}
 _URL_RE = re.compile(r"https?://[^\s)>\]]+", re.I)
 
 
-def _default_rules() -> Dict[str, Any]:
+def _default_rules() -> dict[str, Any]:
     # 與預設 YAML 對齊
     return {
         "keywords": {
@@ -42,7 +42,7 @@ def _default_rules() -> Dict[str, Any]:
     }
 
 
-def _load_yaml_or_json(text: str) -> Dict[str, Any]:
+def _load_yaml_or_json(text: str) -> dict[str, Any]:
     if yaml is not None:
         try:
             return yaml.safe_load(text) or {}
@@ -52,7 +52,7 @@ def _load_yaml_or_json(text: str) -> Dict[str, Any]:
     return json.loads(text)
 
 
-def load_rules(force: bool = False) -> Dict[str, Any]:
+def load_rules(force: bool = False) -> dict[str, Any]:
     """熱重載：檔案 mtime 變動即重新載入。"""
     try:
         mtime = CONF_PATH.stat().st_mtime
@@ -94,8 +94,8 @@ def score_email(sender: str, subject: str, content: str, attachments: list[str])
     # 3) URL 可疑（網域、TLD）
     w = r.get("weights", {})
     u = _URL_RE.findall(content or "")
-    susp_domains = set(d.lower() for d in r.get("suspicious_domains", []))
-    susp_tlds = set(t.lower() for t in r.get("suspicious_tlds", []))
+    susp_domains = {d.lower() for d in r.get("suspicious_domains", [])}
+    susp_tlds = {t.lower() for t in r.get("suspicious_tlds", [])}
     for url in u:
         host = url.split("://", 1)[-1].split("/", 1)[0].lower()
         if any(host == d or host.endswith("." + d) for d in susp_domains):
@@ -122,7 +122,5 @@ def label_email(sender: str, subject: str, content: str, attachments: list[str])
     r = load_rules()
     score, reasons = score_email(sender, subject, content, attachments)
     th = r.get("thresholds", {"suspect": 4, "spam": 8})
-    label = (
-        "spam" if score >= int(th.get("spam", 8)) else ("suspect" if score >= int(th.get("suspect", 4)) else "legit")
-    )
+    label = "spam" if score >= int(th.get("spam", 8)) else ("suspect" if score >= int(th.get("suspect", 4)) else "legit")
     return label, score, reasons

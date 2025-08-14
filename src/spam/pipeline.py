@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from .rules import label_email
 
 
-def analyze(email: Dict[str, Any]) -> Dict[str, Any]:
+def analyze(email: dict[str, Any]) -> dict[str, Any]:
     sender = email.get("sender", "") or ""
     subject = email.get("subject", "") or ""
     content = email.get("content", "") or ""

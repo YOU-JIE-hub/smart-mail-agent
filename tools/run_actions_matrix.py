@@ -8,7 +8,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 
 def _detect_root() -> Path:
@@ -49,7 +49,7 @@ def load_handle():
         return handle
 
 
-def _run_case(handle, name: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+def _run_case(handle, name: str, payload: dict[str, Any]) -> dict[str, Any]:
     os.environ.setdefault("OFFLINE", "1")
     res = handle(payload)
     outp = OUT / f"{name}.json"
@@ -67,9 +67,9 @@ def _run_case(handle, name: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def run_matrix() -> Dict[str, Any]:
+def run_matrix() -> dict[str, Any]:
     handle = load_handle()
-    matrix: List[Dict[str, Any]] = []
+    matrix: list[dict[str, Any]] = []
 
     # 正常案例（六大動作）
     matrix.append(

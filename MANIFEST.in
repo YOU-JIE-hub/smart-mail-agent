@@ -1,0 +1,6 @@
+recursive-include assets/fonts *.ttf *.otf README.txt
+recursive-include templates *
+recursive-include configs *
+include .env.example
+global-exclude *:Zone.Identifier
+exclude assets/fonts/*.pkl

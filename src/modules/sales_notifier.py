@@ -1,15 +1,14 @@
-#!/usr/bin/env python3
-# 離線安全替身：不寄信、不連外，直接回 True（符合 tests/test_sales_notifier.py 期待）
 from __future__ import annotations
 
-from typing import Optional
+#!/usr/bin/env python3
+# 離線安全替身：不寄信、不連外，直接回 True（符合 tests/test_sales_notifier.py 期待）
 
 
 class EmailSendError(Exception):
     pass
 
 
-def notify_sales(*, client_name: str, package: str, pdf_path: Optional[str] = None) -> bool:
+def notify_sales(*, client_name: str, package: str, pdf_path: str | None = None) -> bool:
     """
     測試呼叫樣式：
         notify_sales(client_name=..., package=..., pdf_path=...)

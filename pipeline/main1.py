@@ -47,9 +47,7 @@ def init_db():
 
 def decode_mime_header(header_bytes):
     decoded_parts = decode_header(header_bytes)
-    return "".join(
-        part.decode(encoding or "utf-8") if isinstance(part, bytes) else part for part, encoding in decoded_parts
-    )
+    return "".join(part.decode(encoding or "utf-8") if isinstance(part, bytes) else part for part, encoding in decoded_parts)
 
 
 def uid_already_processed(uid: str) -> bool:

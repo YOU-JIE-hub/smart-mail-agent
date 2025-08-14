@@ -1,14 +1,16 @@
+from __future__ import annotations
+
+import json
+
 #!/usr/bin/env python3
 # 檔案位置：src/actions/sales_inquiry.py
 # 模組用途：處理商務詢問；抽取關鍵欄位並以模板產出需求彙整 .md 附件；補充 meta.next_step
-
-from __future__ import annotations
-
 import re
+import sys
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 try:
     from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -22,13 +24,13 @@ def _ensure_dir(p: Path) -> None:
     p.parent.mkdir(parents=True, exist_ok=True)
 
 
-def _load_template_env() -> "Environment|None":
+def _load_template_env() -> Environment | None:
     """
     嘗試從 templates/ 與 src/templates/ 建立 Jinja2 環境
     """
     if Environment is None:
         return None
-    search_paths: List[str] = []
+    search_paths: list[str] = []
     for d in ("templates", "src/templates"):
         if Path(d).is_dir():
             search_paths.append(d)
@@ -49,27 +51,25 @@ RE_DATE1 = re.compile(r"(\d{4})[-/](\d{1,2})[-/](\d{1,2})")  # YYYY-MM-DD
 RE_DATE2 = re.compile(r"(\d{1,2})[月/](\d{1,2})[日]?", re.I)  # M月D日 or M/D
 RE_KEYWORDS = re.compile(r"[A-Za-z\u4e00-\u9fa5]{2,15}")
 
-COMMON_STOP = set(
-    [
-        "我們",
-        "你好",
-        "您好",
-        "謝謝",
-        "請問",
-        "協助",
-        "需要",
-        "希望",
-        "聯繫",
-        "安排",
-        "報價",
-        "需求",
-        "規格",
-        "提供",
-    ]
-)
+COMMON_STOP = {
+    "我們",
+    "你好",
+    "您好",
+    "謝謝",
+    "請問",
+    "協助",
+    "需要",
+    "希望",
+    "聯繫",
+    "安排",
+    "報價",
+    "需求",
+    "規格",
+    "提供",
+}
 
 
-def _extract_fields(subject: str, body: str, sender: str | None) -> Dict[str, Any]:
+def _extract_fields(subject: str, body: str, sender: str | None) -> dict[str, Any]:
     text = f"{subject}\n{body}"
     company = None
     m = RE_COMPANY.search(text)
@@ -129,7 +129,7 @@ def _extract_fields(subject: str, body: str, sender: str | None) -> Dict[str, An
     }
 
 
-def _render_needs_md(context: Dict[str, Any]) -> str:
+def _render_needs_md(context: dict[str, Any]) -> str:
     env = _load_template_env()
     if env:
         try:
@@ -156,7 +156,7 @@ def _render_needs_md(context: Dict[str, Any]) -> str:
     )
 
 
-def execute(request: Dict[str, Any], context: Dict[str, Any] | None = None) -> Dict[str, Any]:
+def execute(request: dict[str, Any], context: dict[str, Any] | None = None) -> dict[str, Any]:
     """
     參數:
         request: 輸入 JSON（subject/from/body/predicted_label/confidence/attachments）
