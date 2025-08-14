@@ -1,54 +1,42 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-trap 'ec=$?; echo "❌ smarun failed at line $LINENO (exit $ec)"; exit $ec' ERR
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
+# 先進專案，再開環境
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$ROOT"
 
-# 先進專案，再開 venv
-if [[ -f .venv/bin/activate ]]; then
+if [ -f .venv/bin/activate ]; then
   . .venv/bin/activate
-elif [[ -x bin/smaenv ]]; then
-  bin/smaenv
 else
   python3 -m venv .venv
   . .venv/bin/activate
   python -m pip -q install -U pip
-  [[ -f requirements.txt ]] && pip -q install -r requirements.txt || true
+  [ -f requirements.txt ] && pip -q install -r requirements.txt || true
 fi
 
-export PYTHONFAULTHANDLER=1
-export PYTHONWARNINGS="${PYTHONWARNINGS:-default}"
-export SMA_LOG_DIR="${SMA_LOG_DIR:-$ROOT/logs}"
+: "${SMA_LOG_DIR:=logs}"
 mkdir -p "$SMA_LOG_DIR" data/output
 
-# 匯入檢查（不再用 heredoc）
-if ! PYTHONPATH=src python -c "import importlib; importlib.import_module('src.run_action_handler')" >/dev/null 2>&1; then
-  echo "❌ 無法 import src.run_action_handler（檢查 PYTHONPATH=src 與程式檔）" >&2
-  exit 3
-fi
+run_case () {
+  local in_f="$1"; local out_f="$2"; local dry="${3:-}"
+  PYTHONPATH=src python -m src.run_action_handler \
+    --input "$in_f" \
+    --output "$out_f" \
+    ${dry:+--dry-run}
+}
 
-# 沒參數就自動跑 sample（--dry-run）
-if [[ $# -eq 0 ]]; then
-  [[ -f data/output/in_sales.json ]] || cat > data/output/in_sales.json <<'JSON'
+if [ "$#" -eq 0 ]; then
+  # 沒參數：自動跑兩個 sample（非互動）
+  [ -f data/output/in_sales.json ] || cat > data/output/in_sales.json <<'JSON'
 {"subject":"詢價與合作","from":"alice@partner.co","body":"想了解報價與合作方案。"}
 JSON
-  set -- --input data/output/in_sales.json --output data/output/out_sales.json --dry-run
+  [ -f data/output/in_complaint.json ] || cat > data/output/in_complaint.json <<'JSON'
+{"subject":"嚴重投訴","from":"bob@example.com","body":"我的訂單延誤，請儘速協助。"}
+JSON
+  run_case data/output/in_sales.json     data/output/out_sales.json     "--dry-run"
+  run_case data/output/in_complaint.json data/output/out_complaint.json "--dry-run"
+else
+  # 透傳參數給 handler
+  PYTHONPATH=src python -m src.run_action_handler "$@"
 fi
-
-PYTHONPATH=src python -X dev -m src.run_action_handler "$@"
-
-# 摘要輸出 & log 尾巴
-out=""; prev=""
-for a in "$@"; do [[ "$prev" == "--output" ]] && out="$a"; prev="$a"; done
-if [[ -n "$out" && -f "$out" ]]; then
-  echo "✅ 輸出：$out"
-  PYTHONPATH=src python - "$out" <<'PY' || true
-import json, sys
-d = json.load(open(sys.argv[1], "r", encoding="utf-8"))
-print("logged_path =", d.get("logged_path"))
-print("warnings    =", d.get("warnings"))
-PY
-fi
-LOG="$SMA_LOG_DIR/sma-$(date +%Y%m%d).jsonl"
-[[ -f "$LOG" ]] && { echo "📝 Log tail:"; tail -n 5 "$LOG" || true; } || echo "⚠️ 沒有當日 JSONL：$LOG"
