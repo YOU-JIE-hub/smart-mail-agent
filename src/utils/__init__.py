@@ -1,2 +1,2 @@
-# export 常用 logger API
-from .logger import get_logger, logger  # noqa: F401
+# Keep old imports working: from utils... (inside src) -> smart_mail_agent.utils...
+from smart_mail_agent.utils import *  # noqa: F401,F403
