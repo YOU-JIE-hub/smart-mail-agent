@@ -1,39 +1,47 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import List
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 
-def _candidate_dirs() -> list[str]:
-    # src/utils/templater.py -> parents[2] 才是 repo 根目錄
-    root = Path(__file__).resolve().parents[2]
-    env_dir = os.getenv("SMA_TEMPLATES_DIR")
+def _template_dirs() -> List[str]:
+    here = Path(__file__).resolve()
+    roots = [
+        here.parents[2],  # repo root
+        here.parents[1],  # src/
+        Path.cwd(),
+    ]
     dirs = []
-    if env_dir:
-        p = Path(env_dir)
-        if not p.is_absolute():
-            p = root / env_dir
-        dirs.append(str(p))
-    # repo 根目錄下的 templates/
-    dirs.append(str(root / "templates"))
-    # 兼容：src/templates/（若專案另放）
-    dirs.append(str(root / "src" / "templates"))
-    # 去重
+    for r in roots:
+        for p in [r / "templates", r / "src" / "templates", r / "src" / "src" / "templates"]:
+            if p.exists():
+                dirs.append(str(p))
     seen, out = set(), []
     for d in dirs:
         if d not in seen:
-            seen.add(d)
             out.append(d)
+            seen.add(d)
     return out
 
 
+_env: Environment | None = None
+
+
 def get_env() -> Environment:
-    return Environment(loader=FileSystemLoader(_candidate_dirs()), autoescape=select_autoescape())
+    global _env
+    if _env is None:
+        _env = Environment(
+            loader=FileSystemLoader(_template_dirs()),
+            undefined=StrictUndefined,
+            autoescape=False,
+            trim_blocks=True,
+            lstrip_blocks=True,
+        )
+    return _env
 
 
-def render(template_name: str, context: Dict[str, Any]) -> str:
+def render(template_name: str, context: dict) -> str:
     return get_env().get_template(template_name).render(**context)
