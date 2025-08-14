@@ -21,3 +21,6 @@ assets/fonts/*.ttf
 .coverage
 htmlcov/
 backups/
+# Local-only
+.env
+.backup/
