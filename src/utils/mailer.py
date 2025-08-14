@@ -2,82 +2,74 @@ from __future__ import annotations
 
 import mimetypes
 import os
-import pathlib
-import smtplib
-from email.message import EmailMessage
-from typing import Iterable, Mapping, Optional, Tuple
+import smtplib  # 重要：用模組層級，讓 tests 的 patch("utils.mailer.smtplib.SMTP_SSL") 能命中
+from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from pathlib import Path
+from typing import Any, Dict, Optional
 
-OFFLINE = str(os.getenv("OFFLINE", "0")) == "1"
+
+def _env(cfg: Optional[Dict[str, Any]], key: str, default: Optional[str] = None) -> Optional[str]:
+    return (cfg or {}).get(key) or os.getenv(key) or default
 
 
-def validate_smtp_config(cfg: Mapping[str, str]) -> Tuple[bool, str]:
-    required = ["SMTP_HOST", "SMTP_PORT", "SMTP_USERNAME", "SMTP_PASSWORD", "SMTP_FROM"]
-    missing = [k for k in required if not str(cfg.get(k, "")).strip()]
-    if missing:
-        return False, f"missing: {', '.join(missing)}"
+def validate_smtp_config(cfg: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    user = _env(cfg, "SMTP_USER") or _env(cfg, "SMTP_USERNAME")
+    pwd = _env(cfg, "SMTP_PASS") or _env(cfg, "SMTP_PASSWORD")
+    host = _env(cfg, "SMTP_HOST")
+    port_raw = _env(cfg, "SMTP_PORT")
+    sender = _env(cfg, "SMTP_FROM") or user
+
     try:
-        int(cfg["SMTP_PORT"])
+        port = int(port_raw) if port_raw is not None else 0
     except Exception:
-        return False, "SMTP_PORT must be integer"
-    return True, ""
+        port = 0
+
+    if not (user and pwd and host and port):
+        raise ValueError("SMTP 設定錯誤：缺少必要欄位")
+
+    return {"user": user, "password": pwd, "host": host, "port": port, "sender": sender}
 
 
 def send_email_with_attachment(
-    to: str,
+    recipient: str,
     subject: str,
-    body: str,
-    attachments: Optional[Iterable[str]] = None,
-    cfg: Optional[Mapping[str, str]] = None,
-    use_tls: Optional[bool] = None,
-    dry_run: Optional[bool] = None,
+    body_html: str,
+    attachment_path: str,
+    cfg: Optional[Dict[str, Any]] = None,
 ) -> bool:
-    cfg_all = dict(os.environ)
-    if cfg:
-        cfg_all.update({k: str(v) for k, v in cfg.items()})
-    ok, msg = validate_smtp_config(cfg_all)
-    if dry_run is None:
-        dry_run = OFFLINE or str(cfg_all.get("DRY_RUN", "0")) == "1"
-    if dry_run:
-        return ok
-    if not ok:
-        return False
+    conf = validate_smtp_config(cfg)
 
-    host = cfg_all["SMTP_HOST"]
-    port = int(cfg_all["SMTP_PORT"])
-    user = cfg_all["SMTP_USERNAME"]
-    pwd = cfg_all["SMTP_PASSWORD"]
-    from_addr = cfg_all["SMTP_FROM"]
-    if use_tls is None:
-        use_tls = str(cfg_all.get("SMTP_USE_TLS", "1")).lower() not in ("0", "false", "no")
+    p = Path(attachment_path)
+    if not p.exists():
+        raise FileNotFoundError(str(p))
 
-    msg_obj = EmailMessage()
-    msg_obj["From"] = from_addr
-    msg_obj["To"] = to
-    msg_obj["Subject"] = subject
-    msg_obj.set_content(body)
+    # 準備信件
+    msg = MIMEMultipart()
+    msg["From"] = conf["sender"]
+    msg["To"] = recipient
+    msg["Subject"] = subject
+    msg.attach(MIMEText(body_html, "html", "utf-8"))
 
-    for p in attachments or []:
-        path = pathlib.Path(p)
-        if not path.is_file():
-            continue
-        ctype, _ = mimetypes.guess_type(path.name)
-        if not ctype:
-            ctype = "application/octet-stream"
-        maintype, subtype = ctype.split("/", 1)
-        msg_obj.add_attachment(path.read_bytes(), maintype=maintype, subtype=subtype, filename=path.name)
+    ctype, _ = mimetypes.guess_type(p.name)
+    subtype = (ctype or "application/octet-stream").split("/")[-1]
+    with p.open("rb") as fh:
+        part = MIMEApplication(fh.read(), _subtype=subtype)
+    part.add_header("Content-Disposition", "attachment", filename=p.name)
+    msg.attach(part)
 
-    smtp = smtplib.SMTP(host, port, timeout=10)
-    try:
-        if use_tls:
-            smtp.starttls()
-        smtp.login(user, pwd)
-        smtp.send_message(msg_obj)
-    finally:
-        try:
-            smtp.quit()
-        except Exception:
-            pass
+    # 傳送（465 使用 SMTP_SSL；其他連接埠預設 STARTTLS）
+    if conf["port"] == 465:
+        with smtplib.SMTP_SSL(conf["host"], conf["port"]) as s:  # 讓測試可 patch 命中
+            s.login(conf["user"], conf["password"])
+            s.sendmail(conf["sender"], [recipient], msg.as_string())
+    else:
+        with smtplib.SMTP(conf["host"], conf["port"]) as s:
+            use_tls = os.getenv("SMTP_USE_TLS", "1") not in ("0", "false", "False")
+            if use_tls:
+                s.starttls()
+            s.login(conf["user"], conf["password"])
+            s.sendmail(conf["sender"], [recipient], msg.as_string())
+
     return True
-
-
-__all__ = ["validate_smtp_config", "send_email_with_attachment"]

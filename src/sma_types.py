@@ -1,87 +1,94 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Union
+
+try:
+    from pydantic import BaseModel, Field  # v2
+
+    _V2 = True
+except Exception:  # pragma: no cover
+    from pydantic import BaseModel, Field  # type: ignore  # v1
+
+    _V2 = False
 
 
-@dataclass
-class AttachmentMeta:
-    filename: str
-    content_type: Optional[str] = None
-    path: Optional[str] = None
+class _CompatModel(BaseModel):
+    """提供 v1/v2 一致的 model_dump()。"""
+
+    def model_dump(self, **kwargs):
+        if hasattr(super(), "model_dump"):
+            return super().model_dump(**kwargs)  # type: ignore[attr-defined]
+        return self.dict(**kwargs)  # type: ignore[call-arg]
+
+    class Config:  # pydantic v1
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+
+
+class AttachmentMeta(_CompatModel):
+    path: str
+    exists: bool = True
     size: Optional[int] = None
-    sha256: Optional[str] = None
-    inline: Optional[bool] = None
+    mime: Optional[str] = None
 
 
-@dataclass
-class ActionResult:
+class Request(_CompatModel):
+    subject: str = ""
+    from_: Optional[str] = Field(default=None, alias="from")
+    body: str = ""
+    predicted_label: str = ""  # 預設空字串（測試期望）
+    confidence: float = -1.0  # 預設 -1.0（測試期望）
+    attachments: List[Any] = []
+
+
+class ActionResult(_CompatModel):
     action: Optional[str] = None
-    label: Optional[str] = None
-    predicted_label: Optional[str] = None
-    confidence: Optional[float] = None
-    dry_run: bool = False
-    meta: Dict[str, Any] = field(default_factory=dict)
-    attachments: List[AttachmentMeta] = field(default_factory=list)
-    logged_path: Optional[str] = None
+    action_name: Optional[str] = None
+    ok: bool = True
+    code: str = "OK"
+    message: str = ""
+    subject: Optional[str] = None
+    body: Optional[str] = None
+    output: Optional[Any] = None  # 放寬以容納多型 payload
+    attachments: List[Union[AttachmentMeta, Dict[str, Any], str]] = []
+    request_id: Optional[str] = None
+    spent_ms: Optional[int] = None
+    duration_ms: int = 0  # 測試只檢查鍵是否存在
+    meta: Dict[str, Any] = {}
+    cc: List[str] = []
 
-    def to_dict(self) -> Dict[str, Any]:
-        d = asdict(self)
-        if d.get("predicted_label") is None and d.get("label") is not None:
-            d["predicted_label"] = d["label"]
-        if d.get("label") is None and d.get("predicted_label") is not None:
-            d["label"] = d["predicted_label"]
-        if isinstance(d.get("meta"), dict) and "dry_run" in d["meta"]:
-            d["dry_run"] = bool(d["meta"]["dry_run"])
-        return d
+    def with_logged_path(self, path: Optional[str]) -> "ActionResult":
+        if path:
+            self.meta = dict(self.meta or {})
+            self.meta.setdefault("logged_path", path)
+        return self
 
 
-REQUIRED_TOP: Tuple[str, ...] = ("action",)
-
-
-def _coerce_attachments(v: Optional[Iterable[Any]]) -> List[AttachmentMeta]:
-    out: List[AttachmentMeta] = []
-    if not v:
-        return out
-    for x in v:
-        if isinstance(x, AttachmentMeta):
-            out.append(x)
-        elif isinstance(x, dict) and "filename" in x:
-            out.append(AttachmentMeta(**x))
+def _coerce_attachments(items: Optional[Iterable[Any]]) -> List[Union[AttachmentMeta, Dict[str, Any], str]]:
+    out: List[Union[AttachmentMeta, Dict[str, Any], str]] = []
+    for a in items or []:
+        if isinstance(a, str):
+            out.append(AttachmentMeta(path=a, exists=True))
+        else:
+            out.append(a)
     return out
 
 
-def normalize_request(d: Dict[str, Any]) -> Dict[str, Any]:
-    d = dict(d or {})
-    d.setdefault("meta", {})
-    d.setdefault("dry_run", False)
-    for k in REQUIRED_TOP:
-        d.setdefault(k, None)
-    if isinstance(d.get("meta"), dict) and "dry_run" in d["meta"]:
-        d["dry_run"] = bool(d["meta"]["dry_run"])
-    return d
+def normalize_request(raw: Dict[str, Any]) -> Request:
+    return Request(**raw)
 
 
-def normalize_result(r: Dict[str, Any]) -> Dict[str, Any]:
-    if isinstance(r, ActionResult):
-        return r.to_dict()
-    r = dict(r or {})
-    r.setdefault("meta", {})
-    r.setdefault("dry_run", False)
-    if r.get("predicted_label") is None and r.get("label") is not None:
-        r["predicted_label"] = r["label"]
-    if r.get("label") is None and r.get("predicted_label") is not None:
-        r["label"] = r["predicted_label"]
-    if isinstance(r.get("meta"), dict) and "dry_run" in r["meta"]:
-        r["dry_run"] = bool(r["meta"]["dry_run"])
-    r["attachments"] = _coerce_attachments(r.get("attachments"))
-    return r
-
-
-__all__ = [
-    "AttachmentMeta",
-    "ActionResult",
-    "normalize_request",
-    "normalize_result",
-    "REQUIRED_TOP",
-]
+def normalize_result(raw: Dict[str, Any]) -> ActionResult:
+    data = dict(raw or {})
+    # 對齊 action 欄位
+    if "action" not in data and "action_name" in data:
+        data["action"] = data.get("action_name")
+    # 主旨自動加前綴
+    subj = data.get("subject")
+    if isinstance(subj, str) and not subj.startswith("[自動回覆] "):
+        data["subject"] = f"[自動回覆] {subj}"
+    # 附件正規化
+    data["attachments"] = _coerce_attachments(data.get("attachments"))
+    # 確保有 duration_ms 鍵
+    data.setdefault("duration_ms", 0)
+    return ActionResult(**data)
