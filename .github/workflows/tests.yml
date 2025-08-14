@@ -6,7 +6,7 @@ on:
     branches: [ main ]
   workflow_dispatch:
   schedule:
-    - cron: "0 20 * * *"  # 每天 UTC 20:00 跑 e2e
+    - cron: "0 20 * * *"  # 每天 UTC 20:00 夜跑 e2e
 
 concurrency:
   group: tests-${{ github.ref }}
@@ -17,9 +17,13 @@ permissions:
 
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  PIP_CACHE_DIR: ~/.cache/pip
 
 jobs:
   unit:
+    # 夜跑只給 e2e；其他事件照跑 unit/contracts
+    if: github.event_name != 'schedule'
     name: unit & contracts (fast)
     runs-on: ubuntu-latest
     steps:
@@ -37,7 +41,8 @@ jobs:
 
   e2e:
     name: e2e (online & heavy)
-    if: github.event_name != 'pull_request'   # 避免 PR 時跑
+    needs: [unit]
+    if: github.event_name != 'pull_request'   # 避免 PR 時跑 e2e
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
