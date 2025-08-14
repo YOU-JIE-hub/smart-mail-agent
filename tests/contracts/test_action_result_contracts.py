@@ -19,9 +19,7 @@ ALLOWED_CODES = {"OK", "INPUT_INVALID", "EXTERNAL_FAIL", "INTERNAL_ERROR"}
 
 def test_contracts_matrix_schema(_ensure_matrix):
     root = Path(__file__).resolve().parents[2]
-    data = json.loads(
-        (root / "data" / "output" / "matrix" / "matrix_summary.json").read_text(encoding="utf-8")
-    )
+    data = json.loads((root / "data" / "output" / "matrix" / "matrix_summary.json").read_text(encoding="utf-8"))
     cases = data.get("cases", [])
     assert cases, "矩陣沒有案例"
 

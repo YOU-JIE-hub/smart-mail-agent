@@ -57,9 +57,7 @@ def _run_case(handle, name: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     attachments = []
     for ap in res.get("attachments", []) or []:
         p = Path(ap)
-        attachments.append(
-            {"path": str(p), "exists": p.exists(), "size": (p.stat().st_size if p.exists() else 0)}
-        )
+        attachments.append({"path": str(p), "exists": p.exists(), "size": (p.stat().st_size if p.exists() else 0)})
     return {
         "name": name,
         "action": res.get("action") or res.get("action_name"),

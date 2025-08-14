@@ -9,12 +9,7 @@ import sys  # noqa: F401
 
 import torch
 from dotenv import load_dotenv
-from transformers import (
-    AutoModelForSeq2SeqLM,
-    AutoModelForSequenceClassification,
-    AutoTokenizer,
-    pipeline,
-)
+from transformers import AutoModelForSeq2SeqLM, AutoModelForSequenceClassification, AutoTokenizer, pipeline
 
 from utils.logger import logger
 

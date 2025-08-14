@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-set -euo pipefail
-summ() {
-  local f="$1"
+set -Eeuo pipefail
+shopt -s nullglob
+OUT_DIR="data/output"
+files=("$OUT_DIR"/out_*.json)
+[ ${#files[@]} -eq 0 ] && echo "未找到輸出於 ${OUT_DIR}" >&2 && exit 1
+for f in "${files[@]}"; do
+  echo "==== $(basename "$f") ===="
   if command -v jq >/dev/null 2>&1; then
-    jq -r '"action_name="+(.action_name|tostring),"subject="+(.subject|tostring),"meta="+(.meta|tostring),"attachments="+(.attachments|tostring),""' "$f"
+    jq '{action, label:.predicted_label, confidence, dry_run, meta, logged_path}' "$f" 2>/dev/null || cat "$f"
   else
-    echo "== $f =="; cat "$f"
+    head -n 80 "$f"
   fi
-}
-echo "=== out_sales ===";      summ data/output/out_sales.json
-echo "=== out_quote ===";      summ data/output/out_quote.json
-echo "=== out_overlimit ===";  summ data/output/out_overlimit.json
-echo "=== out_whitelist ===";  summ data/output/out_whitelist.json
+done

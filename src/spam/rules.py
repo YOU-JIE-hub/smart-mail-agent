@@ -68,9 +68,7 @@ def load_rules(force: bool = False) -> Dict[str, Any]:
     return _CACHE["rules"]  # type: ignore[return-value]
 
 
-def score_email(
-    sender: str, subject: str, content: str, attachments: list[str]
-) -> tuple[int, list[str]]:
+def score_email(sender: str, subject: str, content: str, attachments: list[str]) -> tuple[int, list[str]]:
     r = load_rules()
     score = 0
     reasons: list[str] = []
@@ -120,15 +118,11 @@ def score_email(
     return score, reasons
 
 
-def label_email(
-    sender: str, subject: str, content: str, attachments: list[str]
-) -> tuple[str, int, list[str]]:
+def label_email(sender: str, subject: str, content: str, attachments: list[str]) -> tuple[str, int, list[str]]:
     r = load_rules()
     score, reasons = score_email(sender, subject, content, attachments)
     th = r.get("thresholds", {"suspect": 4, "spam": 8})
     label = (
-        "spam"
-        if score >= int(th.get("spam", 8))
-        else ("suspect" if score >= int(th.get("suspect", 4)) else "legit")
+        "spam" if score >= int(th.get("spam", 8)) else ("suspect" if score >= int(th.get("suspect", 4)) else "legit")
     )
     return label, score, reasons

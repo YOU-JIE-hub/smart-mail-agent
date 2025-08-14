@@ -44,9 +44,7 @@ def main() -> None:
     # 3) 若沒有提交，建立 main 與首個提交
     # 檢查是否已有 commit
     has_commit = (
-        subprocess.run(
-            ["git", "rev-parse", "HEAD"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-        ).returncode
+        subprocess.run(["git", "rev-parse", "HEAD"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
         == 0
     )
     if not has_commit:
@@ -77,9 +75,7 @@ def main() -> None:
 
         # 推 main
         # 先確認目前分支名
-        res = subprocess.run(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True, check=True
-        )
+        res = subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True, check=True)
         cur = res.stdout.strip() or "main"
         try:
             sh(["git", "push", "-u", "origin", cur])

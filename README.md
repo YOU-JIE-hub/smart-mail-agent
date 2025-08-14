@@ -1,65 +1,17 @@
-[![CI](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/ci.yaml/badge.svg)](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/ci.yaml)
+# Smart Mail Agent（面試展示版）
+狀態徽章：見 GitHub Actions CI
 
-# Smart Mail Agent
+快速開始（步驟）：
+1. 建立 venv 與安裝依賴（requirements.txt、requirements-dev.txt）
+2. 執行 `make demo-all` 產生範例輸出
+3. 執行 `make show-summary` 檢視摘要
+4. 離線 E2E：`OFFLINE=1 PYTHONPATH=src pytest -q tests/e2e`
 
-可離線運行的郵件處理/自動化專案：
-- 意圖分類（離線 stub；可切換 Hugging Face / OpenAI）
-- 垃圾信/白名單 Orchestrator（規則 + 動作）
-- 報價單 PDF（缺字型自動回退 Helvetica）
-- CLI：python -m src.run_action_handler
-- 離線測試全綠
+策略亮點：
+- 投訴 P1 自動 CC + SLA，輸出保證含 meta.next_step
+- `--dry-run`：頂層與 meta 同步 dry_run=true
+- JSONL 日誌永不拋例外；輸出含 logged_path
 
-## 快速開始
-```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -U pip
-python -m pip install -r requirements.txt
-OFFLINE=1 PYTHONPATH=src pytest -q -k "not online"
-```
-
-## 執行 CLI
-```bash
-PYTHONPATH=src python -m src.run_action_handler --help
-```
-
-## 品質檢查
-```bash
-python -m isort .
-python -m black .
-python -m flake8
-```
-
-<!-- CLI_QUICK_EXAMPLE:START -->
-### CLI 快速示例（離線）
-mkdir -p data/output
-# 準備一份分類結果輸入；離線模式不會連外，僅產出可驗收 out.json
-cat > data/output/in.json <<'JSON'
-{"subject":"please send quote","from":"alice@example.com","body":"need quotation","predicted_label":"send_quote","confidence":0.95,"attachments":[]}
-JSON
-OFFLINE=1 PYTHONPATH=src python -m src.run_action_handler --input data/output/in.json --output data/output/out.json
-cat data/output/out.json
-<!-- CLI_QUICK_EXAMPLE:END -->
-
-<!-- E2E_OFFLINE:START -->
-### E2E 測試（離線）
-# 僅執行不依賴外網的測試與 E2E
-OFFLINE=1 PYTHONPATH=src pytest -q -k "not online or e2e"
-<!-- E2E_OFFLINE:END -->
-
-<!-- INTERVIEW_QUICKCHECK:START -->
-### 面試快檢清單
-- 一行離線測：`OFFLINE=1 PYTHONPATH=src pytest -q -k "not online or e2e"`
-- 一行 CLI demo：
-  ```bash
-  mkdir -p data/output && cat > data/output/in.json <<'JSON'
-  {"subject":"please send quote","from":"alice@example.com","body":"need quotation","predicted_label":"send_quote","confidence":0.95,"attachments":[]}
-  JSON
-  OFFLINE=1 PYTHONPATH=src python -m src.run_action_handler --input data/output/in.json --output data/output/out.json && cat data/output/out.json
-  ```
-<!-- INTERVIEW_QUICKCHECK:END -->
-
-<!-- CI_STATUS:START -->
-### CI 狀態（離線）
-已附 `Interview (offline)` workflow，對所有分支/PR 執行 `OFFLINE=1 pytest -q -k "not online or e2e"`。
-<!-- CI_STATUS:END -->
+中文 PDF 字型（可選）：
+- FONT_PATH=assets/fonts/NotoSansTC-Regular.ttf
+- PDF_FONT_FALLBACK=1

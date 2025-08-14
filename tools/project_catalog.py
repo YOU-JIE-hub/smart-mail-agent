@@ -21,16 +21,8 @@ def list_py():
 
 def main():
     files = list_py()
-    entries = [
-        str(p.relative_to(ROOT))
-        for p in files
-        if ENTRY.search(p.read_text(encoding="utf-8", errors="ignore"))
-    ]
-    clis = [
-        str(p.relative_to(ROOT))
-        for p in files
-        if ARG.search(p.read_text(encoding="utf-8", errors="ignore"))
-    ]
+    entries = [str(p.relative_to(ROOT)) for p in files if ENTRY.search(p.read_text(encoding="utf-8", errors="ignore"))]
+    clis = [str(p.relative_to(ROOT)) for p in files if ARG.search(p.read_text(encoding="utf-8", errors="ignore"))]
     tables = defaultdict(set)
     for p in files:
         for m in DDL.finditer(p.read_text(encoding="utf-8", errors="ignore")):

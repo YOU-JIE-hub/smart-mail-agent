@@ -65,9 +65,7 @@ def send_email_with_attachment(
             ctype = "application/octet-stream"
         maintype, subtype = ctype.split("/", 1)
         with open(attachment_path, "rb") as f:
-            msg.add_attachment(
-                f.read(), maintype=maintype, subtype=subtype, filename=Path(attachment_path).name
-            )
+            msg.add_attachment(f.read(), maintype=maintype, subtype=subtype, filename=Path(attachment_path).name)
 
     with smtplib.SMTP_SSL(h, p) as smtp:
         if username:

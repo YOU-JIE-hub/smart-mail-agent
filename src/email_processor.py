@@ -67,12 +67,8 @@ def main():
         result = spam_filter.is_legit(subject, body, sender)
 
         if not result["allow"]:
-            logger.warning(
-                f"[Spam] 被過濾：階段 {result.get('stage') or result.get('engine','blocked')}"
-            )
-            data.update(
-                {"label": "spam", "predicted_label": "spam", "confidence": 0.0, "summary": ""}
-            )
+            logger.warning(f"[Spam] 被過濾：階段 {result.get('stage') or result.get('engine','blocked')}")
+            data.update({"label": "spam", "predicted_label": "spam", "confidence": 0.0, "summary": ""})
             write_classification_result(data, input_path)
             write_log(
                 subject,
@@ -96,9 +92,7 @@ def main():
 
         logger.info(f"[Classifier] 分類為：{label}（信心值：{confidence_val:.4f}）")
 
-        data.update(
-            {"label": label, "predicted_label": label, "confidence": round(confidence_val, 4)}
-        )
+        data.update({"label": label, "predicted_label": label, "confidence": round(confidence_val, 4)})
         write_classification_result(data, input_path)
 
         try:

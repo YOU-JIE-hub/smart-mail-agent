@@ -2,12 +2,7 @@ import json
 import os  # noqa: F401
 
 from datasets import Dataset
-from transformers import (
-    AutoModelForSequenceClassification,
-    AutoTokenizer,
-    Trainer,
-    TrainingArguments,
-)
+from transformers import AutoModelForSequenceClassification, AutoTokenizer, Trainer, TrainingArguments
 
 # 類別對應（順序需與原標籤一致）
 LABELS = ["請求技術支援", "申請修改資訊", "詢問流程或規則", "投訴與抱怨", "業務接洽或報價", "其他"]

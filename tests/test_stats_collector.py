@@ -52,9 +52,7 @@ def test_increment_counter():
 
 def test_cli_init_and_insert():
     """使用 CLI 執行 init 與 insert"""
-    result = subprocess.run(
-        ["python3", "src/stats_collector.py", "--init"], capture_output=True, text=True
-    )
+    result = subprocess.run(["python3", "src/stats_collector.py", "--init"], capture_output=True, text=True)
     assert "資料庫初始化完成" in result.stdout
 
     result2 = subprocess.run(
