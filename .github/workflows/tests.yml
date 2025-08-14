@@ -33,11 +33,11 @@ jobs:
           python -m pip install -U pip
           pip install -U pytest pytest-timeout "pydantic>=1,<3"
       - name: Run fast tests
-        run: pytest -q   # pytest.ini 已限制 testpaths=tests/unit,tests/contracts
+        run: pytest -q   # 由 pytest.ini 限制 testpaths=tests/unit,tests/contracts
 
   e2e:
     name: e2e (online & heavy)
-    if: github.event_name != 'pull_request'   # 避免 PR 時跑；push/main & schedule 會跑
+    if: github.event_name != 'pull_request'   # 避免 PR 時跑
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
