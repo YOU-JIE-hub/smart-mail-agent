@@ -53,9 +53,7 @@ def generate_info_change_pdf(info_dict: dict, save_path: str):
 
         # 系統說明
         c.setFont(FONT_NAME, 12)
-        c.drawString(
-            margin, y, "以下為客戶主動申請之資料異動內容，已由 Smart-Mail-Agent 系統自動紀錄："
-        )
+        c.drawString(margin, y, "以下為客戶主動申請之資料異動內容，已由 Smart-Mail-Agent 系統自動紀錄：")
         y -= line_height * 2
 
         # 異動欄位列出

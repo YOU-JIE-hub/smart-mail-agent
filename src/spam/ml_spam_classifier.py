@@ -4,11 +4,7 @@
 # 模組用途：使用 fine-tuned BERT 模型進行垃圾郵件分類預測
 
 import torch
-from transformers import (
-    AutoModelForSequenceClassification,
-    AutoTokenizer,
-    TextClassificationPipeline,
-)
+from transformers import AutoModelForSequenceClassification, AutoTokenizer, TextClassificationPipeline
 
 from utils.logger import logger
 

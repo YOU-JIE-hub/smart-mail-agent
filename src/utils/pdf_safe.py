@@ -68,9 +68,7 @@ def _write_minimal_pdf(lines: List[str], out_path: Path) -> Path:
     )
     xref.append(add_obj(stream))
     # 5: Font
-    xref.append(
-        add_obj(b"5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n")
-    )
+    xref.append(add_obj(b"5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n"))
 
     # xref & trailer
     xref_start = len(header) + sum(len(x) for x in objs)
@@ -78,11 +76,7 @@ def _write_minimal_pdf(lines: List[str], out_path: Path) -> Path:
     for off in xref:
         xref_table.append(("{:010d} 00000 n \n".format(off)).encode("ascii"))
     xref_bytes = b"".join(xref_table)
-    trailer = (
-        b"trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n"
-        + str(xref_start).encode("ascii")
-        + b"\n%%EOF\n"
-    )
+    trailer = b"trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n" + str(xref_start).encode("ascii") + b"\n%%EOF\n"
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("wb") as f:

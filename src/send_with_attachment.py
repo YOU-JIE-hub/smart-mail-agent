@@ -81,9 +81,7 @@ def send_email_with_attachment(
             try:
                 with open(attachment_path, "rb") as f:
                     part = MIMEApplication(f.read(), Name=os.path.basename(attachment_path))
-                    part["Content-Disposition"] = (
-                        f'attachment; filename="{os.path.basename(attachment_path)}"'
-                    )
+                    part["Content-Disposition"] = f'attachment; filename="{os.path.basename(attachment_path)}"'
                     msg.attach(part)
                 logger.debug("[SMTP] 附件已加入：%s", attachment_path)
             except Exception as e:

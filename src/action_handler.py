@@ -144,9 +144,7 @@ def _action_send_quote(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 def _action_reply_support(payload: Dict[str, Any]) -> Dict[str, Any]:
     subject = f"[支援回覆] {payload.get('subject','').strip()}"
-    body = TEMPLATES["reply_support"].format(
-        subject=payload.get("subject", ""), content=payload.get("content", "")
-    )
+    body = TEMPLATES["reply_support"].format(subject=payload.get("subject", ""), content=payload.get("content", ""))
     to_addr = payload.get("sender") or _addr_book()["from"]
     resp = _send(to_addr, subject, body)
     return {
@@ -160,9 +158,7 @@ def _action_reply_support(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 def _action_apply_info_change(payload: Dict[str, Any]) -> Dict[str, Any]:
     subject = f"[資料更新受理] {payload.get('subject','').strip()}"
-    body = TEMPLATES["apply_info_change"].format(
-        subject=payload.get("subject", ""), content=payload.get("content", "")
-    )
+    body = TEMPLATES["apply_info_change"].format(subject=payload.get("subject", ""), content=payload.get("content", ""))
     to_addr = payload.get("sender") or _addr_book()["from"]
     resp = _send(to_addr, subject, body)
     return {
@@ -176,9 +172,7 @@ def _action_apply_info_change(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 def _action_reply_faq(payload: Dict[str, Any]) -> Dict[str, Any]:
     subject = f"[流程說明] {payload.get('subject','').strip()}"
-    body = TEMPLATES["reply_faq"].format(
-        faq_text="退款流程：填寫申請表 → 審核 3–5 個工作天 → 原路退回。"
-    )
+    body = TEMPLATES["reply_faq"].format(faq_text="退款流程：填寫申請表 → 審核 3–5 個工作天 → 原路退回。")
     to_addr = payload.get("sender") or _addr_book()["from"]
     resp = _send(to_addr, subject, body)
     return {"ok": True, "action": "reply_faq", "subject": subject, "to": to_addr, "mailer": resp}

@@ -22,9 +22,7 @@ def main():
     html.append(f"<h2>Spam Demo Report</h2><p>TS = {obj.get('ts')}</p>")
     html.append(f"<p>legit={ok} , suspect={su} , spam={sp}</p>")
     html.append("<table border='1' cellspacing='0' cellpadding='6'>")
-    html.append(
-        "<tr><th>name</th><th>label</th><th>score</th><th>hits</th><th>components</th></tr>"
-    )
+    html.append("<tr><th>name</th><th>label</th><th>score</th><th>hits</th><th>components</th></tr>")
     for r in rows:
         comp = r["rationale"]
         hits = ", ".join(h["rule"] for h in comp.get("hits", [])) or "-"

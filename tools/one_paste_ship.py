@@ -54,9 +54,7 @@ PASTE_FILE = ROOT / "ALL_CODE_FOR_PASTE.txt"
 def run(cmd, check=True, env=None, cwd=None, quiet=False):
     if isinstance(cmd, str):
         cmd = shlex.split(cmd)
-    p = subprocess.run(
-        cmd, cwd=cwd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
-    )
+    p = subprocess.run(cmd, cwd=cwd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     if not quiet:
         sys.stdout.write(p.stdout)
     if check and p.returncode != 0:
@@ -236,9 +234,7 @@ def git_commit_push(
 def main():
     import argparse
 
-    ap = argparse.ArgumentParser(
-        description="One-paste ship: format > lint > offline test > export > (optional) push"
-    )
+    ap = argparse.ArgumentParser(description="One-paste ship: format > lint > offline test > export > (optional) push")
     ap.add_argument("--no-venv", action="store_true", help="不要建立/升級 venv（用現有環境）")
     ap.add_argument("--format", action="store_true", help="只做 isort/black/flake8")
     ap.add_argument("--test", action="store_true", help="只跑離線測試")

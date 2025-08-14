@@ -63,10 +63,7 @@ def get_all_users(db_path: str) -> List[Dict]:
         conn.close()
 
         logger.info(f"[DB] 成功查詢所有使用者，共 {len(rows)} 筆")
-        return [
-            {"id": row[0], "email": row[1], "name": row[2], "phone": row[3], "address": row[4]}
-            for row in rows
-        ]
+        return [{"id": row[0], "email": row[1], "name": row[2], "phone": row[3], "address": row[4]} for row in rows]
     except Exception as e:
         logger.error(f"[DB] 查詢所有使用者失敗：{e}")
         return []
