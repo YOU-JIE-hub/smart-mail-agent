@@ -1,42 +1,31 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-
-# 先進專案，再開環境
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-if [ -f .venv/bin/activate ]; then
-  . .venv/bin/activate
-else
+# venv：一定是先進專案再開環境
+if [[ ! -f .venv/bin/activate ]]; then
   python3 -m venv .venv
-  . .venv/bin/activate
+fi
+. .venv/bin/activate
+if [[ -f requirements.txt && ! -f .venv/.deps_installed ]]; then
   python -m pip -q install -U pip
-  [ -f requirements.txt ] && pip -q install -r requirements.txt || true
+  pip -q install -r requirements.txt || true
+  touch .venv/.deps_installed
 fi
 
 : "${SMA_LOG_DIR:=logs}"
 mkdir -p "$SMA_LOG_DIR" data/output
 
-run_case () {
-  local in_f="$1"; local out_f="$2"; local dry="${3:-}"
-  PYTHONPATH=src python -m src.run_action_handler \
-    --input "$in_f" \
-    --output "$out_f" \
-    ${dry:+--dry-run}
-}
-
-if [ "$#" -eq 0 ]; then
-  # 沒參數：自動跑兩個 sample（非互動）
-  [ -f data/output/in_sales.json ] || cat > data/output/in_sales.json <<'JSON'
+if [[ $# -eq 0 ]]; then
+  [[ -f data/output/in_sales.json ]] || cat > data/output/in_sales.json <<'JSON'
 {"subject":"詢價與合作","from":"alice@partner.co","body":"想了解報價與合作方案。"}
 JSON
-  [ -f data/output/in_complaint.json ] || cat > data/output/in_complaint.json <<'JSON'
+  [[ -f data/output/in_complaint.json ]] || cat > data/output/in_complaint.json <<'JSON'
 {"subject":"嚴重投訴","from":"bob@example.com","body":"我的訂單延誤，請儘速協助。"}
 JSON
-  run_case data/output/in_sales.json     data/output/out_sales.json     "--dry-run"
-  run_case data/output/in_complaint.json data/output/out_complaint.json "--dry-run"
+  PYTHONPATH=src python -m src.run_action_handler --input data/output/in_sales.json --output data/output/out_sales.json --dry-run
+  PYTHONPATH=src python -m src.run_action_handler --input data/output/in_complaint.json --output data/output/out_complaint.json --dry-run
 else
-  # 透傳參數給 handler
   PYTHONPATH=src python -m src.run_action_handler "$@"
 fi
