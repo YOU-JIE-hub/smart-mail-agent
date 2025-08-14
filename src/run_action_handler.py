@@ -153,9 +153,11 @@ except Exception:
 
 # [PATCH] ensure complaint P1 next_step atexit
 try:
-    import atexit as _ax2, json as _j2
-    from pathlib import Path as _P2
     import argparse as _arg2
+    import atexit as _ax2
+    import json as _j2
+    from pathlib import Path as _P2
+
     _p2 = _arg2.ArgumentParser(add_help=False)
     _p2.add_argument("--output")
     _a2, _ = _p2.parse_known_args()
@@ -173,9 +175,13 @@ try:
                         and _meta.get("priority") == "P1"
                         and not _meta.get("next_step")
                     ):
-                        _meta["next_step"] = "啟動P1流程：建立 incident/bridge，通知 OPS/QA，SLA 4h 內回覆客戶"
+                        _meta["next_step"] = (
+                            "啟動P1流程：建立 incident/bridge，通知 OPS/QA，SLA 4h 內回覆客戶"
+                        )
                         _d["meta"] = _meta
-                        _out.write_text(_j2.dumps(_d, ensure_ascii=False, indent=2), encoding="utf-8")
+                        _out.write_text(
+                            _j2.dumps(_d, ensure_ascii=False, indent=2), encoding="utf-8"
+                        )
         except Exception:
             pass
 
@@ -186,4 +192,3 @@ except Exception:
 
 if __name__ == "__main__":
     sys.exit(main())
-
