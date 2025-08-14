@@ -40,9 +40,7 @@ def _match_when(when: dict, bundle: dict) -> bool:
         return False
     if "attachments_total_size_gt" in when:
         try:
-            if int(bundle.get("attachments_total_size") or 0) <= int(
-                when["attachments_total_size_gt"]
-            ):
+            if int(bundle.get("attachments_total_size") or 0) <= int(when["attachments_total_size_gt"]):
                 return False
         except Exception:
             return False
@@ -116,3 +114,17 @@ def apply_policies(
         except Exception:
             continue
     return result
+
+
+# ---- compatibility shim for tests ----
+def apply_policy(policy, message, context=None):
+    """
+    Wrap single policy into apply_policies to keep tests compatible.
+    """
+    try:
+        res = apply_policies([policy], message, context)
+        # 若原本 apply_policies 回傳列表
+        return res[0] if isinstance(res, (list, tuple)) else res
+    except NameError:
+        # 若此檔無 apply_policies，直接回傳 policy(message)
+        return policy(message)

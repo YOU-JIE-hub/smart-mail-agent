@@ -42,9 +42,7 @@ def _load_template_env() -> "Environment|None":
 
 
 # 規則式抽取：公司、數量、截止、預算、關鍵詞
-RE_COMPANY = re.compile(
-    r"([A-Za-z\u4e00-\u9fa5][\w\u4e00-\u9fa5＆&\.-]{1,30})(?:股份有限公司|有限公司|公司)", re.I
-)
+RE_COMPANY = re.compile(r"([A-Za-z\u4e00-\u9fa5][\w\u4e00-\u9fa5＆&\.-]{1,30})(?:股份有限公司|有限公司|公司)", re.I)
 RE_QUANTITY = re.compile(r"(\d{1,6})\s*(台|件|個|套|pcs?)", re.I)
 RE_BUDGET = re.compile(r"(?:NTD?|新台幣|\$)\s*([0-9][0-9,]{0,12})(?:\s*(萬|千|元|dollars?))?", re.I)
 RE_DATE1 = re.compile(r"(\d{4})[-/](\d{1,2})[-/](\d{1,2})")  # YYYY-MM-DD

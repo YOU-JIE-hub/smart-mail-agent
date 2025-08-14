@@ -1,170 +1,23 @@
-# ==== Python 環境產物 ====
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.egg-info/
-.eggs/
-
-# ==== 虛擬環境 ====
-.venv/
-.env
-*.env
-
-# ==== 編譯與中間產物 ====
-*.log
-*.db
-*.sqlite
-*.checkpoint
-*.tmp
-*.bak
-
-# ==== 模型與訓練結果 ====
-model/
-output/
-outputs/
-runs/
-
-# ==== 本地資料與測試結果 ====
-data/train/
-data/testdata/
-data/inbox/
-data/output/
-data/db/
-logs/
-emails/
-attachments/
-*.jsonl
-
-# ==== IDE 設定 ====
-.vscode/
-.idea/
-
-# ==== 系統檔案 ====
-.DS_Store
-Thumbs.db
-
-# ==== PDF 與圖片類 ====
-*.pdf
-*.png
-*.jpg
-assets/fonts/*.otf
-
-# Local only
-.env
-.venv/
-__pycache__/
-*.db
-*.sqlite
-reports/
-
-# diagnostics bundles
-diagnostics/
-
-# === Local & Python ===
-.venv/
 __pycache__/
 *.py[cod]
-*.pkl
+*.egg-info/
+.build/
+dist/
+build/
+.mypy_cache/
+.pytest_cache/
 *.log
-logs/
-logs.out
-reports/
-report.html
-
-# === Local data / outputs ===
-data/*.db
-data/db/*.db
-data/tickets.db
-data/quote_log.db
-data/users.db
-data/emails_log.db
-output/
-outputs/
-
-# === Models (large) ===
-model/
-share_bundle/model/
-
-# === Diagnostics ===
-diagnostics/
-
-# === OS junk ===
+.venv/
+env/
+venv/
 .DS_Store
 Thumbs.db
-*:Zone.Identifier
-# --- audit auto-append ---
+.vscode/
+.idea/
+logs/*.jsonl
+data/output/*
+!data/output/.gitkeep
 assets/fonts/*.ttf
-share_bundle/assets/fonts/*.ttf
-logs/
-src/logs/
-*.log
-
-# --- dedup cleanup ---
-share_bundle/
-assets/fonts/*.ttf
-logs/
-src/logs/
-*.log
-# --- dedup cleanup (Mon Aug 11 17:35:11 CST 2025) ---
+.coverage
 htmlcov/
-.coverage*
-.pytest_cache/
-# --- final cleanup ---
-sma-codeonly.tar.gz
-backup_dedup_*/
-
-# --- repo cleanup ---
-sma-codeonly.tar.gz
-backup_dedup_*/
-modules_legacy_backup_*/
-
-# --- repo clean rules ---
-diagnostics/
-backup_dedup_*/
-modules_legacy_backup_*/
-share_bundle/
-scripts/
-sma-codeonly.tar.gz
-ALL_CODE_FOR_PASTE.txt
-assets/fonts/*.ttf
-.github/workflows/*.disabled
-
-# --- portfolio clean ---
-.tmp/
-subject,
-report.html
-Dockerfile
-docker-compose.yml
-Makefile.broken
-project_structure.txt
-run_leads_test.py
-test_imap_connect.py
-.tables
-=0.9.0
-=13.0.0
-DELETE
-FROM
-SELECT
-
-# keep selected generated reports for demo
-!reports/
-!reports/spam_report.html
-!reports/spam_demo.json
-
-# === allow selected reports/configs ===
-!reports/spam_scan.html
-!reports/spam_report.html
-!reports/spam_demo.json
-!configs/spam_rules.yaml
-
-# --- hardened ignore rules ---
-artifacts/
-reports/*
-!reports/spam_scan.html
-!reports/spam_scan.json
-!reports/spam_scan.csv
-$BIN/
-sitecustomize.py
-
 backups/

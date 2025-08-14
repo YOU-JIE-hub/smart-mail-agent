@@ -40,9 +40,7 @@ def run(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="BERT Spam 分類器 CLI 測試")
-    parser.add_argument(
-        "--json", required=True, help="輸入 JSON 檔案路徑，需包含 subject 與 content 欄位"
-    )
+    parser.add_argument("--json", required=True, help="輸入 JSON 檔案路徑，需包含 subject 與 content 欄位")
     parser.add_argument("--model", required=True, help="模型目錄路徑")
     args = parser.parse_args()
     run(args)

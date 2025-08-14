@@ -82,9 +82,7 @@ class IntentClassifier:
             logger.info(f"[IntentClassifier] 載入模型：{model_path}")
             self.tokenizer = AutoTokenizer.from_pretrained(model_path)
             self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
-            self.pipeline = pipeline(
-                "text-classification", model=self.model, tokenizer=self.tokenizer
-            )
+            self.pipeline = pipeline("text-classification", model=self.model, tokenizer=self.tokenizer)
 
     @staticmethod
     def _is_negative(text: str) -> bool:
@@ -125,9 +123,7 @@ class IntentClassifier:
             fallback_label = "其他"
 
         if fallback_label != model_label:
-            logger.info(
-                f"[Fallback] 類別調整：{model_label} → {fallback_label}（信心值：{confidence:.4f}）"
-            )
+            logger.info(f"[Fallback] 類別調整：{model_label} → {fallback_label}（信心值：{confidence:.4f}）")
 
         return {
             "predicted_label": fallback_label,
@@ -155,9 +151,7 @@ def _cli() -> None:
     )
     args = parser.parse_args()
 
-    clf = IntentClassifier(
-        model_path=args.model, pipeline_override=None, local_files_only=not args.allow_online
-    )
+    clf = IntentClassifier(model_path=args.model, pipeline_override=None, local_files_only=not args.allow_online)
     result = clf.classify(subject=args.subject, content=args.content)
 
     output_path = Path(args.output)

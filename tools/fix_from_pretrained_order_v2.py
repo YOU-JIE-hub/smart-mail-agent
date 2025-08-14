@@ -59,9 +59,7 @@ def fix_source(src: str) -> tuple[str, int]:
         k = j - 1
         while k >= 0 and (src[k].isalnum() or src[k] in "._"):
             k -= 1
-        prefix = src[
-            k + 1 : j
-        ]  # 例如 AutoTokenizer 或 AutoModelForSequenceClassification 或某變數.pipeline
+        prefix = src[k + 1 : j]  # 例如 AutoTokenizer 或 AutoModelForSequenceClassification 或某變數.pipeline
         # 括號配對
         lp = j + len(".from_pretrained(")
         pos = lp

@@ -43,9 +43,7 @@ def test_edge_cases():
     )
     assert res.get("action") == "reply_support"
 
-    res = _h(
-        {"predicted_label": "詢問流程或規則", "subject": "流程", "content": "", "sender": "n@b.com"}
-    )
+    res = _h({"predicted_label": "詢問流程或規則", "subject": "流程", "content": "", "sender": "n@b.com"})
     assert res.get("action") == "reply_faq"
 
     res = _h(

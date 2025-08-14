@@ -47,9 +47,7 @@ def ensure_db() -> None:
         logger.warning(f"[leads_logger] 建立資料表失敗：{e}")
 
 
-def log_lead(
-    email: str, package: str, pdf_path: str = "", company: str = "", source: str = "email"
-) -> None:
+def log_lead(email: str, package: str, pdf_path: str = "", company: str = "", source: str = "email") -> None:
     """
     寫入一筆 leads 記錄至 SQLite。
 

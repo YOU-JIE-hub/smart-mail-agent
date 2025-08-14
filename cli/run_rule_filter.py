@@ -24,8 +24,6 @@ def run(json_path: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="使用 Rule-Based 方法檢測垃圾郵件")
-    parser.add_argument(
-        "--json", required=True, help="輸入 JSON 路徑，需含 subject 與 content 欄位"
-    )
+    parser.add_argument("--json", required=True, help="輸入 JSON 路徑，需含 subject 與 content 欄位")
     args = parser.parse_args()
     run(args.json)

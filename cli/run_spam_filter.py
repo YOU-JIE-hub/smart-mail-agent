@@ -23,9 +23,7 @@ def run_single(json_path: str, model_path: str):
     print(f"\n[測資檔案] {json_path}")
     print(f"[主旨] {subject}")
     print(f"[寄件者] {sender}")
-    print(
-        f"[判斷結果] 許可: {result['allow']} | 階段: {result['stage']} | 理由: {result['reason']}\n"
-    )
+    print(f"[判斷結果] 許可: {result['allow']} | 階段: {result['stage']} | 理由: {result['reason']}\n")
 
 
 def main():
