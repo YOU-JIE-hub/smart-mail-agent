@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 # 檔案位置：src/inference_classifier.py
 # 模組用途：繁體郵件意圖分類與內容摘要推論（支援本地訓練模型與中文 summarizer）
-
 import argparse
 import json
 import os
-import sys  # noqa: F401
 
 import torch
 from dotenv import load_dotenv
-from transformers import AutoModelForSeq2SeqLM, AutoModelForSequenceClassification, AutoTokenizer, pipeline
+from transformers import (
+    AutoModelForSeq2SeqLM,
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    pipeline,
+)
 
 from utils.logger import logger
 
@@ -117,7 +120,7 @@ def main():
         logger.error(f"[Input] 找不到輸入檔案：{input_path}")
         return
 
-    with open(input_path, "r", encoding="utf-8") as f:
+    with open(input_path, encoding="utf-8") as f:
         data = json.load(f)
 
     subject = data.get("subject", "").strip()

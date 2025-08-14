@@ -25,7 +25,7 @@ spam_model_path = os.path.abspath(args.spam_model)
 intent_model_path = os.path.abspath(args.intent_model)
 
 # 載入信件內容
-with open(input_path, "r", encoding="utf-8") as f:
+with open(input_path, encoding="utf-8") as f:
     mail = json.load(f)
 subject = mail.get("subject", "")
 content = mail.get("content", "")

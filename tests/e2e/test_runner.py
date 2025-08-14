@@ -11,7 +11,7 @@ OUT = ROOT / "data" / "output"
 def test_runner_outputs():
     env = os.environ.copy()
     env["OFFLINE"] = env.get("OFFLINE", "1")
-    env["PYTHONPATH"] = f"{ROOT}:{ROOT/'src'}"
+    env["PYTHONPATH"] = f"{ROOT}:{ROOT / 'src'}"
     cp = subprocess.run([str(BIN)], cwd=str(ROOT), text=True, env=env)
     assert cp.returncode == 0
     outs = sorted(OUT.glob("out_*.json"))

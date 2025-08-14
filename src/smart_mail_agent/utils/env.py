@@ -1,7 +1,8 @@
-# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import os
+
+# -*- coding: utf-8 -*-
 
 
 def get_bool(keys, default=False):

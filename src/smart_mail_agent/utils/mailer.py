@@ -7,14 +7,14 @@ from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 
-def _env(cfg: Optional[Dict[str, Any]], key: str, default: Optional[str] = None) -> Optional[str]:
+def _env(cfg: dict[str, Any] | None, key: str, default: str | None = None) -> str | None:
     return (cfg or {}).get(key) or os.getenv(key) or default
 
 
-def validate_smtp_config(cfg: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def validate_smtp_config(cfg: dict[str, Any] | None = None) -> dict[str, Any]:
     user = _env(cfg, "SMTP_USER") or _env(cfg, "SMTP_USERNAME")
     pwd = _env(cfg, "SMTP_PASS") or _env(cfg, "SMTP_PASSWORD")
     host = _env(cfg, "SMTP_HOST")
@@ -34,7 +34,7 @@ def send_email_with_attachment(
     subject: str,
     body_html: str,
     attachment_path: str,
-    cfg: Optional[Dict[str, Any]] = None,
+    cfg: dict[str, Any] | None = None,
 ) -> bool:
     conf = validate_smtp_config(cfg)
     p = Path(attachment_path)

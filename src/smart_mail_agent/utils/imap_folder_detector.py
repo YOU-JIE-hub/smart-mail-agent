@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 # 檔案位置：src/utils/imap_utils.py
 # 模組用途：偵測 Gmail 的 All Mail 資料夾名稱，支援不同語系與 IMAP 編碼
-
 import imaplib
-from typing import Tuple, Union
+import os
 
 
-def _decode_imap_bytes(v: Union[bytes, Tuple[bytes, ...], bytearray]) -> str:
+def _decode_imap_bytes(v: bytes | tuple[bytes, ...] | bytearray) -> str:
     """統一處理 IMAP 回傳：可能為 bytes 或 (bytes, ...)。
     盡力解碼，失敗則回傳 str(v)。"""
     try:
@@ -22,7 +21,6 @@ def _decode_imap_bytes(v: Union[bytes, Tuple[bytes, ...], bytearray]) -> str:
         return str(v)
 
 
-import os
 import re
 
 from dotenv import load_dotenv

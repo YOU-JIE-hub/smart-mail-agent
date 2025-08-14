@@ -9,7 +9,7 @@ from spam.rule_filter import RuleBasedSpamFilter
 
 
 def run(json_path: str):
-    with open(json_path, "r", encoding="utf-8") as f:
+    with open(json_path, encoding="utf-8") as f:
         data = json.load(f)
 
     subject = data.get("subject", "")

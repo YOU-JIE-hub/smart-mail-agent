@@ -3,8 +3,9 @@ from __future__ import annotations
 import argparse
 import json
 import re
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any
 
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
 
@@ -57,7 +58,7 @@ class IntentClassifier:
     def __init__(
         self,
         model_path: str,
-        pipeline_override: Optional[Callable[..., Any]] = None,
+        pipeline_override: Callable[..., Any] | None = None,
         *,
         local_files_only: bool = True,
         low_conf_threshold: float = 0.4,
@@ -92,7 +93,7 @@ class IntentClassifier:
     def _is_generic(text: str) -> bool:
         return any(g in text.lower() for g in GENERIC_WORDS)
 
-    def classify(self, subject: str, content: str) -> Dict[str, Any]:
+    def classify(self, subject: str, content: str) -> dict[str, Any]:
         """執行分類與 fallback 修正。"""
         raw_text = f"{subject.strip()}\n{content.strip()}"
         text = smart_truncate(raw_text)

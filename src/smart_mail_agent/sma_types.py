@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Optional, Union
+from collections.abc import Iterable
+from typing import Any
 
 try:
     from pydantic import BaseModel, Field  # v2
@@ -28,44 +29,46 @@ class _CompatModel(BaseModel):
 class AttachmentMeta(_CompatModel):
     path: str
     exists: bool = True
-    size: Optional[int] = None
-    mime: Optional[str] = None
+    size: int | None = None
+    mime: str | None = None
 
 
 class Request(_CompatModel):
     subject: str = ""
-    from_: Optional[str] = Field(default=None, alias="from")
+    from_: str | None = Field(default=None, alias="from")
     body: str = ""
     predicted_label: str = ""  # 預設空字串（測試期望）
     confidence: float = -1.0  # 預設 -1.0（測試期望）
-    attachments: List[Any] = []
+    attachments: list[Any] = []
 
 
 class ActionResult(_CompatModel):
-    action: Optional[str] = None
-    action_name: Optional[str] = None
+    action: str | None = None
+    action_name: str | None = None
     ok: bool = True
     code: str = "OK"
     message: str = ""
-    subject: Optional[str] = None
-    body: Optional[str] = None
-    output: Optional[Any] = None  # 放寬以容納多型 payload
-    attachments: List[Union[AttachmentMeta, Dict[str, Any], str]] = []
-    request_id: Optional[str] = None
-    spent_ms: Optional[int] = None
+    subject: str | None = None
+    body: str | None = None
+    output: Any | None = None  # 放寬以容納多型 payload
+    attachments: list[AttachmentMeta | dict[str, Any] | str] = []
+    request_id: str | None = None
+    spent_ms: int | None = None
     duration_ms: int = 0  # 測試只檢查鍵是否存在
-    meta: Dict[str, Any] = {}
-    cc: List[str] = []
+    meta: dict[str, Any] = {}
+    cc: list[str] = []
 
-    def with_logged_path(self, path: Optional[str]) -> "ActionResult":
+    def with_logged_path(self, path: str | None) -> ActionResult:
         if path:
             self.meta = dict(self.meta or {})
             self.meta.setdefault("logged_path", path)
         return self
 
 
-def _coerce_attachments(items: Optional[Iterable[Any]]) -> List[Union[AttachmentMeta, Dict[str, Any], str]]:
-    out: List[Union[AttachmentMeta, Dict[str, Any], str]] = []
+def _coerce_attachments(
+    items: Iterable[Any] | None,
+) -> list[AttachmentMeta | dict[str, Any] | str]:
+    out: list[AttachmentMeta | dict[str, Any] | str] = []
     for a in items or []:
         if isinstance(a, str):
             out.append(AttachmentMeta(path=a, exists=True))
@@ -74,11 +77,11 @@ def _coerce_attachments(items: Optional[Iterable[Any]]) -> List[Union[Attachment
     return out
 
 
-def normalize_request(raw: Dict[str, Any]) -> Request:
+def normalize_request(raw: dict[str, Any]) -> Request:
     return Request(**raw)
 
 
-def normalize_result(raw: Dict[str, Any]) -> ActionResult:
+def normalize_result(raw: dict[str, Any]) -> ActionResult:
     data = dict(raw or {})
     # 對齊 action 欄位
     if "action" not in data and "action_name" in data:

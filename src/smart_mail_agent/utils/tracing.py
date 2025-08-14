@@ -3,10 +3,10 @@ from __future__ import annotations
 import json
 import time
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 
-def trace_decision(root: Path, name: str, payload: Dict[str, Any]) -> Path:
+def trace_decision(root: Path, name: str, payload: dict[str, Any]) -> Path:
     out_dir = root / "data" / "output" / "traces"
     out_dir.mkdir(parents=True, exist_ok=True)
     ts = time.strftime("%Y%m%d_%H%M%S")

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import os
@@ -20,8 +19,7 @@ def _try_help(path):
             [sys.executable, path, "--help"],
             check=True,
             env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             timeout=15,
         )
     except Exception:

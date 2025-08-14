@@ -1,11 +1,12 @@
-#!/usr/bin/env python3
 from __future__ import annotations
 
 import datetime as dt
 import json
 import os
+
+#!/usr/bin/env python3
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 def _log_dir() -> Path:
@@ -25,7 +26,7 @@ def _jsonable(x: Any):
             return "<unserializable>"
 
 
-def _to_dict(obj: Any) -> Dict[str, Any]:
+def _to_dict(obj: Any) -> dict[str, Any]:
     if isinstance(obj, dict):
         return obj
     for attr in ("model_dump", "dict"):
@@ -38,7 +39,7 @@ def _to_dict(obj: Any) -> Dict[str, Any]:
     return {"repr": repr(obj)}
 
 
-def log_event(result: Any, request: Optional[Dict[str, Any]] = None) -> str:
+def log_event(result: Any, request: dict[str, Any] | None = None) -> str:
     """Never-throw JSONL logger. Also sets result['logged_path'] when possible."""
     try:
         p = _log_dir() / f"sma-{dt.datetime.now():%Y%m%d}.jsonl"
@@ -71,8 +72,7 @@ def log_event(result: Any, request: Optional[Dict[str, Any]] = None) -> str:
         try:
             dbg = _log_dir() / "log_event_error.txt"
             dbg.write_text(
-                (dbg.read_text(encoding="utf-8") if dbg.exists() else "")
-                + f"[{dt.datetime.now().isoformat(timespec='seconds')}] {type(e).__name__}: {e}\n",
+                (dbg.read_text(encoding="utf-8") if dbg.exists() else "") + f"[{dt.datetime.now().isoformat(timespec='seconds')}] {type(e).__name__}: {e}\n",
                 encoding="utf-8",
             )
         except Exception:

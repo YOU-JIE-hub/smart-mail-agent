@@ -9,7 +9,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
@@ -31,7 +31,7 @@ def run_offline_tests() -> int:
     return p.returncode
 
 
-def demo_actions() -> Dict[str, Any]:
+def demo_actions() -> dict[str, Any]:
     _ensure_sys_path()
     os.environ.setdefault("OFFLINE", "1")
     from action_handler import handle
@@ -73,7 +73,7 @@ def demo_actions() -> Dict[str, Any]:
         payload["predicted_label"] = label
         res = handle(payload)
         # 逐案寫檔，便於你檢視
-        out_path = OUT / f"demo_{res.get('action') or res.get('action_name','unknown')}.json"
+        out_path = OUT / f"demo_{res.get('action') or res.get('action_name', 'unknown')}.json"
         out_path.write_text(json.dumps(res, ensure_ascii=False, indent=2), encoding="utf-8")
         results[label] = {
             "action": res.get("action") or res.get("action_name"),
@@ -90,9 +90,7 @@ def demo_actions() -> Dict[str, Any]:
                 }
             )
     # 總覽寫檔
-    (OUT / "offline_verify_summary.json").write_text(
-        json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    (OUT / "offline_verify_summary.json").write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
     return results
 
 
