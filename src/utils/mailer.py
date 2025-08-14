@@ -1,75 +1,83 @@
-#!/usr/bin/env python3
 from __future__ import annotations
 
 import mimetypes
 import os
+import pathlib
 import smtplib
 from email.message import EmailMessage
-from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Iterable, Mapping, Optional, Tuple
 
-REQUIRED = ("host", "port", "from_addr")
-
-
-def validate_smtp_config(cfg: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    cfg = dict(cfg or {})
-    cfg.setdefault("host", os.getenv("SMTP_HOST", ""))
-    cfg.setdefault("port", int(os.getenv("SMTP_PORT", "465") or 0))
-    cfg.setdefault("from_addr", os.getenv("SMTP_FROM", ""))
-    for k in REQUIRED:
-        if not cfg.get(k):
-            raise ValueError("SMTP 設定錯誤")
-    return cfg
+OFFLINE = str(os.getenv("OFFLINE", "0")) == "1"
 
 
-def _ensure_attachment(path: Optional[str]) -> None:
-    if not path:
-        return
-    if not Path(path).exists():
-        raise FileNotFoundError(path)
+def validate_smtp_config(cfg: Mapping[str, str]) -> Tuple[bool, str]:
+    required = ["SMTP_HOST", "SMTP_PORT", "SMTP_USERNAME", "SMTP_PASSWORD", "SMTP_FROM"]
+    missing = [k for k in required if not str(cfg.get(k, "")).strip()]
+    if missing:
+        return False, f"missing: {', '.join(missing)}"
+    try:
+        int(cfg["SMTP_PORT"])
+    except Exception:
+        return False, "SMTP_PORT must be integer"
+    return True, ""
 
 
 def send_email_with_attachment(
-    *,
-    recipient: str,
+    to: str,
     subject: str,
-    body_html: str,
-    attachment_path: Optional[str] = None,
-    host: Optional[str] = None,
-    port: int = 465,
-    username: Optional[str] = None,
-    password: Optional[str] = None,
-    from_addr: Optional[str] = None,
+    body: str,
+    attachments: Optional[Iterable[str]] = None,
+    cfg: Optional[Mapping[str, str]] = None,
+    use_tls: Optional[bool] = None,
+    dry_run: Optional[bool] = None,
 ) -> bool:
-    """
-    測試期望：
-      - 附件路徑不存在時先拋 FileNotFoundError
-      - 一定呼叫 smtplib.SMTP_SSL（測試會 patch）
-      - 成功回傳 True（布林）
-    """
-    _ensure_attachment(attachment_path)
+    cfg_all = dict(os.environ)
+    if cfg:
+        cfg_all.update({k: str(v) for k, v in cfg.items()})
+    ok, msg = validate_smtp_config(cfg_all)
+    if dry_run is None:
+        dry_run = OFFLINE or str(cfg_all.get("DRY_RUN", "0")) == "1"
+    if dry_run:
+        return ok
+    if not ok:
+        return False
 
-    h = host or os.getenv("SMTP_HOST", "smtp.gmail.com")
-    p = int(port or int(os.getenv("SMTP_PORT", "465") or 465))
-    frm = from_addr or os.getenv("SMTP_FROM", "noreply@example.com")
+    host = cfg_all["SMTP_HOST"]
+    port = int(cfg_all["SMTP_PORT"])
+    user = cfg_all["SMTP_USERNAME"]
+    pwd = cfg_all["SMTP_PASSWORD"]
+    from_addr = cfg_all["SMTP_FROM"]
+    if use_tls is None:
+        use_tls = str(cfg_all.get("SMTP_USE_TLS", "1")).lower() not in ("0", "false", "no")
 
-    msg = EmailMessage()
-    msg["From"] = frm
-    msg["To"] = recipient
-    msg["Subject"] = subject
-    msg.add_alternative(body_html or "", subtype="html")
+    msg_obj = EmailMessage()
+    msg_obj["From"] = from_addr
+    msg_obj["To"] = to
+    msg_obj["Subject"] = subject
+    msg_obj.set_content(body)
 
-    if attachment_path:
-        ctype, enc = mimetypes.guess_type(attachment_path)
-        if ctype is None or enc is not None:
+    for p in attachments or []:
+        path = pathlib.Path(p)
+        if not path.is_file():
+            continue
+        ctype, _ = mimetypes.guess_type(path.name)
+        if not ctype:
             ctype = "application/octet-stream"
         maintype, subtype = ctype.split("/", 1)
-        with open(attachment_path, "rb") as f:
-            msg.add_attachment(f.read(), maintype=maintype, subtype=subtype, filename=Path(attachment_path).name)
+        msg_obj.add_attachment(path.read_bytes(), maintype=maintype, subtype=subtype, filename=path.name)
 
-    with smtplib.SMTP_SSL(h, p) as smtp:
-        if username:
-            smtp.login(username, password or "")
-        smtp.sendmail(frm, [recipient], msg.as_string())
-
+    smtp = smtplib.SMTP(host, port, timeout=10)
+    try:
+        if use_tls:
+            smtp.starttls()
+        smtp.login(user, pwd)
+        smtp.send_message(msg_obj)
+    finally:
+        try:
+            smtp.quit()
+        except Exception:
+            pass
     return True
+
+
+__all__ = ["validate_smtp_config", "send_email_with_attachment"]
