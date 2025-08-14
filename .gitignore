@@ -166,3 +166,5 @@ reports/*
 !reports/spam_scan.csv
 $BIN/
 sitecustomize.py
+
+backups/
