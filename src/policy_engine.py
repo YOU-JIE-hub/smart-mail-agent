@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# 檔案位置：src/policy_engine.py
+# 模組用途：依據 config/policy.yaml 套用策略；支援多種 when/effect 條件
+
 from __future__ import annotations
 
 import os
@@ -7,89 +10,109 @@ from typing import Any, Dict, List
 import yaml
 
 
-def _load_policy(path: str) -> Dict[str, Any]:
-    if not os.path.exists(path):
-        return {}
-    with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+def _sum_attachments_size(items: List[dict]) -> int:
+    total = 0
+    for it in items or []:
+        try:
+            total += int(it.get("size") or 0)
+        except Exception:
+            pass
+    return total
 
 
-def apply_policy(
-    result: Dict[str, Any], request: Dict[str, Any], policy_file: str
-) -> Dict[str, Any]:
-    policy = _load_policy(policy_file)
+def _from_domain(addr: str | None) -> str | None:
+    if not addr or "@" not in addr:
+        return None
+    return addr.split("@", 1)[1].lower()
+
+
+def _match_when(when: dict, bundle: dict) -> bool:
+    # 支援：label, max_confidence, severity, attachments_total_size_gt, from_domain_in
+    if "label" in when and when["label"] != bundle.get("label"):
+        return False
+    if "max_confidence" in when:
+        try:
+            if float(bundle.get("confidence") or 0) > float(when["max_confidence"]):
+                return False
+        except Exception:
+            return False
+    if "severity" in when and when["severity"] != bundle.get("severity"):
+        return False
+    if "attachments_total_size_gt" in when:
+        try:
+            if int(bundle.get("attachments_total_size") or 0) <= int(
+                when["attachments_total_size_gt"]
+            ):
+                return False
+        except Exception:
+            return False
+    if "from_domain_in" in when:
+        dom = (bundle.get("from_domain") or "").lower()
+        wl = [str(x).lower() for x in (when.get("from_domain_in") or [])]
+        if dom not in wl:
+            return False
+    return True
+
+
+def _apply_effect(effect: dict, result: dict) -> None:
     meta = result.setdefault("meta", {})
-    cc: List[str] = result.setdefault("cc", [])
-
-    # 低信心覆核（reply_faq）
-    low_conf = policy.get("low_confidence_review", {})
-    if (request.get("predicted_label") or "") == "reply_faq":
-        th = float(low_conf.get("threshold", 0.6))
-        conf = float(request.get("confidence", -1.0))
-        if conf >= 0 and conf < th:
-            meta["require_review"] = True
-            for addr in low_conf.get("cc", []):
-                if addr not in cc:
-                    cc.append(addr)
-
-    # 投訴升級（high）
-    esc = policy.get("complaint_escalation", {})
-    if result.get("action_name") == "complaint" and meta.get("severity") == "high":
-        meta.setdefault("priority", "P1")
-        meta.setdefault("sla_eta", esc.get("sla_eta_high", "24h"))
-        for addr in esc.get("cc", []):
-            if addr not in cc:
-                cc.append(addr)
-        meta["require_review"] = True
-
-    # 附件大小限制 → 人工覆核
-    att = policy.get("attachments_limit", {})
-    if att:
-        limit = int(att.get("max_total_bytes", 5 * 1024 * 1024))
-        total = sum(int(a.get("size_bytes") or 0) for a in request.get("attachments", []))
-        if total > limit:
-            meta["attachments_policy"] = "over_limit"
-            meta["require_review"] = True
-            for addr in att.get("cc", []):
-                if addr not in cc:
-                    cc.append(addr)
-
-    # 白名單紀錄
-    wl = policy.get("allow_domains", {})
-    sender = (request.get("sender") or "").lower()
-    if "@" in sender and wl:
-        domain = sender.split("@", 1)[1]
-        if domain in (wl.get("domains") or []):
-            meta["whitelisted_sender"] = True
-
-    result["cc"] = cc
-    result["meta"] = meta
-    return result
+    # require_review
+    if "require_review" in effect:
+        meta["require_review"] = bool(effect["require_review"])
+    # cc
+    if "cc" in effect:
+        cc = set(meta.get("cc") or [])
+        for r in effect["cc"] or []:
+            cc.add(r)
+        meta["cc"] = sorted(cc)
+    # set_subject_prefix
+    if "set_subject_prefix" in effect:
+        prefix = str(effect["set_subject_prefix"])
+        subj = result.get("subject") or ""
+        if not subj.startswith(prefix):
+            result["subject"] = f"{prefix}{subj}"
+    # set_action
+    if "set_action" in effect:
+        result["action_name"] = str(effect["set_action"])
+    # set_meta
+    if "set_meta" in effect:
+        for k, v in (effect.get("set_meta") or {}).items():
+            meta[k] = v
 
 
-# 舊名相容
 def apply_policies(
-    result: Dict[str, Any], request: Dict[str, Any], policy_file: str
+    result: Dict[str, Any], request: Dict[str, Any], policy_path: str = "config/policy.yaml"
 ) -> Dict[str, Any]:
-    return apply_policy(result, request, policy_file)
+    """
+    參數:
+        result: 動作回傳的 ActionResult
+        request: 原始輸入
+        policy_path: YAML 規則路徑
+    回傳:
+        經策略套用後的 ActionResult
+    """
+    if not os.path.exists(policy_path):
+        return result
+    try:
+        rules = yaml.safe_load(open(policy_path, "r", encoding="utf-8")) or {}
+    except Exception:
+        return result
 
+    attachments = request.get("attachments") or []
+    bundle = {
+        "label": result.get("action_name"),
+        "confidence": request.get("confidence"),
+        "severity": (result.get("meta") or {}).get("severity"),
+        "attachments_total_size": _sum_attachments_size(attachments),
+        "from_domain": _from_domain(request.get("from")),
+    }
 
-__all__ = ["apply_policy", "apply_policies"]
-
-
-def apply_policies(*args, **kwargs):  # noqa: F811
-    import os
-
-    if len(args) == 2 and isinstance(args[0], dict) and isinstance(args[1], dict):
-        req, res = args
-        policy_file = os.getenv("SMA_POLICY_FILE", os.getenv("POLICY_FILE", "configs/policy.yaml"))
-        return apply_policy(res, req, policy_file)
-    elif len(args) == 3:
-        return apply_policy(*args)
-    else:
-        res = kwargs.get("result") or {}
-        req = kwargs.get("request") or {}
-        policy_file = kwargs.get("policy_file") or os.getenv(
-            "SMA_POLICY_FILE", os.getenv("POLICY_FILE", "configs/policy.yaml")
-        )
-        return apply_policy(res, req, policy_file)
+    for rule in rules.get("rules") or []:
+        when = rule.get("when") or {}
+        effect = rule.get("effect") or {}
+        try:
+            if _match_when(when, bundle):
+                _apply_effect(effect, result)
+        except Exception:
+            continue
+    return result

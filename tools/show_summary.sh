@@ -1,17 +1,14 @@
 #!/usr/bin/env bash
-set -Eeuo pipefail
-python - <<'PY'
-import json, pathlib
-def show(p):
-    p=pathlib.Path(p)
-    if not p.exists(): return
-    d=json.loads(p.read_text(encoding="utf-8"))
-    name=p.name.replace('out_','').replace('.json','')
-    print(f"=== {name} ===")
-    print("action_name=", d.get("action_name"))
-    print("subject=", d.get("subject"))
-    print("meta=", d.get("meta"))
-    print("attachments=", d.get("attachments"))
-for name in ["out_sales.json","out_quote.json","out_overlimit.json","out_whitelist.json"]:
-    show(f"data/output/{name}")
-PY
+set -euo pipefail
+summ() {
+  local f="$1"
+  if command -v jq >/dev/null 2>&1; then
+    jq -r '"action_name="+(.action_name|tostring),"subject="+(.subject|tostring),"meta="+(.meta|tostring),"attachments="+(.attachments|tostring),""' "$f"
+  else
+    echo "== $f =="; cat "$f"
+  fi
+}
+echo "=== out_sales ===";      summ data/output/out_sales.json
+echo "=== out_quote ===";      summ data/output/out_quote.json
+echo "=== out_overlimit ===";  summ data/output/out_overlimit.json
+echo "=== out_whitelist ===";  summ data/output/out_whitelist.json
