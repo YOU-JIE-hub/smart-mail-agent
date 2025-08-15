@@ -49,3 +49,20 @@ PYTHONPATH=. pytest -q tests -k "not online"
 '
 
 ## Project structure
+
+```text
+.
+├─ src/smart_mail_agent/        # 主程式（單一命名空間）
+├─ tests/                       # 測試（CI 預設跑離線集）
+├─ docs/                        # MkDocs 文件（gh-pages 自動部署）
+├─ scripts/bin/                 # CLI/工具腳本（可執行）
+├─ configs/                     # 設定與範例
+├─ .github/                     # Actions / Issue & PR 模板
+├─ pyproject.toml               # 打包/依賴/工具設定
+├─ mkdocs.yml                   # 文件設定
+├─ README.md LICENSE            # 說明與授權
+├─ tools/run_actions_matrix.py  # 測試相容 shim
+└─ (de-emphasized)
+   ├─ .dev/                     # 只給開發者用的腳本與輔助工具
+   └─ .archive/                 # 歷史資產（legacy、封包、備份）
+```
