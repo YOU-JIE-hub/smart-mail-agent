@@ -47,3 +47,5 @@ sma-spamcheck --help
 # 3) 測試（離線）
 PYTHONPATH=. pytest -q tests -k "not online"
 '
+
+## Project structure
