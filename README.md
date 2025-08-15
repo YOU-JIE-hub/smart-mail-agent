@@ -1,3 +1,4 @@
+![Build](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/tests.yml/badge.svg) ![Coverage](https://codecov.io/gh/YOU-JIE-hub/smart-mail-agent/branch/main/graph/badge.svg)
 # Smart Mail Agent
 
 ![CI](https://img.shields.io/github/actions/workflow/status/YOU-JIE-hub/smart-mail-agent/ci.yml?branch=main) ![License](https://img.shields.io/badge/license-MIT-green)
