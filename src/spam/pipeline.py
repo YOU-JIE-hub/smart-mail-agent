@@ -1,14 +1,8 @@
-from __future__ import annotations
+# Auto-generated compat proxy: src/spam/pipeline.py
+from importlib import import_module as _imp
 
-from typing import Any
-
-from .rules import label_email
-
-
-def analyze(email: dict[str, Any]) -> dict[str, Any]:
-    sender = email.get("sender", "") or ""
-    subject = email.get("subject", "") or ""
-    content = email.get("content", "") or ""
-    attachments = email.get("attachments") or []
-    label, score, reasons = label_email(sender, subject, content, attachments)
-    return {"label": label, "score": int(score), "reasons": list(reasons), "subject": subject}
+_mod = _imp("smart_mail_agent.spam.pipeline")
+# re-export public names
+for _k in dir(_mod):
+    if not _k.startswith("_"):
+        globals()[_k] = getattr(_mod, _k)
