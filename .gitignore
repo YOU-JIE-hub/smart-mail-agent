@@ -1,0 +1,13 @@
+# virtualenv & caches
+.venv/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+site/
+.cache/
+*.py[cod]
+
+# packaging/build leftovers
+*.egg-info/
+dist/
+build/
