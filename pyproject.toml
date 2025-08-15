@@ -51,3 +51,8 @@ dev = [
   "mkdocs>=1.6",
   "mkdocs-material>=9.5"
 ]
+
+[project.scripts]
+sma = "smart_mail_agent.__main__:main"
+sma-run = "src.run_action_handler:main"
+sma-spamcheck = "smart_mail_agent.cli_spamcheck:main"
