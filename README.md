@@ -1,3 +1,4 @@
+[![coverage](https://img.shields.io/codecov/c/github/YOU-JIE-hub/smart-mail-agent?logo=codecov)](https://app.codecov.io/gh/YOU-JIE-hub/smart-mail-agent)
 ![Build](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/tests.yml/badge.svg) ![Coverage](https://codecov.io/gh/YOU-JIE-hub/smart-mail-agent/branch/main/graph/badge.svg)
 # Smart Mail Agent
 
