@@ -10,7 +10,8 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 authors = [{name="YOU-JIE"}]
-dependencies = []
+dependencies = [  "pydantic>=1.10,<3"
+]
 
 [project.urls]
 Homepage = "https://github.com/YOU-JIE-hub/smart-mail-agent"
