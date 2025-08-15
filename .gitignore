@@ -41,3 +41,4 @@ sitecustomize.py
 .ruff_cache/
 __pycache__/
 site/
+smart-mail-agent-*.tar.gz
