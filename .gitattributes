@@ -2,3 +2,7 @@ model/** filter=lfs diff=lfs merge=lfs -text
 data/archive/** filter=lfs diff=lfs merge=lfs -text
 *.pdf filter=lfs diff=lfs merge=lfs -text
 archive_legacy/** linguist-vendored
+.dev/              export-ignore
+.archive/          export-ignore
+.github/           export-ignore
+.venv/             export-ignore
