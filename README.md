@@ -66,3 +66,7 @@ PYTHONPATH=. pytest -q tests -k "not online"
    ├─ .dev/                     # 只給開發者用的腳本與輔助工具
    └─ .archive/                 # 歷史資產（legacy、封包、備份）
 ```
+
+> **Portfolio clean branch**：僅保留核心 src / tests / configs / scripts / tools。
+> 其他開發資產已移到 `.portfolio_hidden/`（完整版本請看 `main` 分支）。
+
