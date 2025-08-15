@@ -22,7 +22,7 @@ jobs:
         run: |
           pytest -q tests -k "not online" --cov=src --cov=smart_mail_agent --cov-report=xml
       - name: Upload to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: ./coverage.xml
           flags: unittests
