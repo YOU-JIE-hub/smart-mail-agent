@@ -21,7 +21,7 @@ jobs:
       - name: Install (editable)
         run: |
           python -m pip install -U pip
-          python -m pip install -e ".[dev]" --no-deps
+          python -m pip install -e ".[dev]"
       - name: Offline tests
         env:
           OFFLINE: "1"
