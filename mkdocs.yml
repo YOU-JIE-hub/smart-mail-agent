@@ -1,0 +1,14 @@
+site_name: Smart Mail Agent
+site_description: AI + RPA smart mail processing (Open Source Portfolio)
+repo_url: https://github.com/YOU-JIE-hub/smart-mail-agent
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.sections
+    - content.code.copy
+nav:
+  - Overview: index.md
+  - Quickstart: usage.md
+  - Architecture: architecture.md
+  - CLI: cli.md
