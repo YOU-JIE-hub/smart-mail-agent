@@ -1,3 +1,4 @@
+![Build](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/tests.yml/badge.svg) ![Coverage](https://codecov.io/gh/YOU-JIE-hub/smart-mail-agent/branch/main/graph/badge.svg)
 # Smart Mail Agent
 
 ![CI](https://img.shields.io/github/actions/workflow/status/YOU-JIE-hub/smart-mail-agent/ci.yml?branch=main) ![License](https://img.shields.io/badge/license-MIT-green)
@@ -27,3 +28,21 @@ docker run --rm smart-mail-agent:local
 ## 設定檔
 - 預設會讀取 `.env` 與 `configs/default.yml`。
 - 字型：放在 `assets/fonts/` 或設定 `FONT_PATH`。
+
+---
+
+### Quickstart
+
+```bash
+# 1) 安裝
+python -m pip install -U pip
+python -m pip install -e ".[dev]"
+
+# 2) CLI
+sma --help
+sma-run --help
+sma-spamcheck --help
+
+# 3) 測試（離線）
+PYTHONPATH=. pytest -q tests -k "not online"
+'
