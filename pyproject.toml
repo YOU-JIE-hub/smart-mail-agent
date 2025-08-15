@@ -16,12 +16,6 @@ dependencies = [  "pydantic>=1.10,<3"
 [project.urls]
 Homepage = "https://github.com/YOU-JIE-hub/smart-mail-agent"
 
-[project.scripts]
-sma = "smart_mail_agent.cli.sma:main"
-sma-run = "smart_mail_agent.cli.sma_run:main"
-sma-spamcheck = "smart_mail_agent.cli.sma_spamcheck:main"
-
-
 [tool.setuptools]
 package-dir = {"" = "src"}
 include-package-data = true
