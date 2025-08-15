@@ -19,6 +19,7 @@ jobs:
         run: |
           python -m pip install -U pip
           python -m pip install -e ".[dev]"
+          python -m pip install pydantic>=1.10,<3
           # 這兩行若檔案不存在不會失敗
           test -f requirements.txt && python -m pip install -r requirements.txt || true
           test -f requirements-dev.txt && python -m pip install -r requirements-dev.txt || true
