@@ -1,0 +1,160 @@
+=== GIT ===
+share/final-audit-20250817T060507
+e4050f3f7 chore: final audit snapshot 20250817T060507
+
+=== Runtime ===
+Python 3.10.12
+pip 25.2 from /home/youjie/.local/lib/python3.10/site-packages/pip (python 3.10)
+PYTHONPATH=.:src
+
+=== Key files present ===
+✓ src/smart_mail_agent/spam/orchestrator_offline.py
+✓ src/run_action_handler.py
+✓ src/smart_mail_agent/spam/rules.py
+✓ .github/workflows/ci.yml
+✓ pyproject.toml
+✓ .pre-commit-config.yaml
+
+=== orchestrator_offline: model 決策關鍵 ===
+- 呼叫 _call_model_robust 之後（應該看到 ham→score=0.0 覆寫）
+   324	    label, score, source, err = _call_model_robust(model, email, model_threshold)
+   325	
+   326	    # ham 標籤一律視為非垃圾：覆寫 score 為 0.0
+   327	
+   328	    if label == "ham":
+   329	
+   330	        score = 0.0
+   331	
+   332	    is_spam = score >= model_threshold
+   333	    is_borderline = bool(model is not None and score == model_threshold)
+   334	    action = "review" if (is_spam and is_borderline) else ("drop" if is_spam else "route_to_inbox")
+   335	
+   336	    ns = SimpleNamespace(is_spam=is_spam, is_borderline=is_borderline, source=source, action=action)
+   337	    if source == "fallback" and err:
+   338	        ns.extra = {"model_error": err}
+   339	    return ns
+   340	
+   341	
+   342	# ---------- CLI ----------
+   343	def _parse_args(argv=None):
+
+- 只以分數判定 is_spam（應該是：is_spam = score >= model_threshold）
+332:    is_spam = score >= model_threshold
+
+- link_ratio 規則 reason（應包含 rule:link_ratio>=...）
+193:            reasons.append(f"rule:link_ratio>={d}")
+203:            reasons.append(f"rule:link_ratio>={r}")
+266:            reasons.append(f"rule:link_ratio>={d}")
+276:            reasons.append(f"rule:link_ratio>={r}")
+
+- NFKC 正規化與 keyword 規則
+156:                x = unicodedata.normalize("NFKC", x or "")
+233:                x = _ud.normalize("NFKC", x or "")
+169:                    "reasons": ["rule:keyword"],
+294:                "reasons": ["rule:keyword"],
+
+=== run_action_handler: 附件風險與 CC ===
+- 風險代碼（double_ext / long_name / mime_mismatch）
+91:                risks.append("attach:double_ext")
+96:            risks.append("attach:long_name")
+101:            risks.append("attach:mime_mismatch")
+- require_review → 自動 CC support@company.example
+202:   202	        if "support@company.example" not in cc:
+203:   203	            cc.append("support@company.example")
+- 主旨自動前綴 [自動回覆]
+44:def _subject_with_prefix(subj: str) -> str:
+152:        result["subject"] = _subject_with_prefix(subj)
+156:        result["subject"] = _subject_with_prefix(subj)
+173:        result["subject"] = _subject_with_prefix(subj)
+212:        result["subject"] = _subject_with_prefix(subj)
+
+=== Tooling (pyproject / CI) ===
+- pyproject.toml (line-length / ruff / isort / coverage)
+1:[tool.black]
+2:line-length = 100
+3:target-version = ["py310"]
+4:include = "\\.pyi?$"
+5:extend-exclude = "build|dist|.venv"
+6:
+7:[tool.isort]
+8:profile = "black"
+9:line_length = 100
+10:src_paths = ["src", "tests"]
+11:
+12:[tool.ruff]
+13:target-version = "py310"
+14:line-length = 100
+15:extend-select = ["E", "F", "I", "UP"]
+16:ignore = ["E501"]
+17:src = ["src", "tests"]
+18:
+19:[tool.coverage.run]
+20:branch = true
+21:source = ["src"]
+22:
+23:[tool.coverage.report]
+24:show_missing = true
+25:skip_covered = true
+
+- .github/workflows/ci.yml
+name: build
+on:
+  push: { branches: [ main ] }
+  pull_request: { branches: [ main ] }
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10"]
+
+    env:
+      PYTHONPATH: .:src
+      OFFLINE: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install deps
+        run: |
+          python -m pip install -U pip
+          pip install -U pytest pytest-cov black isort ruff
+
+      - name: Lint
+        run: |
+          ruff check src tests
+          black --check src tests
+          isort --check-only src tests
+
+      - name: Tests
+        run: |
+          pytest -q --disable-warnings --cov=src --cov-report=xml --cov-report=term-missing
+
+=== Lint ===
+-> ruff check
+ruff 0.12.9
+All checks passed!
+
+-> black --check
+black, 25.1.0 (compiled: yes)
+Python (CPython) 3.10.12
+
+-> isort --check-only
+isort 6.0.1
+
+=== Pytest (full) ===
+.sssssssssssssssssssssssss.............................................. [ 31%]
+........................................................................ [ 62%]
+........................s..............................s.....ss......... [ 94%]
+.....s...ss..                                                            [100%]
+197 passed, 32 skipped, 5 warnings in 0.90s
+
