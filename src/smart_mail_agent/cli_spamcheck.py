@@ -1,14 +1,34 @@
 from __future__ import annotations
-import argparse, json
+
+import argparse
+import json
+
 
 def _heuristic_spam_score(text: str) -> float:
     if not text:
         return 0.0
     lowers = text.lower()
     kws = [
-        "free","winner","bitcoin","viagra","casino","loan","credit",
-        "limited time","act now","click here","http://","https://",
-        "獎","中獎","免費","限時","點擊","投資","加密","博彩",
+        "free",
+        "winner",
+        "bitcoin",
+        "viagra",
+        "casino",
+        "loan",
+        "credit",
+        "limited time",
+        "act now",
+        "click here",
+        "http://",
+        "https://",
+        "獎",
+        "中獎",
+        "免費",
+        "限時",
+        "點擊",
+        "投資",
+        "加密",
+        "博彩",
     ]
     score = 0.0
     for k in kws:
@@ -17,6 +37,7 @@ def _heuristic_spam_score(text: str) -> float:
     if "http://" in lowers or "https://" in lowers:
         score += 0.10
     return min(score, 0.99)
+
 
 def _classify(subject: str, content: str, sender: str | None = None) -> dict:
     text = f"{subject}\n{content}\n{sender or ''}"
@@ -28,6 +49,7 @@ def _classify(subject: str, content: str, sender: str | None = None) -> dict:
         "is_spam": score >= 0.5,
         "engine": "heuristic-v0",
     }
+
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
@@ -44,11 +66,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.json:
         print(json.dumps(res, ensure_ascii=False))
     else:
-        print(
-            f"subject={res['subject']!r} sender={res['sender']!r} "
-            f"is_spam={res['is_spam']} score={res['score']} engine={res['engine']}"
-        )
+        print(f"subject={res['subject']!r} sender={res['sender']!r} " f"is_spam={res['is_spam']} score={res['score']} engine={res['engine']}")
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

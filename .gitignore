@@ -12,3 +12,5 @@ dist/
 .DS_Store
 # data outputs (保留版本但可視需要忽略)
 data/output/
+# local env
+.env

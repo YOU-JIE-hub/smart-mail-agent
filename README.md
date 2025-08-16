@@ -1,3 +1,5 @@
+[![tests](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/tests.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 # Smart Mail Agent
 
 最小可演示的郵件自動化專案（離線可驗證）。已整理結構、提供 CLI 與離線測試，適合面試展示。

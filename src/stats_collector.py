@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, os, sqlite3
+
+import argparse
+import os
+import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
 __all__ = ["init_stats_db", "increment_counter", "main"]
 
+
 def _get_db_path() -> Path:
     return Path(os.environ.get("SMA_STATS_DB", "data/stats.db")).resolve()
+
 
 def init_stats_db() -> Path:
     db = _get_db_path()
@@ -25,6 +30,7 @@ def init_stats_db() -> Path:
         conn.commit()
     return db
 
+
 def increment_counter(label: str, elapsed: float) -> int:
     db = init_stats_db()
     with sqlite3.connect(str(db)) as conn:
@@ -35,6 +41,7 @@ def increment_counter(label: str, elapsed: float) -> int:
         )
         conn.commit()
         return int(cur.lastrowid)
+
 
 def _parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Stats collector CLI")
@@ -47,16 +54,24 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument("--count", type=float, default=None, help="(兼容) 數值=elapsed")
     return p
 
-def main(argv: Optional[list[str]] = None) -> int:
+
+def main(argv: list[str] | None = None) -> int:
     import sys
+
     args = _parser().parse_args(sys.argv[1:] if argv is None else argv)
     if args.init:
-        init_stats_db(); print("資料庫初始化完成"); return 0
+        init_stats_db()
+        print("資料庫初始化完成")
+        return 0
     if (args.label is not None and args.elapsed is not None) or args.insert:
         label = args.label if args.label is not None else (args.event or "")
         elapsed = args.elapsed if args.elapsed is not None else (args.count if args.count is not None else 0.0)
-        increment_counter(label, float(elapsed)); print("已新增統計紀錄"); return 0
-    print("OK"); return 0
+        increment_counter(label, float(elapsed))
+        print("已新增統計紀錄")
+        return 0
+    print("OK")
+    return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
