@@ -9,3 +9,7 @@ data/output/       export-ignore
 reports/ export-ignore
 .env export-ignore
 .portfolio_hidden/backup/ export-ignore
+audit_bundle_*/ export-ignore
+src_lowcov/ export-ignore
+.github/ISSUE_TEMPLATE/ export-ignore
+.github/PULL_REQUEST_TEMPLATE.md export-ignore

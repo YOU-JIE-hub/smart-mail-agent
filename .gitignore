@@ -14,3 +14,7 @@ dist/
 data/output/
 # local env
 .env
+reports/
+audit_bundle_*
+src_lowcov/
+data/*.db
