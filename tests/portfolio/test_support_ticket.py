@@ -1,9 +1,16 @@
-import os, sqlite3, pathlib, sys
+import os
+import pathlib
+import sqlite3
+import sys
+
 from src import support_ticket as st
+
 
 def _reset_db():
     p = pathlib.Path(st.DB_PATH)
-    if p.exists(): p.unlink()
+    if p.exists():
+        p.unlink()
+
 
 def test_create_list_show_update(capsys):
     _reset_db()

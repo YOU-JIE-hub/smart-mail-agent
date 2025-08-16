@@ -9,6 +9,7 @@ from smart_mail_agent.ingestion.integrations import send_with_attachment as impl
 # 對外暴露：讓 tests 用 mock.patch("send_with_attachment.send_email_with_attachment") 能打在這裡
 send_email_with_attachment = impl.send_email_with_attachment  # type: ignore[attr-defined]
 
+
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Send email with a single attachment (CLI shim)")
     p.add_argument("--to", required=True)
@@ -16,6 +17,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--body", required=True)
     p.add_argument("--file", required=True, dest="file")
     return p
+
 
 def main(argv: list[str] | None = None) -> int:
     if argv is None:
@@ -31,6 +33,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     print("郵件寄出成功" if ok else "郵件寄出失敗")
     return 0 if ok else 1
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

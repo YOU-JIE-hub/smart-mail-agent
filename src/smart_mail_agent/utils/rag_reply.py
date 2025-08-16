@@ -4,7 +4,20 @@ import os
 # 檔案位置：src/utils/rag_reply.py
 # 模組用途：使用 GPT 模型 + FAQ 知識庫進行回應生成（中文 Retrieval-Augmented Generation）
 from dotenv import load_dotenv
-from openai import OpenAI, OpenAIError
+
+try:
+    from openai import OpenAI, OpenAIError  # type: ignore
+
+    _OPENAI_AVAILABLE = True
+except Exception:  # ImportError or others
+
+    class OpenAIError(Exception): ...
+
+    class OpenAI:  # minimal stub so module can import
+        def __init__(self, *a, **k):
+            raise RuntimeError("openai package not available")
+
+    _OPENAI_AVAILABLE = False
 
 from utils.logger import logger
 

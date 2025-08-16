@@ -17,8 +17,8 @@ def smart_truncate(text: str, max_chars: int = 1000) -> str:
 
 
 def load_model(*_args, **_kwargs):
-    class _Dummy:
-        ...
+    class _Dummy: ...
+
     return _Dummy()
 
 

@@ -1,6 +1,1 @@
-.archive/                     export-ignore
-.portfolio_hidden/            export-ignore
-reports/                      export-ignore
-data/output/                  export-ignore
-audit_bundle_*                export-ignore
-src_lowcov/                   export-ignore
+* text=auto eol=lf

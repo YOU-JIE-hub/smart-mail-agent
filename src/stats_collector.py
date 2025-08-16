@@ -9,32 +9,38 @@ from pathlib import Path
 
 __all__ = ["init_stats_db", "increment_counter", "main"]
 
+
 def _db_path() -> Path:
     return Path(os.environ.get("SMA_STATS_DB", "data/stats.db"))
+
 
 def init_stats_db() -> Path:
     p = _db_path()
     p.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(p) as conn:
-        conn.execute("""
+        conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS stats(
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               label TEXT NOT NULL,
               elapsed REAL DEFAULT 0,
               created_at TEXT NOT NULL
             )
-        """)
+        """
+        )
         conn.commit()
     return p
+
 
 def increment_counter(label: str, elapsed: float = 0.0) -> None:
     p = init_stats_db()
     with sqlite3.connect(p) as conn:
         conn.execute(
             "INSERT INTO stats(label,elapsed,created_at) VALUES (?,?,?)",
-            (label, float(elapsed), datetime.now(timezone.utc).isoformat())
+            (label, float(elapsed), datetime.now(timezone.utc).isoformat()),
         )
         conn.commit()
+
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
@@ -52,6 +58,7 @@ def main(argv=None) -> int:
         return 0
     ap.print_help()
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -28,7 +28,11 @@ def test_generate_quote_pdf(tmp_path):
     if str(SRC_DIR) not in sys.path:
         sys.path.insert(0, str(SRC_DIR))
 
-    mod = importlib.import_module("modules.quotation" if (SRC_DIR / "modules" / "quotation.py").exists() else "src.modules.quotation")
+    mod = importlib.import_module(
+        "modules.quotation"
+        if (SRC_DIR / "modules" / "quotation.py").exists()
+        else "src.modules.quotation"
+    )
     fn = getattr(mod, "generate_pdf_quote", None)
     assert fn, "generate_pdf_quote missing"
 

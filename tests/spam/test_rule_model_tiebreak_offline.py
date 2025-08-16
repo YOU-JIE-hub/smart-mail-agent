@@ -1,6 +1,8 @@
 from __future__ import annotations
-import types
+
 import importlib
+import types
+
 import pytest
 
 # 我們用 "smart_mail_agent.spam.spam_filter_orchestrator" 若存在；否則用 rule_filter 做簡化測
@@ -18,11 +20,14 @@ except Exception:
 if not (spam_orch or rule_filter):
     pytest.skip("No offline spam orchestrator available", allow_module_level=True)
 
+
 def _mk_stub_model(label: str, score: float = 0.9):
     class Stub:
         def predict(self, text: str):
             return {"label": label, "score": score}
+
     return Stub()
+
 
 def _mk_stub_rules(spam: bool):
     mod = types.SimpleNamespace()
@@ -30,12 +35,16 @@ def _mk_stub_rules(spam: bool):
     mod.link_ratio = lambda s: 0.9 if spam else 0.0
     return mod
 
-@pytest.mark.parametrize("rule_says_spam, model_says_spam", [
-    (True, True),
-    (True, False),
-    (False, True),
-    (False, False),
-])
+
+@pytest.mark.parametrize(
+    "rule_says_spam, model_says_spam",
+    [
+        (True, True),
+        (True, False),
+        (False, True),
+        (False, False),
+    ],
+)
 def test_rule_model_tiebreak(monkeypatch, rule_says_spam, model_says_spam):
     text = "任意內容"
     if spam_orch and hasattr(spam_orch, "decide"):
