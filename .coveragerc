@@ -1,0 +1,16 @@
+[run]
+branch = True
+source = 
+    src
+
+omit =
+    # out-of-scope / vendored / legacy
+    src/torch/*
+    src/transformers/*
+    src_lowcov/*
+    tests/*
+    */__main__.py
+
+[report]
+show_missing = True
+skip_covered = True
