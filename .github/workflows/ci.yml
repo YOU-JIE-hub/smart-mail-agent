@@ -1,0 +1,46 @@
+name: ci
+on:
+  push:
+  pull_request:
+
+jobs:
+  ruff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - run: python -m pip install --upgrade pip ruff
+      - run: ruff check .
+
+  tests-offline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Install deps (best-effort)
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          pip install pytest pytest-cov pydantic python-dotenv || true
+      - name: Run offline tests
+        env:
+          OFFLINE: '1'
+          PYTHONPATH: .:src
+        run: pytest -q --maxfail=1
+      - name: Coverage XML (optional)
+        env:
+          OFFLINE: '1'
+          PYTHONPATH: .:src
+        run: pytest -q --cov=src --cov-report=xml:reports/coverage-offline.xml || true
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-offline-xml
+          path: reports/coverage-offline.xml
+          if-no-files-found: ignore
