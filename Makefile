@@ -22,3 +22,10 @@ demo-send: ## 直接寄一封測試信（不透過 pytest）
 tests-spam-and-flows: ## 僅跑本批 SPAM/分類/動作/錯誤情境測試
 	OFFLINE=1 PYTHONPATH=.:src pytest -q -k "spam or inference_classifier_errors or online_send_paths" -rs
 	OFFLINE=0 PYTHONPATH=".:src" python scripts/online_check.py
+
+
+tests-spam-orchestrator: ## 只跑離線 Spam orchestrator 行為/錯誤測
+	OFFLINE=1 PYTHONPATH=".:src" pytest -q -k "offline_orchestrator" -rs
+
+tests-spam-and-flows: ## 跑本輪新增的 spam & flow 測試集合
+	OFFLINE=1 PYTHONPATH=".:src" pytest -q -k "spam or inference_classifier_errors or online_send_paths" -rs

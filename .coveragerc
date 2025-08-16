@@ -32,3 +32,8 @@ include =
     src/send_with_attachment.py
     src/stats_collector.py
     src/support_ticket.py
+
+include =
+    src/classifier.py
+    src/inference_classifier.py
+    src/smart_mail_agent/spam/orchestrator_offline.py
