@@ -32,7 +32,20 @@ def pytest_ignore_collect(path, config):
 
 
 def pytest_collection_modifyitems(config, items):
+    # Skip @online unless --online is passed
+    if config.getoption("--online"):
+        return
     skip_online = pytest.mark.skip(reason="online tests disabled")
     for item in items:
         if "online" in item.keywords:
             item.add_marker(skip_online)
+
+import pytest
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--online",
+        action="store_true",
+        default=False,
+        help="run tests marked as @pytest.mark.online",
+    )
