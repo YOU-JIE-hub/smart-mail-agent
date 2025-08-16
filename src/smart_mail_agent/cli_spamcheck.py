@@ -66,7 +66,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.json:
         print(json.dumps(res, ensure_ascii=False))
     else:
-        print(f"subject={res['subject']!r} sender={res['sender']!r} " f"is_spam={res['is_spam']} score={res['score']} engine={res['engine']}")
+        print(
+            f"subject={res['subject']!r} sender={res['sender']!r} "
+            f"is_spam={res['is_spam']} score={res['score']} engine={res['engine']}"
+        )
     return 0
 
 

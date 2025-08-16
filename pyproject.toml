@@ -1,52 +1,25 @@
-[build-system]
-requires = ["setuptools>=69", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "smart-mail-agent"
-version = "0.4.6"
-description = "AI + RPA smart mail processing with CLI entrypoints and packaging"
-readme = "README.md"
-requires-python = ">=3.10"
-license = "MIT"
-authors = [{name="YOU-JIE"}]
-dependencies = [  "pydantic>=1.10,<3"
-]
-
-[project.urls]
-Homepage = "https://github.com/YOU-JIE-hub/smart-mail-agent"
-
-[tool.setuptools]
-package-dir = {"" = "src"}
-include-package-data = true
-
-[tool.setuptools.packages.find]
-where = ["src"]
-include = ["smart_mail_agent*"]
-
 [tool.black]
-line-length = 200
+line-length = 100
 target-version = ["py310"]
+include = "\\.pyi?$"
+extend-exclude = "build|dist|.venv"
+
+[tool.isort]
+profile = "black"
+line_length = 100
+src_paths = ["src", "tests"]
 
 [tool.ruff]
-line-length = 200
 target-version = "py310"
+line-length = 100
+extend-select = ["E", "F", "I", "UP"]
+ignore = ["E501"]
+src = ["src", "tests"]
 
-[tool.ruff.lint]
-select = ["E","F","I","B","UP","ISC","C90"]
-ignore = ["E402","E501","C901","B007","UP038","F401","F403","ISC001","B034"]
-[project.optional-dependencies]
-dev = [
-  "pytest>=7",
-  "pytest-cov>=4",
-  "pytest-timeout>=2.3",
-  "ruff>=0.5",
-  "pre-commit>=3.5",
-  "mkdocs>=1.6",
-  "mkdocs-material>=9.5"
-]
+[tool.coverage.run]
+branch = true
+source = ["src"]
 
-[project.scripts]
-sma = "smart_mail_agent.__main__:main"
-sma-run = "src.run_action_handler:main"
-sma-spamcheck = "smart_mail_agent.cli_spamcheck:main"
+[tool.coverage.report]
+show_missing = true
+skip_covered = true

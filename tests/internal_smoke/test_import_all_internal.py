@@ -1,7 +1,9 @@
 from __future__ import annotations
+
 import importlib
 import pkgutil
 from pathlib import Path
+
 import pytest
 
 PKG = "smart_mail_agent"
@@ -23,6 +25,7 @@ for finder in pkgutil.walk_packages([str(BASE)], prefix=f"{PKG}."):
     if any(x in name for x in SKIP_CONTAINS):
         continue
     mods.append(name)
+
 
 @pytest.mark.parametrize("mod", mods)
 def test_import_module(mod: str) -> None:

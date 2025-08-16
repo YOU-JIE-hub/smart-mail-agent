@@ -1,6 +1,11 @@
-import json, subprocess, tempfile, sys, pathlib
+import json
+import pathlib
+import subprocess
+import sys
+import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
+
 
 def _run_cli(payload: dict, *flags: str):
     with tempfile.TemporaryDirectory() as td:
@@ -10,13 +15,16 @@ def _run_cli(payload: dict, *flags: str):
         cmd = [
             sys.executable,
             str(ROOT / "src" / "run_action_handler.py"),
-            "--input", str(inp),
-            "--output", str(out),
+            "--input",
+            str(inp),
+            "--output",
+            str(out),
             *flags,
         ]
         r = subprocess.run(cmd, capture_output=True, text=True)
         assert r.returncode == 0, (r.stdout, r.stderr)
         return json.loads(out.read_text(encoding="utf-8"))
+
 
 def test_send_quote_simulate_failure_and_require_review():
     payload = {
@@ -36,6 +44,7 @@ def test_send_quote_simulate_failure_and_require_review():
     # 有些路徑不填 whitelisted；允許 None/True，但需有 cc 安全副本
     assert m.get("whitelisted") in (True, None)
     assert "support@company.example" in m.get("cc", [])
+
 
 def test_complaint_p1_path():
     payload = {"predicted_label": "complaint", "subject": "系統宕機", "body": "嚴重 無法使用"}

@@ -1,7 +1,12 @@
-import importlib, sys, pytest
+import importlib
+import sys
 from unittest.mock import patch
+
+import pytest
+
 sys.path.insert(0, "src")
 swa = importlib.import_module("send_with_attachment")
+
 
 def test_function_is_patchable_and_callable():
     if not hasattr(swa, "send_email_with_attachment"):

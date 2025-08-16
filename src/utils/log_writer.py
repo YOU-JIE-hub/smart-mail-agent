@@ -11,10 +11,13 @@ except Exception:  # pragma: no cover
             write_log as _write_log,  # type: ignore[attr-defined]
         )
     except Exception:  # 最後保底，避免 import error 讓測試無法收集
+
         def _write_log(*args, **kwargs):  # type: ignore
             return 0
 
+
 __all__ = ["write_log"]
+
 
 def write_log(*args, **kwargs):  # proxy
     return _write_log(*args, **kwargs)

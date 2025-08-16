@@ -1,2 +1,6 @@
-# AUTO-GENERATED SHIM for backward-compat imports
-from smart_mail_agent.features.spam.pipeline import *  # noqa: F401,F403
+#!/usr/bin/env python3
+from __future__ import annotations
+
+from smart_mail_agent.spam.pipeline import analyze
+
+__all__ = ["analyze"]
