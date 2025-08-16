@@ -1,6 +1,22 @@
 .portfolio_hidden/ export-ignore
 .archive/          export-ignore
+<<<<<<< HEAD
 .venv/             export-ignore
 .pytest_cache/     export-ignore
 .ruff_cache/       export-ignore
 .github/workflows-archive/ export-ignore
+=======
+.pytest_cache/     export-ignore
+__pycache__/       export-ignore
+.venv/             export-ignore
+data/output/       export-ignore
+.backup/ export-ignore
+.archive/ export-ignore
+reports/ export-ignore
+.env export-ignore
+.portfolio_hidden/backup/ export-ignore
+audit_bundle_*/ export-ignore
+src_lowcov/ export-ignore
+.github/ISSUE_TEMPLATE/ export-ignore
+.github/PULL_REQUEST_TEMPLATE.md export-ignore
+>>>>>>> origin/main
