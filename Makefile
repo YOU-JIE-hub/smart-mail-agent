@@ -12,7 +12,7 @@ test-offline: ## 跑整包離線測試（不會連網）；CI 預設跑這個
 	OFFLINE=1 PYTHONPATH=".:src" pytest -q
 
 cov-offline: ## 產 XML 覆蓋率（離線）
-	OFFLINE=1 PYTHONPATH=".:src" pytest -q --cov=src --cov-report=term-missing:skip-covered --cov-report=xml:reports/coverage-offline.xml
+	OFFLINE=1 PYTHONPATH=".:src" pytest -q --cov=src --cov-config=.coveragerc --cov-report=term-missing:skip-covered --cov-report=xml:reports/coverage-offline.xml --cov-fail-under=60
 
 test-online: ## 線上寄信冒煙（需先 export SMTP_* / REPLY_TO；OFFLINE=0）
 	OFFLINE=0 PYTHONPATH=".:src" pytest -q -rs --online tests/test_mailer_online.py -k test_smtp_live_send_ok
