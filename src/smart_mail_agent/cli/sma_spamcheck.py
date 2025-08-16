@@ -179,7 +179,7 @@ def _normalize(res: Any) -> tuple[bool, float, str]:
     if isinstance(res, bool):
         return res, 1.0 if res else 0.0, ""
     # (bool, score[, reason]) 或 (score, reason) 等
-    if isinstance(res, (tuple, list)):
+    if isinstance(res, tuple | list):
         if len(res) >= 2:
             a, b = res[0], res[1]
             c = res[2] if len(res) >= 3 else ""
@@ -219,7 +219,7 @@ def _pick_bool(d: dict[str, Any], keys, default=None):
             v = d[k]
             if isinstance(v, bool):
                 return v
-            if isinstance(v, (int, float)):
+            if isinstance(v, int | float):
                 return bool(v)
             if isinstance(v, str):
                 return v.strip().lower() in ("1", "true", "yes", "y", "spam", "junk", "垃圾")

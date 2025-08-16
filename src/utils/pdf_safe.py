@@ -5,10 +5,14 @@ from __future__ import annotations
 
 try:
     # 新位置（實作完整，優先使用）
+    from smart_mail_agent.utils.pdf_safe import (
+        _escape_pdf_text as _escape_pdf_text,
+    )
+    from smart_mail_agent.utils.pdf_safe import (
+        _write_minimal_pdf as _write_minimal_pdf,
+    )
     from smart_mail_agent.utils.pdf_safe import (  # type: ignore
         write_pdf_or_txt as _write_pdf_or_txt,
-        _escape_pdf_text as _escape_pdf_text,
-        _write_minimal_pdf as _write_minimal_pdf,
     )
 except Exception:
     # 最小後備：離線可用、非正式 PDF，僅供測試路徑 fallback，用不到真正字型/版面。
@@ -24,7 +28,7 @@ except Exception:
 
     def _write_minimal_pdf(lines: list[str], out_path: Path) -> Path:
         out_path = Path(out_path)
-        text = "\\n".join(_escape_pdf_text(l) for l in lines)
+        text = "\\n".join(_escape_pdf_text(ln) for ln in lines)
         # 超簡 PDF（僅檢測 header/長度）
         content = f"""%PDF-1.4
 1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj

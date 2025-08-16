@@ -7,7 +7,9 @@ try:
 except Exception:  # pragma: no cover
     try:
         # 退到新位置
-        from smart_mail_agent.utils.log_writer import write_log as _write_log  # type: ignore[attr-defined]
+        from smart_mail_agent.utils.log_writer import (
+            write_log as _write_log,  # type: ignore[attr-defined]
+        )
     except Exception:  # 最後保底，避免 import error 讓測試無法收集
         def _write_log(*args, **kwargs):  # type: ignore
             return 0
