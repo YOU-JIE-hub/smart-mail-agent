@@ -17,7 +17,7 @@ def choose_package(subject: str, content: str) -> dict[str, object]:
     return {"package": "企業", "needs_manual": False}
 
 
-def generate_pdf_quote(*args, **kwargs) -> Path:
+def generate_pdf_quote(*args, **kwargs) -> str:
     """
     A) generate_pdf_quote(package="基礎", client_name="client@example.com", outdir="data/output")
     B) generate_pdf_quote(customer: str, items: Sequence[tuple[str,int,float]]|None=None,
@@ -30,7 +30,7 @@ def generate_pdf_quote(*args, **kwargs) -> Path:
         package = kwargs["package"]
         client = kwargs["client_name"]
         lines = [f"Package: {package}", f"Client: {client}", "Thank you."]
-        return write_pdf_or_txt(lines, outdir, f"quote-{client}")
+        return str(write_pdf_or_txt(lines, outdir, f"quote-{client}")
 
     # 舊 API（保留向後相容）
     if args and isinstance(args[0], str):
@@ -47,4 +47,4 @@ def generate_pdf_quote(*args, **kwargs) -> Path:
     lines.append("")
     lines.append(f"Total: {total:.2f}")
     # 為了避開 signature 差異，仍用 out_dir/basename 的鍵
-    return write_pdf_or_txt(lines, out_dir=outdir, basename=f"quote-{customer}")
+    return str(write_pdf_or_txt(lines, out_dir=outdir, basename=f"quote-{customer}")
