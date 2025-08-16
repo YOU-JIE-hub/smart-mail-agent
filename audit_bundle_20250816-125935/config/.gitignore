@@ -1,0 +1,16 @@
+# venv / caches
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+# build artifacts
+build/
+dist/
+*.egg-info/
+# editor
+*.swp
+.DS_Store
+# data outputs (保留版本但可視需要忽略)
+data/output/
+# local env
+.env
