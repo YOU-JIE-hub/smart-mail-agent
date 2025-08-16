@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 try:
     from utils.pdf_safe import write_pdf_or_txt  # re-export for tests
 except Exception:
