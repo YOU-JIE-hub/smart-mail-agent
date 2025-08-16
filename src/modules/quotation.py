@@ -30,7 +30,7 @@ def generate_pdf_quote(*args, **kwargs) -> Path:
         package = kwargs["package"]
         client = kwargs["client_name"]
         lines = [f"Package: {package}", f"Client: {client}", "Thank you."]
-        return write_pdf_or_txt(lines, out_dir=outdir, basename=f"quote-{client}")
+        return write_pdf_or_txt(lines, outdir, basename=f"quote-{client}")
 
     # 舊 API（保留向後相容）
     if args and isinstance(args[0], str):
