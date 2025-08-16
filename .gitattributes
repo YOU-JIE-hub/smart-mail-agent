@@ -5,3 +5,6 @@ __pycache__/       export-ignore
 .venv/             export-ignore
 data/output/       export-ignore
 .backup/ export-ignore
+.archive/ export-ignore
+reports/ export-ignore
+.env export-ignore
