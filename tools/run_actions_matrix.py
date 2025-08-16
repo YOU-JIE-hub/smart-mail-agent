@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import json, time
+
+import json
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,12 +22,7 @@ payload = {
                 "content": "price/報價 詢問",
                 "meta": {"offline": True},
             },
-            "result": {
-                "ok": True,
-                "label": "inquiry",
-                "confidence": 0.9,
-                "notes": "portfolio-clean shim"
-            },
+            "result": {"ok": True, "label": "inquiry", "confidence": 0.9, "notes": "portfolio-clean shim"},
         }
     ],
 }
