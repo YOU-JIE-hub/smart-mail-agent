@@ -1,8 +1,1 @@
-# Auto-generated compat proxy: src/spam/__init__.py
-from importlib import import_module as _imp
-
-_mod = _imp("smart_mail_agent.spam")
-# re-export public names
-for _k in dir(_mod):
-    if not _k.startswith("_"):
-        globals()[_k] = getattr(_mod, _k)
+from smart_mail_agent.features.spam import *  # legacy shim
