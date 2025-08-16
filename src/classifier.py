@@ -19,14 +19,14 @@ class IntentClassifier:
 
     def _normalize_ret(self, ret: Any) -> tuple[str, float]:
         # 常見：list[dict] / (label, score)
-        if isinstance(ret, (list, tuple)) and ret:
+        if isinstance(ret, list | tuple) and ret:
             head = ret[0]
             tail = ret[1] if len(ret) > 1 else None
             if isinstance(head, dict):
                 lab = head.get("predicted_label") or head.get("label") or head.get("class") or "其他"
                 conf = head.get(
                     "confidence",
-                    head.get("score", tail if isinstance(tail, (int, float)) else 0.0),
+                    head.get("score", tail if isinstance(tail, int | float) else 0.0),
                 )
                 try:
                     conf = float(conf)
