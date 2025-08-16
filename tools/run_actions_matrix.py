@@ -13,8 +13,8 @@ payload = {
     "engine": "shim-minimal",
     "cases": [
         {
-            "id": "shim-demo-1",
-            "action": "classify_mail",
+            "id": "shim-sales-1",
+            "action": "sales",
             "request": {
                 "subject": "Hello from shim",
                 "content": "price/報價 詢問",
@@ -24,7 +24,7 @@ payload = {
                 "ok": True,
                 "label": "inquiry",
                 "confidence": 0.9,
-                "notes": "portfolio-clean shim",
+                "notes": "portfolio-clean shim"
             },
         }
     ],
