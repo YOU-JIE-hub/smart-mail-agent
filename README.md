@@ -1,7 +1,6 @@
 <!-- BADGES START -->
-[![Lint](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/lint.yml/badge.svg)](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/lint.yml) [![Build](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/build.yml/badge.svg)](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/build.yml) [![Tests](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/tests.yml) [![Online](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/tests-online.yml/badge.svg)](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/tests-online.yml) ![coverage](assets/badges/coverage.svg) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Build](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/build.yml/badge.svg)](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/build.yml) [![Tests](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/tests.yml) ![coverage](assets/badges/coverage.svg) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 <!-- BADGES END -->
-
 [![tests](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/tests.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 # Smart Mail Agent
