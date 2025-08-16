@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, os, sqlite3
+
+import argparse
+import os
+import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 

@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, json, sys, pathlib
+
+import argparse
+import json
+import pathlib
+
 
 def _decide_action(label: str) -> str:
     m = {

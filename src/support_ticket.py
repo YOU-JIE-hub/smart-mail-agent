@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import sqlite3, os
-from datetime import datetime, timezone
+
+import os
+import sqlite3
+from collections.abc import Iterable
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional, Iterable
 
 TABLE = "tickets"
 DB_PATH = Path(os.environ.get("SMA_TICKET_DB", "data/tickets.db"))
@@ -14,8 +16,8 @@ class Ticket:
     sender: str = ""
     subject: str = ""
     body: str = ""
-    category: Optional[str] = None
-    confidence: Optional[float] = None
+    category: str | None = None
+    confidence: float | None = None
     status: str = "open"
     created_at: str = datetime.now(timezone.utc).isoformat(timespec="seconds")
 
@@ -66,7 +68,7 @@ def list_tickets(limit: int = 10) -> Iterable[tuple]:
         print(r)
     return rows
 
-def get_ticket(ticket_id: int) -> Optional[tuple]:
+def get_ticket(ticket_id: int) -> tuple | None:
     init_db()
     with _conn() as c:
         cur = c.execute(f"SELECT id,sender,subject,body,category,confidence,status,created_at FROM {TABLE} WHERE id=?", (ticket_id,))
@@ -100,23 +102,6 @@ if __name__ == "__main__":
         print("用法：--list 或 --create <SUBJECT> <BODY>")
 
 def show_ticket(ticket_id: int) -> None:
-    """列印單一工單詳情（供測試用，與 list_tickets 輸出風格一致）"""
-    row = get_ticket(ticket_id)
-    if not row:
-        print("找不到工單")
-        return
-    (tid, sender, subject, body, category, confidence, status, created_at) = row
-    print("工單詳情：")
-    print(f"id={tid}")
-    print(f"sender={sender}")
-    print(f"subject={subject}")
-    print(f"body={body}")
-    print(f"category={category}")
-    print(f"confidence={confidence}")
-    print(f"status={status}")
-    print(f"created_at={created_at}")
-
-def show_ticket(ticket_id: int) -> None:
     """列印單一工單詳情，欄位名稱以固定寬度對齊，符合測試期待"""
     row = get_ticket(ticket_id)
     if not row:
@@ -139,7 +124,6 @@ def update_ticket(ticket_id: int, **fields) -> int:
     """更新工單欄位（最常用：status、summary）。
     只接受白名單欄位，傳入其他鍵會被忽略。回傳受影響列數。
     """
-    import sqlite3 as _sqlite3
     init_db()  # 確保資料庫存在
     allowed = {"status", "summary", "category", "confidence", "subject", "body"}
     updates = {k: v for k, v in fields.items() if k in allowed}
