@@ -1,26 +1,14 @@
-__pycache__/
-*.py[cod]
-*.egg-info/
-.build/
-dist/
-build/
-.mypy_cache/
-.pytest_cache/
-*.log
+# venv / caches
 .venv/
-env/
-venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+# build artifacts
+build/
+dist/
+*.egg-info/
+# editor
+*.swp
 .DS_Store
-Thumbs.db
-.vscode/
-.idea/
-logs/*.jsonl
-data/output/*
-!data/output/.gitkeep
-assets/fonts/*.ttf
-.coverage
-htmlcov/
-backups/
-# Local-only
-.env
-.backup/
+# data outputs (保留版本但可視需要忽略)
+data/output/
