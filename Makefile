@@ -18,4 +18,7 @@ test-online: ## 線上寄信冒煙（需先 export SMTP_* / REPLY_TO；OFFLINE=0
 	OFFLINE=0 PYTHONPATH=".:src" pytest -q -rs --online tests/test_mailer_online.py -k test_smtp_live_send_ok
 
 demo-send: ## 直接寄一封測試信（不透過 pytest）
+
+tests-spam-and-flows: ## 僅跑本批 SPAM/分類/動作/錯誤情境測試
+	OFFLINE=1 PYTHONPATH=.:src pytest -q -k "spam or inference_classifier_errors or online_send_paths" -rs
 	OFFLINE=0 PYTHONPATH=".:src" python scripts/online_check.py
