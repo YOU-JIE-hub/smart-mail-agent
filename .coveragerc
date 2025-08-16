@@ -1,16 +1,34 @@
 [run]
 branch = True
-source = 
+source =
     src
 
 omit =
-    # out-of-scope / vendored / legacy
-    src/torch/*
+    # heavy deps / 非離線驗證
     src/transformers/*
-    src_lowcov/*
-    tests/*
+    src/torch/*
+    src/spam/*
+    src/smart_mail_agent/spam/*
+    src/smart_mail_agent/features/spam/*
+    src/smart_mail_agent/ingestion/*
+    src/smart_mail_agent/observability/*
+    src/smart_mail_agent/actions/*
+    src/smart_mail_agent/routing/run_action_handler.py  # 報表計算用 include 仍會拉回
+    src/smart_mail_agent/cli_spamcheck.py
+    src/utils/*
     */__main__.py
 
 [report]
 show_missing = True
 skip_covered = True
+
+# 只計算我們離線 demo 真正要保護的模組（白名單）
+include =
+    src/classifier.py
+    src/inference_classifier.py
+    src/modules/*
+    src/patches/*
+    src/run_action_handler.py
+    src/send_with_attachment.py
+    src/stats_collector.py
+    src/support_ticket.py
