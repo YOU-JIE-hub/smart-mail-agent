@@ -8,4 +8,3 @@ data/output/       export-ignore
 .archive/ export-ignore
 reports/ export-ignore
 .env export-ignore
-.portfolio_hidden/backup/ export-ignore
