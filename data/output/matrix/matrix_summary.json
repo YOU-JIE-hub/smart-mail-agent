@@ -1,0 +1,23 @@
+{
+  "generated_at": 1755304599,
+  "engine": "shim-minimal",
+  "cases": [
+    {
+      "id": "shim-sales-1",
+      "action": "sales",
+      "request": {
+        "subject": "Hello from shim",
+        "content": "price/報價 詢問",
+        "meta": {
+          "offline": true
+        }
+      },
+      "result": {
+        "ok": true,
+        "label": "inquiry",
+        "confidence": 0.9,
+        "notes": "portfolio-clean shim"
+      }
+    }
+  ]
+}
