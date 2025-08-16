@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import os, sys, smtplib, ssl, time
+
+import os
+import smtplib
+import ssl
+import sys
+import time
 from email.message import EmailMessage
+
 
 def main() -> int:
     user = os.getenv("SMTP_USER") or ""
