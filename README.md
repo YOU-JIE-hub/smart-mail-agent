@@ -30,3 +30,29 @@
 ## PDF 中文字型
 - 將 `NotoSansTC-Regular.ttf` 放在 `assets/fonts/`  
 - 或在 `.env` 設：`FONT_TTC_PATH=assets/fonts/NotoSansTC-Regular.ttf`
+
+## Online email demo
+
+1) 申請 SMTP 帳密（Gmail 請開啟 2FA 並建立 App Password）。  
+2) 匯入環境變數（或複製 `.env.example` 自行填入再 `export`）：
+```bash
+export OFFLINE=0
+export SMTP_USER="you@gmail.com"
+export SMTP_PASS="your-app-password"
+export SMTP_HOST="smtp.gmail.com"
+export SMTP_PORT="465"
+export REPLY_TO="you@gmail.com"
+跑線上冒煙（會實際寄信）：
+
+bash
+Copy
+Edit
+make test-online
+# 或：make demo-send
+Offline quick check
+bash
+Copy
+Edit
+make lint
+make test
+make cov-offline
