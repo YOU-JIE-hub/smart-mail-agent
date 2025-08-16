@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
-import json
 
 
 def extract_fields(payload: dict[str, Any]) -> tuple[str, str, str]:
@@ -22,7 +22,7 @@ def write_classification_result(arg1: Any, arg2: Any) -> Path:
     回傳實際寫出的檔案 Path。
     """
     # 判斷哪個是 path 哪個是 data
-    if isinstance(arg1, (str, Path)) and not isinstance(arg2, (str, Path)):
+    if isinstance(arg1, str | Path) and not isinstance(arg2, str | Path):
         path, data = arg1, arg2
     else:
         data, path = arg1, arg2
