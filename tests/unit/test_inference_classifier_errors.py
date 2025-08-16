@@ -1,9 +1,12 @@
 from __future__ import annotations
-import types
-import pytest
+
 import importlib
+import types
+
+import pytest
 
 ic = importlib.import_module("inference_classifier")
+
 
 def _new_ic():
     # 兼容 class 名稱或工廠函式
@@ -12,6 +15,7 @@ def _new_ic():
     if hasattr(ic, "new_classifier"):
         return ic.new_classifier()
     pytest.skip("No InferenceClassifier available")
+
 
 def _call(clf, text: str):
     for name in ("predict", "__call__", "infer"):
@@ -23,11 +27,14 @@ def _call(clf, text: str):
                 continue
     pytest.skip("Classifier has no callable interface")
 
+
 def test_pipe_raises_returns_safe_tuple(monkeypatch):
     clf = _new_ic()
+
     # 用 generator_throw 模擬例外
     def boom(_):
         raise RuntimeError("boom")
+
     # 嘗試常見內部屬性名稱
     for cand in ("_pipe", "pipe", "pipeline"):
         if hasattr(clf, cand):
@@ -35,6 +42,7 @@ def test_pipe_raises_returns_safe_tuple(monkeypatch):
             break
     res = _call(clf, "hi")
     assert isinstance(res, (tuple, list)) and len(res) >= 1
+
 
 def test_pipe_odd_shapes(monkeypatch):
     clf = _new_ic()

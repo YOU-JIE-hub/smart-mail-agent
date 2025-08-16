@@ -1,0 +1,359 @@
+=== PYTHON & PYTEST ===
+3.10.12 (main, May 27 2025, 17:12:29) [GCC 11.4.0]
+pytest 8.4.1
+
+=== TREE (depth<=3) ===
+./src/__init__.py
+./src/action_handler.py
+./src/classifier.py
+./src/email_processor.py
+./src/inference_classifier.py
+./src/init_db.py
+./src/log_writer.py
+./src/modules/__init__.py
+./src/modules/apply_diff.py
+./src/modules/leads_logger.py
+./src/modules/quotation.py
+./src/modules/quote_logger.py
+./src/modules/sales_notifier.py
+./src/patches/handle_router_patch.py
+./src/patches/handle_safe_patch.py
+./src/policy_engine.py
+./src/requirements.txt
+./src/run_action_handler.py
+./src/send_with_attachment.py
+./src/sma_types.py
+./src/smart_mail_agent/__init__.py
+./src/smart_mail_agent/__main__.py
+./src/smart_mail_agent/__version__.py
+./src/smart_mail_agent/actions/__init__.py
+./src/smart_mail_agent/actions/complaint.py
+./src/smart_mail_agent/actions/sales_inquiry.py
+./src/smart_mail_agent/cli/sma.py
+./src/smart_mail_agent/cli/sma_run.py
+./src/smart_mail_agent/cli/sma_spamcheck.py
+./src/smart_mail_agent/cli_spamcheck.py
+./src/smart_mail_agent/core/classifier.py
+./src/smart_mail_agent/core/policy_engine.py
+./src/smart_mail_agent/core/sma_types.py
+./src/smart_mail_agent/features/__init__.py
+./src/smart_mail_agent/features/apply_diff.py
+./src/smart_mail_agent/features/leads_logger.py
+./src/smart_mail_agent/features/quote_logger.py
+./src/smart_mail_agent/features/sales_notifier.py
+./src/smart_mail_agent/ingestion/email_processor.py
+./src/smart_mail_agent/ingestion/init_db.py
+./src/smart_mail_agent/observability/log_writer.py
+./src/smart_mail_agent/observability/sitecustomize.py
+./src/smart_mail_agent/observability/stats_collector.py
+./src/smart_mail_agent/observability/tracing.py
+./src/smart_mail_agent/patches/__init__.py
+./src/smart_mail_agent/patches/handle_router_patch.py
+./src/smart_mail_agent/patches/handle_safe_patch.py
+./src/smart_mail_agent/policy_engine.py
+./src/smart_mail_agent/routing/__init__.py
+./src/smart_mail_agent/routing/action_handler.py
+./src/smart_mail_agent/routing/run_action_handler.py
+./src/smart_mail_agent/sma_types.py
+./src/smart_mail_agent/spam/.keep
+./src/smart_mail_agent/spam/__init__.py
+./src/smart_mail_agent/spam/feature_extractor.py
+./src/smart_mail_agent/spam/ml_spam_classifier.py
+./src/smart_mail_agent/spam/orchestrator_offline.py
+./src/smart_mail_agent/spam/pipeline.py
+./src/smart_mail_agent/spam/rule_filter.py
+./src/smart_mail_agent/spam/rules.py
+./src/smart_mail_agent/spam/spam_filter_orchestrator.py
+./src/smart_mail_agent/spam/spam_llm_filter.py
+./src/smart_mail_agent/trainers/train_bert_spam_classifier.py
+./src/smart_mail_agent/trainers/train_classifier.py
+./src/smart_mail_agent/utils/__init__.py
+./src/smart_mail_agent/utils/config.py
+./src/smart_mail_agent/utils/db_tools.py
+./src/smart_mail_agent/utils/env.py
+./src/smart_mail_agent/utils/errors.py
+./src/smart_mail_agent/utils/font_check.py
+./src/smart_mail_agent/utils/fonts.py
+./src/smart_mail_agent/utils/imap_folder_detector.py
+./src/smart_mail_agent/utils/imap_login.py
+./src/smart_mail_agent/utils/jsonlog.py
+./src/smart_mail_agent/utils/log_writer.py
+./src/smart_mail_agent/utils/logger.py
+./src/smart_mail_agent/utils/logging_setup.py
+./src/smart_mail_agent/utils/mailer.py
+./src/smart_mail_agent/utils/pdf_generator.py
+./src/smart_mail_agent/utils/pdf_safe.py
+./src/smart_mail_agent/utils/priority_evaluator.py
+./src/smart_mail_agent/utils/rag_reply.py
+./src/smart_mail_agent/utils/templater.py
+./src/smart_mail_agent/utils/tracing.py
+./src/smart_mail_agent/utils/validators.py
+./src/spam/__init__.py
+./src/spam/feature_extractor.py
+./src/spam/ml_spam_classifier.py
+./src/spam/pipeline.py
+./src/spam/rule_filter.py
+./src/spam/rules.py
+./src/spam/spam_filter_orchestrator.py
+./src/stats_collector.py
+./src/support_ticket.py
+./src/torch/__init__.py
+./src/torch/distributed/__init__.py
+./src/transformers/__init__.py
+./src/utils/__init__.py
+./src/utils/jsonlog.py
+./src/utils/log_writer.py
+./src/utils/logger.py
+./src/utils/mailer.py
+./src/utils/pdf_safe.py
+
+=== HEAD of spam modules ===
+--- src/smart_mail_agent/spam/rules.py (head -n 80) ---
+#!/usr/bin/env python3
+# 檔案位置: src/smart_mail_agent/spam/rules.py
+# 模組用途: 提供離線可測的垃圾信規則函式（純標準庫），供 orchestrator/pipeline 使用
+
+from __future__ import annotations
+
+import html
+import re
+from typing import Iterable, Mapping, MutableMapping, Sequence, Tuple, Dict, Any
+
+__all__ = ["contains_keywords", "link_ratio", "label_email", "_normalize_text"]
+
+
+def _normalize_text(s: str) -> str:
+    """
+    將輸入文字做基本正規化：
+    1) HTML unescape
+    2) 去除多餘空白
+    3) 全形空白統一為半形空白
+    """
+    if not isinstance(s, str):
+        return ""
+    s = html.unescape(s)
+    s = s.replace("\u3000", " ")
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+
+def contains_keywords(
+    text: str,
+    keywords: Sequence[str],
+    *,
+    case_insensitive: bool = True,
+    match_word_boundary: bool = False,
+) -> bool:
+    """
+    檢測文字是否包含任一關鍵字。
+    """
+    s = _normalize_text(text)
+    if not s or not keywords:
+        return False
+
+    flags = re.IGNORECASE if case_insensitive else 0
+    for kw in keywords:
+        if not kw:
+            continue
+        if match_word_boundary:
+            # 多語字邊界：用非 \w 當分隔
+            pattern = rf"(?:(?<=^)|(?<=[^\w])){re.escape(kw)}(?:(?=$)|(?=[^\w]))"
+        else:
+            pattern = re.escape(kw)
+        if re.search(pattern, s, flags=flags):
+            return True
+    return False
+
+
+def link_ratio(html_text: str) -> float:
+    """
+    計算 HTML 中錨文字佔可見文字長度的比例，範圍 [0,1]。
+    """
+    if not isinstance(html_text, str) or not html_text.strip():
+        return 0.0
+
+    s = html_text
+    link_inners = re.findall(
+        r"<\s*a\b[^>]*>(.*?)<\s*/\s*a\s*>", s, flags=re.IGNORECASE | re.DOTALL
+    )
+    link_text = " ".join(
+        _normalize_text(re.sub(r"<[^>]+>", " ", inner)) for inner in link_inners
+    )
+    link_text_len = len(link_text.strip())
+
+    visible_text = re.sub(r"<[^>]+>", " ", s)
+    visible_text = _normalize_text(visible_text)
+    visible_text_len = max(len(visible_text), 1)
+
+    ratio = link_text_len / float(visible_text_len)
+    if ratio < 0.0:
+        return 0.0
+    if ratio > 1.0:
+--- src/smart_mail_agent/spam/orchestrator_offline.py (head -n 80) ---
+#!/usr/bin/env python3
+# 檔案位置: src/smart_mail_agent/spam/orchestrator_offline.py
+# 模組用途: 垃圾信離線 Orchestrator（規則/模型的依賴注入），輸出動作決策 drop/review/route
+
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+from dataclasses import dataclass
+from typing import Callable, Dict, List, Optional, Sequence, Tuple, Any, Mapping
+
+from .rules import contains_keywords, link_ratio, DEFAULT_KEYWORDS
+
+LOG = logging.getLogger("smart_mail_agent.spam.orchestrator_offline")
+if not LOG.handlers:
+    handler = logging.StreamHandler()
+    fmt = logging.Formatter("[SPAM] %(asctime)s %(levelname)s %(message)s")
+    handler.setFormatter(fmt)
+    LOG.addHandler(handler)
+LOG.setLevel(logging.INFO)
+
+
+@dataclass(frozen=True)
+class Thresholds:
+    link_ratio_drop: float = 0.60
+    link_ratio_review: float = 0.40
+    model_drop: float = 0.90
+    model_review: float = 0.70
+
+
+class SpamFilterOrchestratorOffline:
+    """
+    垃圾信決策 Orchestrator（離線版）
+    """
+
+    def __init__(
+        self,
+        *,
+        spam_keywords: Optional[Sequence[str]] = None,
+        rule_contains: Callable[[str, Sequence[str]], bool] = contains_keywords,
+        rule_link_ratio: Callable[[str], float] = link_ratio,
+        model_predict: Optional[Callable[..., Tuple[str, float]]] = None,
+        thresholds: Optional[Thresholds] = None,
+    ) -> None:
+        self.spam_keywords = list(spam_keywords or DEFAULT_KEYWORDS)
+        self.rule_contains = rule_contains
+        self.rule_link_ratio = rule_link_ratio
+        self.model_predict = model_predict
+        self.th = thresholds or Thresholds()
+
+    def decide(self, subject: str, content: str) -> Dict[str, Any]:
+        """
+        回傳:
+            {
+              "action": "drop" | "review" | "route",
+              "reasons": [ ... ],
+              "scores": { "link_ratio": float, "model": float }
+            }
+        """
+        reasons: List[str] = []
+        scores: Dict[str, float] = {"link_ratio": 0.0, "model": 0.0}
+
+        subject = subject or ""
+        content = content or ""
+        merged = f"{subject}\n{content}"
+
+        # 規則：關鍵字
+        try:
+            if self.rule_contains(merged, self.spam_keywords):
+                reasons.append("rule:keyword")
+        except Exception as e:
+            LOG.warning("contains_keywords failed: %s", e)
+
+        # 規則：連結密度
+        try:
+            lr = float(self.rule_link_ratio(content))
+            scores["link_ratio"] = lr
+            if lr >= self.th.link_ratio_drop:
+                reasons.append(f"rule:link_ratio>={self.th.link_ratio_drop:.2f}")
+--- src/smart_mail_agent/spam/pipeline.py (head -n 80) ---
+#!/usr/bin/env python3
+# 檔案位置: src/smart_mail_agent/spam/pipeline.py
+# 模組用途: 提供 analyze(...)，向後相容 analyze(dict) 的舊測試
+
+from __future__ import annotations
+
+import argparse
+import json
+from typing import Any, Dict, Mapping, Sequence, Tuple
+
+from .orchestrator_offline import SpamFilterOrchestratorOffline, Thresholds
+from .rules import contains_keywords, link_ratio, label_email, DEFAULT_KEYWORDS
+
+
+def analyze(email_or_subject: Mapping[str, Any] | str, content: str | None = None) -> Dict[str, Any]:
+    """
+    相容兩種呼叫：
+      1) analyze({"subject": "...", "content": "...", "attachments": [...]})
+      2) analyze(subject: str, content: str)
+    回傳:
+      {
+        "label": "spam|ham",
+        "action": "drop|review|route",
+        "scores": {"keyword": 0/1, "link_ratio": float},
+        "decision": {...}
+      }
+    """
+    if isinstance(email_or_subject, dict):
+        email = email_or_subject
+        subject = str(email.get("subject", "") or "")
+        body = str(email.get("content", "") or "")
+    else:
+        subject = str(email_or_subject or "")
+        body = str(content or "")
+        email = {"subject": subject, "content": body}
+
+    rule_res = label_email(email, keywords=DEFAULT_KEYWORDS, lr_drop=Thresholds().link_ratio_drop)
+    orch = SpamFilterOrchestratorOffline()
+    decision = orch.decide(subject, body)
+
+    return {"label": rule_res["label"], "action": decision["action"], "scores": rule_res["scores"], "decision": decision}
+
+
+def _build_cli() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(description="Spam analyze pipeline (offline)")
+    p.add_argument("--subject", default="")
+    p.add_argument("--content", default="")
+    p.add_argument("--json", action="store_true")
+    return p
+
+
+def _main() -> int:
+    args = _build_cli().parse_args()
+    out = analyze(args.subject, args.content)
+    if args.json:
+        print(json.dumps(out, ensure_ascii=False, indent=2))
+    else:
+        print(out)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(_main())
+--- src/spam/pipeline.py (head -n 80) ---
+#!/usr/bin/env python3
+# 檔案位置: src/spam/pipeline.py
+# 模組用途: 轉接至 smart_mail_agent.spam.pipeline 的 analyze
+
+from __future__ import annotations
+from smart_mail_agent.spam.pipeline import analyze  # re-export
+__all__ = ["analyze"]
+
+=== TEST calls to analyze/orchestrate (context) ===
+tests/spam/test_offline_orchestrator_contracts.py:12:    res = orchestrate("x", rule_dict_true, model_weird, model_threshold=0.6)
+tests/spam/test_offline_orchestrator_contracts.py:16:    res = orchestrate("x", rule_dict_false, model_tuple, model_threshold=0.6)
+tests/spam/test_offline_orchestrator_contracts.py:20:    res = orchestrate("x", rule_dict_false, model_list_of_dict, model_threshold=0.6)
+tests/spam/test_offline_orchestrator_paths.py:15:    res = orchestrate("x", r_true, m_ham, model_threshold=0.6)
+tests/spam/test_offline_orchestrator_paths.py:19:    res = orchestrate("x", r_false, m_spam_high, model_threshold=0.6)
+tests/spam/test_offline_orchestrator_paths.py:23:    res = orchestrate("x", r_false, m_spam_eq_thr, model_threshold=0.6)
+tests/spam/test_offline_orchestrator_paths.py:27:    res = orchestrate("x", r_false, m_spam_low, model_threshold=0.6)
+tests/spam/test_offline_orchestrator_paths.py:31:    res = orchestrate("x", r_false, m_ham, model_threshold=0.6)
+tests/spam/test_offline_orchestrator_paths.py:35:    res = orchestrate("x", r_false, m_broken, model_threshold=0.6)
+tests/e2e/test_spam_pipeline.py:7:    r = analyze(
+tests/e2e/test_spam_pipeline.py:20:    r = analyze(
+tests/e2e/test_spam_pipeline.py:33:    r = analyze(
+tests/unit/test_spam_pipeline_smoke.py:14:    res = orchestrate(["你中獎了！點此領獎"], rules_only=True)

@@ -1,7 +1,10 @@
 from __future__ import annotations
+
 import json
 from pathlib import Path
+
 from email_processor import write_classification_result
+
 
 def test_write_classification_result_reversed_order(tmp_path):
     dest = tmp_path / "r.json"

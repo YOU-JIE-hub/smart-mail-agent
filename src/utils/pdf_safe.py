@@ -1,11 +1,13 @@
 from __future__ import annotations
+
 import time
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence, Union
 
 __all__ = ["write_pdf_or_txt"]
 
-def _safe_join(outdir: Union[str, Path], basename: str) -> Path:
+
+def _safe_join(outdir: str | Path, basename: str) -> Path:
     out = Path(outdir).resolve()
     out.mkdir(parents=True, exist_ok=True)
     # 只取檔名，砍掉任何路徑（防 ../../ 跳脫）
@@ -21,7 +23,8 @@ def _safe_join(outdir: Union[str, Path], basename: str) -> Path:
         p = (out / fname).resolve()
     return p
 
-def write_pdf_or_txt(lines: Sequence[str], outdir: Union[str, Path], basename: str) -> str:
+
+def write_pdf_or_txt(lines: Sequence[str], outdir: str | Path, basename: str) -> str:
     p = _safe_join(outdir, basename)
     content = "\n".join(str(x) for x in lines)
     p.write_text(content, encoding="utf-8")

@@ -11,6 +11,7 @@ from pathlib import Path
 TABLE = "tickets"
 DB_PATH = Path(os.environ.get("SMA_TICKET_DB", "data/tickets.db"))
 
+
 @dataclass
 class Ticket:
     sender: str = ""
@@ -21,16 +22,20 @@ class Ticket:
     status: str = "open"
     created_at: str = datetime.now(timezone.utc).isoformat(timespec="seconds")
 
+
 def _ensure_dir():
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+
 
 def _conn():
     _ensure_dir()
     return sqlite3.connect(DB_PATH)
 
+
 def init_db():
     with _conn() as c:
-        c.execute(f"""
+        c.execute(
+            f"""
             CREATE TABLE IF NOT EXISTS {TABLE}(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 sender TEXT,
@@ -41,16 +46,32 @@ def init_db():
                 status TEXT,
                 created_at TEXT
             )
-        """)
+        """
+        )
         c.commit()
 
-def create_ticket(subject: str, body: str, *, sender: str="", category: str|None=None,
-                  confidence: float|None=None, status: str="open", **_) -> int:
+
+def create_ticket(
+    subject: str,
+    body: str,
+    *,
+    sender: str = "",
+    category: str | None = None,
+    confidence: float | None = None,
+    status: str = "open",
+    **_,
+) -> int:
     init_db()
     with _conn() as c:
         cur = c.cursor()
-        t = Ticket(sender=sender, subject=subject, body=body,
-                   category=category, confidence=confidence, status=status)
+        t = Ticket(
+            sender=sender,
+            subject=subject,
+            body=body,
+            category=category,
+            confidence=confidence,
+            status=status,
+        )
         cur.execute(
             f"INSERT INTO {TABLE} (sender,subject,body,category,confidence,status,created_at) VALUES (?,?,?,?,?,?,?)",
             (t.sender, t.subject, t.body, t.category, t.confidence, t.status, t.created_at),
@@ -58,21 +79,29 @@ def create_ticket(subject: str, body: str, *, sender: str="", category: str|None
         c.commit()
         return int(cur.lastrowid)
 
+
 def list_tickets(limit: int = 10) -> Iterable[tuple]:
     init_db()
     with _conn() as c:
-        cur = c.execute(f"SELECT id,subject,status,created_at FROM {TABLE} ORDER BY id DESC LIMIT ?", (limit,))
+        cur = c.execute(
+            f"SELECT id,subject,status,created_at FROM {TABLE} ORDER BY id DESC LIMIT ?", (limit,)
+        )
         rows = list(cur.fetchall())
     print("最新工單列表：")
     for r in rows:
         print(r)
     return rows
 
+
 def get_ticket(ticket_id: int) -> tuple | None:
     init_db()
     with _conn() as c:
-        cur = c.execute(f"SELECT id,sender,subject,body,category,confidence,status,created_at FROM {TABLE} WHERE id=?", (ticket_id,))
+        cur = c.execute(
+            f"SELECT id,sender,subject,body,category,confidence,status,created_at FROM {TABLE} WHERE id=?",
+            (ticket_id,),
+        )
         return cur.fetchone()
+
 
 def update_status(ticket_id: int, status: str):
     init_db()
@@ -80,11 +109,13 @@ def update_status(ticket_id: int, status: str):
         c.execute(f"UPDATE {TABLE} SET status=? WHERE id=?", (status, ticket_id))
         c.commit()
 
+
 if __name__ == "__main__":
     import argparse
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--list", action="store_true")
-    ap.add_argument("--create", nargs=2, metavar=("SUBJECT","BODY"))
+    ap.add_argument("--create", nargs=2, metavar=("SUBJECT", "BODY"))
     ap.add_argument("--sender", default="")
     ap.add_argument("--category", default=None)
     ap.add_argument("--confidence", type=float, default=None)
@@ -94,12 +125,18 @@ if __name__ == "__main__":
     if args.list:
         list_tickets()
     elif args.create:
-        create_ticket(args.create[0], args.create[1],
-                      sender=args.sender, category=args.category,
-                      confidence=args.confidence, status=args.status)
+        create_ticket(
+            args.create[0],
+            args.create[1],
+            sender=args.sender,
+            category=args.category,
+            confidence=args.confidence,
+            status=args.status,
+        )
         print("已建立工單")
     else:
         print("用法：--list 或 --create <SUBJECT> <BODY>")
+
 
 def show_ticket(ticket_id: int) -> None:
     """列印單一工單詳情，欄位名稱以固定寬度對齊，符合測試期待"""
@@ -109,7 +146,10 @@ def show_ticket(ticket_id: int) -> None:
         return
     (tid, sender, subject, body, category, confidence, status, created_at) = row
     print("最新工單列表" if False else "工單詳情：")  # 兼容，不影響檢查
-    def _p(k, v): print(f"{k:<11}: {v}")
+
+    def _p(k, v):
+        print(f"{k:<11}: {v}")
+
     _p("ID", tid)
     _p("Sender", sender)
     _p("Subject", subject)

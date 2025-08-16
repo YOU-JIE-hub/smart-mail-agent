@@ -1,8 +1,14 @@
-import tempfile, textwrap, json, pathlib
+import json
+import pathlib
+import tempfile
+import textwrap
+
 import src.smart_mail_agent.spam.rules as rules
 
+
 def test_label_email_with_custom_rules(tmp_path, monkeypatch):
-    yml = textwrap.dedent("""
+    yml = textwrap.dedent(
+        """
     keywords: {"FREE": 3}
     suspicious_domains: ["bit.ly"]
     suspicious_tlds: ["tk"]
@@ -10,7 +16,8 @@ def test_label_email_with_custom_rules(tmp_path, monkeypatch):
     whitelist_domains: ["example.com"]
     weights: {url_suspicious: 4, tld_suspicious: 3, attachment_executable: 5}
     thresholds: {suspect: 4, spam: 8}
-    """).strip()
+    """
+    ).strip()
     conf = tmp_path / "spam_rules.yaml"
     conf.write_text(yml, encoding="utf-8")
     monkeypatch.setattr(rules, "CONF_PATH", conf)

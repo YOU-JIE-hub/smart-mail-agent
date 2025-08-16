@@ -1,6 +1,12 @@
-import os, subprocess, sys, pathlib, textwrap
+import os
+import pathlib
+import subprocess
+import sys
+import textwrap
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
+
+
 def test_sma_spamcheck_help_runs():
     env = dict(os.environ)
     env["OFFLINE"] = "1"

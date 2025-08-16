@@ -13,7 +13,9 @@ def _is_generic(text: str) -> bool:
 
 
 class IntentClassifier:
-    def __init__(self, model_path: str | None = None, pipeline_override: Callable[[str], Any] | None = None):
+    def __init__(
+        self, model_path: str | None = None, pipeline_override: Callable[[str], Any] | None = None
+    ):
         self.model_path = model_path or ""
         self.pipeline: Callable[[str], Any] = pipeline_override or (lambda txt: ("其他", 0.0))
 
@@ -23,7 +25,9 @@ class IntentClassifier:
             head = ret[0]
             tail = ret[1] if len(ret) > 1 else None
             if isinstance(head, dict):
-                lab = head.get("predicted_label") or head.get("label") or head.get("class") or "其他"
+                lab = (
+                    head.get("predicted_label") or head.get("label") or head.get("class") or "其他"
+                )
                 conf = head.get(
                     "confidence",
                     head.get("score", tail if isinstance(tail, int | float) else 0.0),

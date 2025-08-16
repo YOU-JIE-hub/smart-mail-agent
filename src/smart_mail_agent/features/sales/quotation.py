@@ -6,6 +6,7 @@ from pathlib import Path
 
 __all__ = ["choose_package", "generate_pdf_quote"]
 
+
 def choose_package(subject: str, content: str) -> dict:
     """
     依 subject/content 的關鍵字，回傳 dict，其中必含:
@@ -34,6 +35,7 @@ def choose_package(subject: str, content: str) -> dict:
     # 沒命中：保守→企業，但標記需要人工確認
     return {"package": "企業", "needs_manual": True}
 
+
 # 最小合法單頁 PDF（測試只需存在且為 .pdf）
 _MINIMAL_PDF = b"""%PDF-1.4
 1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj
@@ -57,6 +59,7 @@ startxref
 520
 %%EOF
 """
+
 
 def generate_pdf_quote(package: str, client_name: str, out_dir: str = "data/output") -> str:
     """

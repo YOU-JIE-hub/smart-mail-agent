@@ -60,7 +60,11 @@ def _find_orch_class(mod) -> type | None:
     if inspect.isclass(cls):
         return cls
     # 次選：找看起來像 orchestrator 的類
-    cand = [v for k, v in mod.__dict__.items() if inspect.isclass(v) and ("Orchestrator" in v.__name__ or "Spam" in v.__name__)]
+    cand = [
+        v
+        for k, v in mod.__dict__.items()
+        if inspect.isclass(v) and ("Orchestrator" in v.__name__ or "Spam" in v.__name__)
+    ]
     if len(cand) == 1:
         return cand[0]
     return None
@@ -86,7 +90,9 @@ def _instantiate(cls) -> Any | None:
             return None
 
 
-def _call_with_adaptation(target, subject: str, content: str, sender: str) -> tuple[bool, float, str]:
+def _call_with_adaptation(
+    target, subject: str, content: str, sender: str
+) -> tuple[bool, float, str]:
     """
     嘗試多種方法與參數組合；將返回值正規化為 (is_spam, score, reason)。
     score 預設 0.0；若返回值為機率或分數則採用；若僅布林則分數以 1.0/0.0 表示。
@@ -257,7 +263,9 @@ def main(argv=None) -> int:
 
     mod = _import_orch_module()
     if mod is None:
-        sys.stderr.write("找不到 orchestrator 模組：請確認位於 src/spam/ 或 smart_mail_agent/spam/\n")
+        sys.stderr.write(
+            "找不到 orchestrator 模組：請確認位於 src/spam/ 或 smart_mail_agent/spam/\n"
+        )
         return 2
 
     cls = _find_orch_class(mod)
@@ -267,7 +275,9 @@ def main(argv=None) -> int:
         return 2
 
     try:
-        is_spam, score, reason = _call_with_adaptation(target, args.subject, args.content, args.sender)
+        is_spam, score, reason = _call_with_adaptation(
+            target, args.subject, args.content, args.sender
+        )
     except Exception as e:
         sys.stderr.write(f"呼叫 orchestrator 失敗：{e}\n")
         return 3

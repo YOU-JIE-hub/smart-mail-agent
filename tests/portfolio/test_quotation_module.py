@@ -1,6 +1,8 @@
 import importlib
 
 q = importlib.import_module("modules.quotation")  # shim 到 src/smart_mail_agent/...
+
+
 def test_choose_package_contract():
     res = q.choose_package("詢價單：附件很大", "需要正式報價，附件 6MB")
     assert isinstance(res, dict)

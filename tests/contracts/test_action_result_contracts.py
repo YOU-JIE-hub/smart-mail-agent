@@ -19,7 +19,9 @@ ALLOWED_CODES = {"OK", "INPUT_INVALID", "EXTERNAL_FAIL", "INTERNAL_ERROR"}
 
 def test_contracts_matrix_schema(_ensure_matrix):
     root = Path(__file__).resolve().parents[2]
-    data = json.loads((root / "data" / "output" / "matrix" / "matrix_summary.json").read_text(encoding="utf-8"))
+    data = json.loads(
+        (root / "data" / "output" / "matrix" / "matrix_summary.json").read_text(encoding="utf-8")
+    )
     cases = data.get("cases", [])
     assert cases, "矩陣沒有案例"
 
@@ -31,7 +33,10 @@ def test_contracts_matrix_schema(_ensure_matrix):
             "code": c.get("code", "OK"),
             "message": c.get("message", ""),
             "output": c.get("output"),
-            "attachments": [(AttachmentMeta(path=a, exists=True).model_dump() if isinstance(a, str) else a) for a in (c.get("attachments") or [])],
+            "attachments": [
+                (AttachmentMeta(path=a, exists=True).model_dump() if isinstance(a, str) else a)
+                for a in (c.get("attachments") or [])
+            ],
             "request_id": c.get("request_id"),
             "spent_ms": c.get("spent_ms"),
         }

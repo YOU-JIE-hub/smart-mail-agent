@@ -65,4 +65,7 @@ def test_simulate_pdf_failure(tmp_path):
     _run_cli(i, o, "--simulate-failure", "pdf")
     d = json.loads(o.read_text(encoding="utf-8"))
     assert d.get("action_name") == "send_quote"
-    assert "simulated_pdf_failure" in "|".join(d.get("warnings", [])) or d.get("meta", {}).get("simulate_failure") == "pdf"
+    assert (
+        "simulated_pdf_failure" in "|".join(d.get("warnings", []))
+        or d.get("meta", {}).get("simulate_failure") == "pdf"
+    )

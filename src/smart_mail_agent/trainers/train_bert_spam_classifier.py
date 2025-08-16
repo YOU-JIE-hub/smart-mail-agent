@@ -59,7 +59,9 @@ def main():
     tokenizer = BertTokenizer.from_pretrained(args.model)
     tokenized = dataset.map(lambda x: tokenize(x, tokenizer), batched=True)
 
-    model = BertForSequenceClassification.from_pretrained(args.model, num_labels=2, label2id=LABEL2ID, id2label=ID2LABEL)
+    model = BertForSequenceClassification.from_pretrained(
+        args.model, num_labels=2, label2id=LABEL2ID, id2label=ID2LABEL
+    )
 
     output_dir = get_output_dir()
 
