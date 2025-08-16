@@ -1,13 +1,20 @@
-# virtualenv & caches
+# venv / caches
 .venv/
-.pytest_cache/
-.ruff_cache/
 __pycache__/
-site/
-.cache/
-*.py[cod]
-
-# packaging/build leftovers
-*.egg-info/
-dist/
+*.pyc
+.pytest_cache/
+# build artifacts
 build/
+dist/
+*.egg-info/
+# editor
+*.swp
+.DS_Store
+# data outputs (保留版本但可視需要忽略)
+data/output/
+# local env
+.env
+reports/
+audit_bundle_*
+src_lowcov/
+data/*.db

@@ -1,0 +1,10 @@
+.portfolio_hidden/ export-ignore
+.archive/          export-ignore
+.pytest_cache/     export-ignore
+__pycache__/       export-ignore
+.venv/             export-ignore
+data/output/       export-ignore
+.backup/ export-ignore
+.archive/ export-ignore
+reports/ export-ignore
+.env export-ignore

@@ -1,0 +1,28 @@
+name: tests-online
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 18 * * 0'   # 每週日 18:00 UTC 例行跑一次（可自行改）
+jobs:
+  test-online:
+    runs-on: ubuntu-22.04
+    env:
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASS: ${{ secrets.SMTP_PASS }}
+      IMAP_HOST: ${{ secrets.IMAP_HOST }}
+      IMAP_PORT: ${{ secrets.IMAP_PORT }}
+      IMAP_USER: ${{ secrets.IMAP_USER }}
+      IMAP_PASS: ${{ secrets.IMAP_PASS }}
+      OFFLINE: ""
+      PYTHONPATH: ".:src"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.10" }
+      - run: python -m pip install -U pip
+      - run: pip install -e . || pip install -r requirements.txt
+      - name: Run online tests (skips if secrets missing)
+        if: ${{ env.SMTP_HOST != '' && env.SMTP_USER != '' }}
+        run: pytest -q tests -m online --timeout=120 --timeout-method=thread
