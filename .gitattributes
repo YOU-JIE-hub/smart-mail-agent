@@ -4,3 +4,4 @@
 __pycache__/       export-ignore
 .venv/             export-ignore
 data/output/       export-ignore
+.backup/ export-ignore
