@@ -1,0 +1,134 @@
+tests/e2e/test_actions_matrix_ext.py::test_happy_paths
+tests/e2e/test_actions_matrix_ext.py::test_edge_cases
+tests/e2e/test_cli_flags.py::test_dry_run_flag
+tests/e2e/test_cli_flags.py::test_simulate_pdf_failure
+tests/e2e/test_cli_scripts.py::test_cli_run_main_help
+tests/e2e/test_cli_scripts.py::test_cli_run_classifier_help
+tests/e2e/test_cli_scripts.py::test_cli_run_orchestrator_help
+tests/e2e/test_complaint_policy.py::test_complaint_high_triggers_p1_and_cc
+tests/e2e/test_label_routing_offline.py::test_label_send_quote
+tests/e2e/test_label_routing_offline.py::test_label_reply_faq
+tests/e2e/test_label_routing_offline.py::test_label_other_to_reply_general
+tests/e2e/test_new_intents.py::test_sales_inquiry
+tests/e2e/test_new_intents.py::test_complaint
+tests/e2e/test_offline_suite.py::test_generate_quote_pdf
+tests/e2e/test_offline_suite.py::test_cli_smoke
+tests/e2e/test_policy_expansion.py::test_attachments_over_limit_requires_review
+tests/e2e/test_policy_expansion.py::test_sender_domain_whitelist_flag
+tests/e2e/test_runner.py::test_runner_outputs
+tests/e2e/test_sales_and_complaint.py::test_e2e_sales_inquiry
+tests/e2e/test_sales_and_complaint.py::test_e2e_complaint_high
+tests/e2e/test_sales_inquiry_needs_summary.py::test_sales_inquiry_generates_md_and_next_step
+tests/e2e/test_send_quote_degrade.py::test_send_quote_degrade
+tests/test_action_handler.py::test_support
+tests/test_action_handler.py::test_info_change
+tests/test_action_handler.py::test_faq
+tests/test_action_handler.py::test_apology
+tests/test_action_handler.py::test_quote_with_attachment
+tests/test_action_handler.py::test_other_fallback
+tests/test_action_handler.py::test_unknown_label_as_general
+tests/test_apply_diff.py::test_update_with_changes
+tests/test_apply_diff.py::test_update_with_no_change
+tests/test_apply_diff.py::test_update_partial_change
+tests/test_apply_diff.py::test_empty_content
+tests/test_apply_diff.py::test_user_not_found
+tests/test_classifier.py::test_classifier_inference_with_high_confidence
+tests/test_classifier.py::test_classifier_inference_with_low_confidence_trigger_fallback
+tests/test_classifier.py::test_output_file_format
+tests/test_init_db.py::test_users_table_schema
+tests/test_init_db.py::test_diff_log_table_schema
+tests/test_init_db.py::test_repeat_init_users_db_does_not_fail
+tests/test_init_emails_log_db.py::test_emails_log_table_created
+tests/test_init_emails_log_db.py::test_repeat_init_emails_log_db_does_not_fail
+tests/test_init_processed_mails_db.py::test_processed_mails_table_created
+tests/test_init_processed_mails_db.py::test_repeat_init_processed_mails_db_does_not_fail
+tests/test_init_tickets_db.py::test_support_tickets_table_created
+tests/test_init_tickets_db.py::test_repeat_init_tickets_db_does_not_fail
+tests/test_mailer.py::test_validate_smtp_config_missing_env
+tests/test_mailer.py::test_send_email_with_attachment_success
+tests/test_mailer.py::test_send_email_attachment_not_found
+tests/test_mailer_online.py::test_smtp_live_send_ok
+tests/test_quotation.py::test_choose_package[\u5831\u50f9\u9700\u6c42-\u6211\u60f3\u77e5\u9053\u5831\u50f9\u3001\u50f9\u683c\u8cc7\u8a0a-\u57fa\u790e]
+tests/test_quotation.py::test_choose_package[\u81ea\u52d5\u5206\u985e\u529f\u80fd-\u662f\u5426\u652f\u63f4\u81ea\u52d5\u5316\u8207\u6392\u7a0b\uff1f-\u5c08\u696d]
+tests/test_quotation.py::test_choose_package[\u6574\u5408 API-\u60f3\u8207 ERP \u6216 LINE \u6574\u5408-\u4f01\u696d]
+tests/test_quotation.py::test_choose_package[\u5176\u4ed6\u8a62\u554f-\u4f60\u5011\u80fd\u63d0\u4f9b\u4ec0\u9ebc\u529f\u80fd\uff1f-\u4f01\u696d]
+tests/test_quotation.py::test_generate_pdf_quote
+tests/test_quote_logger.py::test_log_quote_to_db
+tests/test_sales_notifier.py::test_notify_sales_success[test_client-\u57fa\u790e]
+tests/test_sales_notifier.py::test_notify_sales_success[test_corp-\u4f01\u696d]
+tests/test_send_with_attachment.py::test_send_with_attachment_cli_success
+tests/test_spam_filter.py::test_spam_filter_logic[email_json0-False]
+tests/test_spam_filter.py::test_spam_filter_logic[email_json1-False]
+tests/test_spam_filter.py::test_spam_filter_logic[email_json2-False]
+tests/test_spam_filter.py::test_spam_filter_logic[email_json3-False]
+tests/test_spam_filter.py::test_spam_filter_logic[email_json4-False]
+tests/test_spam_filter.py::test_spam_filter_logic[email_json5-False]
+tests/test_spam_filter.py::test_spam_filter_logic[email_json6-False]
+tests/test_spam_filter.py::test_spam_filter_logic[email_json7-True]
+tests/test_spam_filter.py::test_spam_filter_logic[email_json8-True]
+tests/test_stats_collector.py::test_init_stats_db
+tests/test_stats_collector.py::test_increment_counter
+tests/test_stats_collector.py::test_cli_init_and_insert
+tests/unit/test_policy_minimal.py::test_policy_require_review_on_low_conf
+tests/unit/test_spam_stack.py::test_spam_stack_allow_and_block
+tests/unit/test_tasks_minimal.py::test_tasks_minimal_contract
+
+==================================== ERRORS ====================================
+_______ ERROR collecting tests/contracts/test_action_result_contracts.py _______
+ImportError while importing test module '/home/youjie/smart-mail-agent/tests/contracts/test_action_result_contracts.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.10/importlib/__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/contracts/test_action_result_contracts.py:6: in <module>
+    from src.sma_types import ActionResult, AttachmentMeta
+E   ModuleNotFoundError: No module named 'src'
+_______________ ERROR collecting tests/e2e/test_spam_pipeline.py _______________
+ImportError while importing test module '/home/youjie/smart-mail-agent/tests/e2e/test_spam_pipeline.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.10/importlib/__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/e2e/test_spam_pipeline.py:3: in <module>
+    from src.spam.pipeline import analyze
+E   ModuleNotFoundError: No module named 'src'
+________________ ERROR collecting tests/unit/test_contracts.py _________________
+ImportError while importing test module '/home/youjie/smart-mail-agent/tests/unit/test_contracts.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.10/importlib/__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/unit/test_contracts.py:4: in <module>
+    from src.sma_types import normalize_request, normalize_result
+E   ModuleNotFoundError: No module named 'src'
+______________ ERROR collecting tests/unit/test_policy_engine.py _______________
+ImportError while importing test module '/home/youjie/smart-mail-agent/tests/unit/test_policy_engine.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.10/importlib/__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/unit/test_policy_engine.py:4: in <module>
+    from src.policy_engine import apply_policies, apply_policy
+E   ModuleNotFoundError: No module named 'src'
+=============================== warnings summary ===============================
+tests/conftest.py:25
+  /home/youjie/smart-mail-agent/tests/conftest.py:25: PytestRemovedIn9Warning: The (path: py.path.local) argument is deprecated, please use (collection_path: pathlib.Path)
+  see https://docs.pytest.org/en/latest/deprecations.html#py-path-local-arguments-for-hooks-replaced-with-pathlib-path
+    def pytest_ignore_collect(path, config):
+
+tests/test_mailer_online.py:13
+  /home/youjie/smart-mail-agent/tests/test_mailer_online.py:13: PytestUnknownMarkWarning: Unknown pytest.mark.online - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    pytestmark = pytest.mark.online
+
+tests/e2e/conftest.py:12
+  /home/youjie/smart-mail-agent/tests/e2e/conftest.py:12: PytestUnknownMarkWarning: Unknown pytest.mark.online - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    item.add_marker(pytest.mark.online)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR tests/contracts/test_action_result_contracts.py
+ERROR tests/e2e/test_spam_pipeline.py
+ERROR tests/unit/test_contracts.py
+ERROR tests/unit/test_policy_engine.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 4 errors during collection !!!!!!!!!!!!!!!!!!!!
+74 tests collected, 4 errors in 5.73s
