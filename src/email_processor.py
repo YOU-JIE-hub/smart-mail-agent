@@ -1,28 +1,33 @@
 from __future__ import annotations
-import json
-from pathlib import Path
-from typing import Tuple, Dict, Any
 
-def extract_fields(payload: Dict[str, Any]) -> Tuple[str, str, str]:
+from pathlib import Path
+from typing import Any
+import json
+
+
+def extract_fields(payload: dict[str, Any]) -> tuple[str, str, str]:
+    """從各種鍵名中擷取 subject/body/sender，缺少時回空字串。"""
     subject = payload.get("subject") or payload.get("title") or ""
-    body = payload.get("body") or payload.get("text") or ""
-    sender = payload.get("from") or payload.get("sender") or ""
+    body = payload.get("body") or payload.get("text") or payload.get("content") or ""
+    sender = payload.get("sender") or payload.get("from") or payload.get("email") or ""
     return subject, body, sender
 
-def write_classification_result(*args, **kwargs) -> str:
-    # 支援兩種呼叫法：
-    # 1) write_classification_result(result_dict, path)
-    # 2) write_classification_result(path, label, score, extra={...}, confidence=...)
-    if args and isinstance(args[0], dict):
-        result, path = args[0], Path(args[1])
+
+def write_classification_result(arg1: Any, arg2: Any) -> Path:
+    """
+    將分類結果寫成 JSON 檔。
+    支援兩種呼叫方式：
+      - write_classification_result(data: dict, path: str|Path)
+      - write_classification_result(path: str|Path, data: dict)
+    回傳實際寫出的檔案 Path。
+    """
+    # 判斷哪個是 path 哪個是 data
+    if isinstance(arg1, (str, Path)) and not isinstance(arg2, (str, Path)):
+        path, data = arg1, arg2
     else:
-        path, label, score = Path(args[0]), str(args[1]), float(args[2])
-        result = {"label": label, "score": score}
-        if "confidence" in kwargs:
-            result["confidence"] = float(kwargs["confidence"])
-        extra = kwargs.get("extra") or {}
-        if isinstance(extra, dict):
-            result.update(extra)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-    return str(path)
+        data, path = arg1, arg2
+
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    return p
