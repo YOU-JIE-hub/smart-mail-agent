@@ -1,57 +1,50 @@
-[![CI](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/ci.yml)
-
-<!-- BADGES START -->
-<!-- BADGES END -->
-
 # Smart Mail Agent
 
-最小可演示的郵件自動化專案（離線可驗證）。已整理結構、提供 CLI 與離線測試，適合面試展示。
+面向企業展示的 AI + RPA 郵件自動化專案：結合 NLP/LLM 與流程自動化，離線可跑、CLI 一鍵驗證，涵蓋垃圾郵件過濾、意圖分類、動作路由（報價 PDF、FAQ 回覆、工單建立、銷售通知）、統計與日誌。
 
-## 結構
-- `src/smart_mail_agent/`：核心與功能模組（routing / features / observability / spam）
-- `src/`：向後相容 shims
-- `tests/`：單元與離線測試
+## 核心特性
+- 垃圾郵件多層過濾（規則、ML、LLM）
+- 意圖分類與路由：技術支援、資料修改、流程詢問、抱怨投訴、商務報價、其他
+- 自動動作：產生 PDF、寄信回覆、紀錄與統計
+- 觀測與日誌：統一結構化輸出
+- CLI 友善：本地離線 Demo 與自動測試
+- 工程化：pre-commit、pytest、CI、版本標籤
 
-## 安裝與測試（離線）
-1. 建立虛擬環境並安裝：
-   - `python -m venv .venv && . .venv/bin/activate`
-   - `python -m pip install -U pip`
-   - `pip install -e . || pip install -r requirements.txt`
-2. 執行離線測試：
-   - `OFFLINE=1 PYTHONPATH=".:src" pytest -q tests -k "not online" --timeout=60 --timeout-method=thread`
+## 專案結構（重點目錄）
+src/smart_mail_agent/ 下：
+- actions/：行為集合（如銷售報價）
+- cli/：CLI 進入點
+- features/：高階功能（apply_diff、spam 等）
+- ingestion/：資料庫初始化與郵件擷取
+- routing/：路由與主流程
+- spam/：spam 規則、模型與編排
+- utils/：共用工具（logger、pdf、db_tools ...）
+tests/：pytest 測試
+.github/workflows/：CI 工作流
 
-## CLI
-- 初始化統計資料庫（stdout: 資料庫初始化完成）  
-  `python src/stats_collector.py --init`
-- 新增統計（stdout: 已新增統計紀錄）  
-  `python src/stats_collector.py --label 投訴 --elapsed 0.56`
+## 安裝與快速開始
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -U pip
+pip install -e .
+pip install -U pytest pytest-cov pre-commit ruff black isort
+pre-commit install
+cp -n .env.example .env
 
-## PDF 中文字型
-- 將 `NotoSansTC-Regular.ttf` 放在 `assets/fonts/`  
-- 或在 `.env` 設：`FONT_TTC_PATH=assets/fonts/NotoSansTC-Regular.ttf`
+## 環境變數（.env）
+OFFLINE=1
+LOG_LEVEL=INFO
+SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS/SMTP_FROM/SMTP_TLS/SMTP_SSL
+NOTO_FONT_PATH=assets/fonts/NotoSansTC-Regular.ttf
+PDF_FONT_FALLBACK=1
 
-## Online email demo
+## 常用 CLI
+python -m smart_mail_agent.cli_spamcheck --subject "免費中獎" --body "恭喜獲得獎金"
+OFFLINE=1 python -m smart_mail_agent.routing.run_action_handler --input data/sample/email.json
 
-1) 申請 SMTP 帳密（Gmail 請開啟 2FA 並建立 App Password）。  
-2) 匯入環境變數（或複製 `.env.example` 自行填入再 `export`）：
-```bash
-export OFFLINE=0
-export SMTP_USER="you@gmail.com"
-export SMTP_PASS="your-app-password"
-export SMTP_HOST="smtp.gmail.com"
-export SMTP_PORT="465"
-export REPLY_TO="you@gmail.com"
-跑線上冒煙（會實際寄信）：
+## 測試與品質
+pytest -q
+pre-commit run -a
 
-bash
-Copy
-Edit
-make test-online
-# 或：make demo-send
-Offline quick check
-bash
-Copy
-Edit
-make lint
-make test
-make cov-offline
+## 授權
+MIT License（見 LICENSE）

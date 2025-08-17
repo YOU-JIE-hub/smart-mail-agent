@@ -606,4 +606,3 @@ data
 == Both-root-and-package duplicates (names only) ==
 DUP: src/policy_engine.py  AND  src/smart_mail_agent/policy_engine.py
 DUP: src/sma_types.py  AND  src/smart_mail_agent/sma_types.py
-
