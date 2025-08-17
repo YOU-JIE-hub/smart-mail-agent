@@ -224,53 +224,77 @@ class SpamFilterOrchestratorOffline:
             "scores": scores,
         }
 
-
     def decide(self, subject: str, content: str) -> dict:
-        import re as _re, unicodedata as _ud
-    
+        import re as _re
+        import unicodedata as _ud
+
         def _nfkc_upper(x: str) -> str:
             try:
                 x = _ud.normalize("NFKC", x or "")
             except Exception:
                 x = x or ""
             return x.upper()
-    
+
         subject = str(subject or "")
         content = str(content or "")
-    
+
         a_pat = _re.compile(r"<a\b[^>]*>(.*?)</a>", _re.IGNORECASE | _re.DOTALL)
+
         def _clean(t: str) -> str:
             return _re.sub(r"\s+", " ", _re.sub(r"<[^>]+>", " ", t)).strip()
-    
+
         # 連結權重（每個連結至少 15 字元）
         link_texts = [m.group(1) for m in a_pat.finditer(content)]
         link_weight = sum(max(len(_clean(t)), 15) for t in link_texts)
-    
+
         # 非連結文字長度
-        nonlink_html_removed = _re.sub(r"<a\b[^>]*>.*?</a>", " ", content, flags=_re.IGNORECASE | _re.DOTALL)
+        nonlink_html_removed = _re.sub(
+            r"<a\b[^>]*>.*?</a>", " ", content, flags=_re.IGNORECASE | _re.DOTALL
+        )
         nonlink_text = _clean(nonlink_html_removed)
         nonlink_len = len(nonlink_text)
-    
+
         den = link_weight + nonlink_len or 1
         ratio = link_weight / den
-    
+
         scores = {"link_ratio": round(ratio, 4)}
         reasons = []
         d = getattr(self.thresholds, "link_ratio_drop", 0.6)
         r = getattr(self.thresholds, "link_ratio_review", 0.45)
-    
+
         if ratio >= d:
             reasons.append(f"rule:link_ratio>={d}")
-            return {"action":"drop","is_spam":True,"is_borderline":False,"source":"link_ratio","reasons":reasons,"scores":scores}
+            return {
+                "action": "drop",
+                "is_spam": True,
+                "is_borderline": False,
+                "source": "link_ratio",
+                "reasons": reasons,
+                "scores": scores,
+            }
         if ratio >= r:
             reasons.append(f"rule:link_ratio>={r}")
-            return {"action":"review","is_spam":True,"is_borderline":True,"source":"link_ratio","reasons":reasons,"scores":scores}
-    
+            return {
+                "action": "review",
+                "is_spam": True,
+                "is_borderline": True,
+                "source": "link_ratio",
+                "reasons": reasons,
+                "scores": scores,
+            }
+
         # 關鍵字（放後面，避免覆蓋 link_ratio 的 reasons）
         text_norm = _nfkc_upper(subject + " " + content)
-        if any(k in text_norm for k in ("FREE","免費","贈品","中獎","中奖")):
-            return {"action":"drop","is_spam":True,"is_borderline":False,"source":"keyword","reasons":["rule:keyword"],"scores":scores}
-    
+        if any(k in text_norm for k in ("FREE", "免費", "贈品", "中獎", "中奖")):
+            return {
+                "action": "drop",
+                "is_spam": True,
+                "is_borderline": False,
+                "source": "keyword",
+                "reasons": ["rule:keyword"],
+                "scores": scores,
+            }
+
         # fallback：交給 orchestrate（rule+model）
         email = {"subject": subject, "content": content, "attachments": []}
         res = orchestrate(email, self.rule, self.model, model_threshold=self.thresholds.model)
@@ -283,6 +307,8 @@ class SpamFilterOrchestratorOffline:
             "reasons": reasons,
             "scores": scores,
         }
+
+
 def orchestrate(
     subject_or_email: Union[str, Email], rule: RuleFn, model: ModelFn, model_threshold: float = 0.6
 ) -> SimpleNamespace:
@@ -303,7 +329,7 @@ def orchestrate(
 
         score = 0.0
 
-    is_spam = (score >= model_threshold)
+    is_spam = score >= model_threshold
     is_borderline = bool(model is not None and score == model_threshold)
     action = "review" if (is_spam and is_borderline) else ("drop" if is_spam else "route_to_inbox")
 

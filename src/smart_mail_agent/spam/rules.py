@@ -1,328 +1,153 @@
-#!/usr/bin/env python3
 from __future__ import annotations
 
-import html
-import json
-import os
 import re
-from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
+from collections.abc import Iterable
+from pathlib import Path
+from typing import Any
 
-CONF_PATH: Optional[str] = None
-
-__all__ = [
-    "contains_keywords",
-    "link_ratio",
-    "label_email",
-    "has_suspicious_attachment",
-    "CONF_PATH",
-    "_normalize_text",
-]
+try:
+    import yaml  # type: ignore
+except Exception:  # pyyaml 不一定存在
+    yaml = None  # type: ignore
 
 
-def _normalize_text(s: str) -> str:
-    if not isinstance(s, str):
-        return ""
-    s = html.unescape(s)
-    s = s.replace("\u3000", " ")
-    s = re.sub(r"\s+", " ", s).strip()
-    return s
+# 預設規則（若專案的 configs/spam_rules.yaml 存在會覆蓋）
+_DEFAULT = {
+    "blacklist_senders": [
+        "scam@bad.com",
+        "noreply@scam.biz",
+    ],
+    "blacklist_domains": [
+        "bad.com",
+        "scam.biz",
+    ],
+    "shorteners": ["bit.ly", "goo.gl", "is.gd", "t.co"],
+    "suspicious_tlds": ["tk", "gq", "ml", "cf", "ga", "top"],
+    "bad_extensions": [".js", ".vbs", ".exe", ".bat", ".cmd", ".scr"],
+    "whitelist_domains": ["yourcompany.com", "example.com"],
+    "weights": {
+        "url_suspicious": 4,
+        "tld_suspicious": 3,
+        "attachment_executable": 5,
+        "sender_black": 5,
+        "domain_black": 4,
+    },
+    "thresholds": {"suspect": 4, "spam": 8},
+}
+
+_CACHE: dict[str, Any] = {}
 
 
-# 內建關鍵字（含常見中文行銷詞）
-DEFAULT_KEYWORDS: Tuple[str, ...] = (
-    "中獎",
-    "領獎",
-    "投資",
-    "虛擬幣",
-    "比特幣",
-    "色情",
-    "發票中獎",
-    "免費",
-    "點此連結",
-    "lottery",
-    "winner",
-    "click here",
-    "viagra",
-    "invest",
-    "crypto",
-    "free",
-    "限時優惠",
-    "優惠",
-    "下單",
-    "折扣",
-    "領券",
-)
-
-
-def contains_keywords(
-    text: str,
-    keywords: Optional[Sequence[str]] = None,
-    *,
-    case_insensitive: bool = True,
-    match_word_boundary: bool = False,
-) -> bool:
-    kws = list(keywords or DEFAULT_KEYWORDS)
-    s = _normalize_text(text)
-    if not s or not kws:
-        return False
-    flags = re.IGNORECASE if case_insensitive else 0
-    for kw in kws:
-        if not kw:
-            continue
-        pattern = (
-            rf"(?:(?<=^)|(?<=[^\w])){re.escape(kw)}(?:(?=$)|(?=[^\w]))"
-            if match_word_boundary
-            else re.escape(kw)
-        )
-        if re.search(pattern, s, flags=flags):
-            return True
-    return False
-
-
-_URL_RE = re.compile(r"https?://[^\s<>\")]+", re.IGNORECASE)
-
-
-def link_ratio(html_or_text: str) -> float:
-    if not isinstance(html_or_text, str) or not html_or_text.strip():
-        return 0.0
-    s = html_or_text
-
-    # 1) <a>inner</a> 的 inner（可見）
-    inners = re.findall(r"<\s*a\b[^>]*>(.*?)<\s*/\s*a\s*>", s, flags=re.IGNORECASE | re.DOTALL)
-    link_text = " ".join(_normalize_text(re.sub(r"<[^>]+>", " ", inner)) for inner in inners)
-    link_text_len = len(link_text.strip())
-
-    # 2) 可見文字（去標籤）
-    visible_text = _normalize_text(re.sub(r"<[^>]+>", " ", s))
-    visible_text_len = max(len(visible_text), 1)
-
-    # 3) 僅在可見文字中計算純文字 URL
-    for u in _URL_RE.findall(visible_text):
-        link_text_len += max(8, min(len(u), 64))
-
-    ratio = link_text_len / float(visible_text_len)
-    return 0.0 if ratio < 0 else (1.0 if ratio > 1 else ratio)
-
-
-DANGEROUS_EXTS: Tuple[str, ...] = (
-    ".exe",
-    ".scr",
-    ".pif",
-    ".com",
-    ".bat",
-    ".cmd",
-    ".vbs",
-    ".js",
-    ".jse",
-    ".wsf",
-    ".wsh",
-    ".ps1",
-    ".psm1",
-    ".psd1",
-    ".jar",
-    ".apk",
-    ".hta",
-    ".cpl",
-    ".msi",
-    ".msp",
-    ".dll",
-    ".reg",
-    ".sh",
-)
-
-
-def _ext_of(name: Any) -> str:
-    m = re.search(r"(\.[A-Za-z0-9]{1,6})$", str(name or "").strip())
-    return m.group(1).lower() if m else ""
-
-
-def has_suspicious_attachment(attachments: Sequence[Any]) -> Tuple[bool, List[str]]:
-    hits: List[str] = []
-    for a in attachments or ():
-        ext = _ext_of(a)
-        if ext and ext in DANGEROUS_EXTS and ext not in hits:
-            hits.append(ext)
-    return (len(hits) > 0, hits)
-
-
-def _load_conf() -> Dict[str, Any]:
-    path = CONF_PATH
-    if not path or not os.path.isfile(path):
-        return {}
+def _load_yaml(path: Path) -> dict[str, Any] | None:
+    if not path.is_file():
+        return None
+    if yaml is None:
+        return None
     try:
-        import yaml  # type: ignore
-
-        with open(path, "r", encoding="utf-8") as f:
-            data = yaml.safe_load(f) or {}
-        return data if isinstance(data, dict) else {}
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        if isinstance(data, dict):
+            return data  # 型別由呼叫端做寬鬆處理
     except Exception:
         pass
-    txt = open(path, "r", encoding="utf-8").read()
-    result: Dict[str, Any] = {}
-    for line in txt.splitlines():
-        line = line.strip()
-        if not line or line.startswith("#") or ":" not in line:
-            continue
-        k, v = line.split(":", 1)
-        k, v = k.strip(), v.strip()
-
-        def _quote_keys(s: str) -> str:
-            return re.sub(r"({|,)\s*([A-Za-z_][A-Za-z0-9_]*)\s*:", r'\1 "\2":', s)
-
-        if v.startswith("{") and v.endswith("}"):
-            vv = _quote_keys(v).replace("'", '"')
-            try:
-                result[k] = json.loads(vv)
-            except Exception:
-                result[k] = {}
-        elif v.startswith("[") and v.endswith("]"):
-            vv = v.replace("'", '"')
-            try:
-                result[k] = json.loads(vv)
-            except Exception:
-                result[k] = []
-        else:
-            result[k] = v.strip('"').strip("'")
-    return result
+    return None
 
 
-def _domain_of(url: str) -> str:
+def load_rules(config_path: str | Path | None = None) -> dict[str, Any]:
+    """
+    讀取規則檔；若未提供或檔案缺失，回傳內建預設。
+    優先順序：參數指定 -> configs/spam_rules.yaml -> 內建預設
+    """
+    key = str(config_path or "default")
+    if key in _CACHE:
+        return _CACHE[key]  # type: ignore[return-value]
+
+    base = dict(_DEFAULT)
+    path = Path(config_path) if config_path else Path("configs/spam_rules.yaml")
+    override = _load_yaml(path)
+    if override:
+        # 淺合併即可（此處不做深層合併，保持簡單可預期）
+        base.update(override)
+
+    _CACHE[key] = base
+    return base
+
+
+_URL_RE = re.compile(r"https?://[^\s)>\]]+", re.I)
+
+
+def _iter_urls(text: str) -> Iterable[str]:
+    if not text:
+        return []
+    return _URL_RE.findall(text)
+
+
+def _domain_of(url: str) -> str | None:
+    # 極簡擷取 domain（不引入 urllib 以減少依賴）
     m = re.match(r"https?://([^/:?#]+)", url, flags=re.I)
-    return (m.group(1).lower() if m else "").strip()
+    return m.group(1).lower() if m else None
 
 
-def _tld_of(domain: str) -> str:
-    parts = (domain or "").split(".")
-    return parts[-1].lower() if parts else ""
+def _tld_of(domain: str) -> str | None:
+    if not domain or "." not in domain:
+        return None
+    return domain.rsplit(".", 1)[-1].lower()
 
 
-@dataclass
-class LabelResult:
-    label: str
-    score: float
-    scores: Dict[str, float]
-    reasons: List[str]
+def _ext_of(path: str) -> str:
+    p = Path(path)
+    return p.suffix.lower()
 
 
-def _label_email_internal(
-    email: Mapping[str, Any], *, keywords: Optional[Sequence[str]], lr_drop: float
-) -> Dict[str, Any]:
-    subject = str(email.get("subject", "") or "")
-    content = str(email.get("content", "") or "")
-    attachments = email.get("attachments", [])
-    if not isinstance(attachments, (list, tuple)):
-        attachments = []
-
-    merged = f"{subject}\n{content}"
-    reasons: List[str] = []
-    conf = _load_conf()
-
-    if conf:
-        pts = 0
-        kw_map = conf.get("keywords") or {}
-        if isinstance(kw_map, dict):
-            for k, w in kw_map.items():
-                if contains_keywords(merged, [str(k)]):
-                    pts += int(w)
-                    reasons.append(f"cfg:kw:{k}")
-        urls = _URL_RE.findall(content)
-        doms = [_domain_of(u) for u in urls]
-        tlds = [_tld_of(d) for d in doms]
-        sus_doms = set(map(str.lower, conf.get("suspicious_domains") or []))
-        sus_tlds = set(map(str.lower, conf.get("suspicious_tlds") or []))
-        if doms and any((d == _sd or d.endswith("." + _sd)) for d in doms for _sd in sus_doms):
-            pts += int((conf.get("weights", {}) or {}).get("url_suspicious", 0))
-            reasons.append("cfg:url_suspicious")
-            for _d in doms:
-                for _sus in sus_doms:
-                    if _d == _sus or _d.endswith("." + _sus):
-                        reasons.append(f"url:{_d}")
-                        break
-        if tlds and any(t in sus_tlds for t in tlds):
-            pts += int((conf.get("weights", {}) or {}).get("tld_suspicious", 0))
-            reasons.append("cfg:tld_suspicious")
-            for _t in tlds:
-                if _t in sus_tlds:
-                    reasons.append(f"tld:{_t}")
-        bad_exts = set(map(str.lower, conf.get("bad_extensions") or []))
-        if attachments and any(_ext_of(a) in bad_exts for a in attachments):
-            pts += int((conf.get("weights", {}) or {}).get("attachment_executable", 0))
-            reasons.append("cfg:attachment_executable")
-        sender = str(email.get("sender") or "")
-        sender_dom = sender.split("@")[-1].lower() if "@" in sender else ""
-        if sender_dom and sender_dom in set(map(str.lower, conf.get("whitelist_domains") or [])):
-            pts = max(0, pts - 999)
-
-        thr = conf.get("thresholds") or {}
-        thr_sus = int(thr.get("suspect", 4))
-        thr_spam = int(thr.get("spam", 8))
-        label = "spam" if pts >= thr_spam else ("suspect" if pts >= thr_sus else "legit")
-        score_norm = min(1.0, pts / float(max(thr_spam, 1)))
-        scores = {
-            "keyword": 1.0 if any(r.startswith("cfg:kw") for r in reasons) else 0.0,
-            "link_ratio": link_ratio(content),
-            "attachment": 1.0 if "cfg:attachment_executable" in reasons else 0.0,
-        }
-        return {
-            "label": label,
-            "score": float(score_norm),
-            "score_points": int(pts),
-            "scores": scores,
-            "reasons": reasons,
-        }
-
-    # 無 conf：啟發式
-    kw_hit = contains_keywords(merged, keywords)
-    if kw_hit:
-        reasons.append("rule:keyword")
-    lr = float(link_ratio(content))
-    if lr >= lr_drop:
-        reasons.append(f"rule:link_ratio>={lr_drop:.2f}")
-    att_hit = any(_ext_of(a) in DANGEROUS_EXTS for a in attachments)
-    if att_hit:
-        for a in attachments:
-            ext = _ext_of(a)
-            if ext in DANGEROUS_EXTS:
-                reasons.append(f"rule:attachment:{ext}")
-    score = max(lr, 0.6 if kw_hit else 0.0, 0.5 if att_hit else 0.0)
-    label = "spam" if score >= 0.60 else ("suspect" if score >= 0.45 else "legit")
-    scores = {
-        "keyword": 1.0 if kw_hit else 0.0,
-        "link_ratio": lr,
-        "attachment": 1.0 if att_hit else 0.0,
-    }
-    return {"label": label, "score": float(score), "scores": scores, "reasons": reasons}
-
-
-def label_email(
-    email_or_sender: Mapping[str, Any] | str,
-    subject: Optional[str] = None,
-    content: Optional[str] = None,
-    attachments: Optional[Sequence[Any]] = None,
-    *,
-    keywords: Optional[Sequence[str]] = None,
-    lr_drop: float = 0.60,
-):
+def score_email(
+    sender: str,
+    subject: str,
+    content: str,
+    attachments: list[str],
+) -> tuple[int, list[str]]:
     """
-    兩種呼叫：
-      1) label_email(mapping) -> dict（含 score=0~1 與 score_points（如有））
-      2) label_email(sender, subject, content, attachments) -> (label, score, reasons)
-         - 若載入 CONF（CONF_PATH 有效），score 為原始分數點數
-         - 否則 score 為 0~1 正規化分數
+    回傳 (分數, 命中的原因列表)。
     """
-    if isinstance(email_or_sender, dict):
-        res = _label_email_internal(email_or_sender, keywords=keywords, lr_drop=lr_drop)
-        return res
-    email = {
-        "sender": email_or_sender,
-        "subject": subject or "",
-        "content": content or "",
-        "attachments": list(attachments or []),
-    }
-    res = _label_email_internal(email, keywords=keywords, lr_drop=lr_drop)
-    # 依是否有 CONF 決定四參數回傳的 score 定義
-    from_path_conf = CONF_PATH
-    if from_path_conf:
-        return (res["label"], int(res.get("score_points", 0)), res["reasons"])  # raw points
-    return (res["label"], float(res.get("score", 0.0)), res["reasons"])  # normalized
+    cfg = load_rules()
+    w = cfg["weights"]
+    reasons: list[str] = []
+    score = 0
+
+    text = f"{subject or ''}\n{content or ''}"
+
+    # URL 與短網址／可疑 TLD
+    for url in _iter_urls(text):
+        domain = _domain_of(url) or ""
+        if any(s in domain for s in cfg["shorteners"]):
+            score += w["url_suspicious"]
+            reasons.append(f"url_shortener:{domain}")
+        tld = _tld_of(domain)
+        if tld and tld in cfg["suspicious_tlds"]:
+            score += w["tld_suspicious"]
+            reasons.append(f"suspicious_tld:.{tld}")
+
+    # 附件副檔名
+    for a in attachments or []:
+        ext = _ext_of(a)
+        if ext in cfg["bad_extensions"]:
+            score += w["attachment_executable"]
+            reasons.append(f"bad_attachment:{ext}")
+
+    # 寄件者與網域
+    sender_lower = (sender or "").lower()
+    sender_domain = sender_lower.split("@", 1)[-1] if "@" in sender_lower else ""
+    if sender_lower in (x.lower() for x in cfg["blacklist_senders"]):
+        score += w["sender_black"]
+        reasons.append("sender_blacklisted")
+    if sender_domain and sender_domain in (d.lower() for d in cfg["blacklist_domains"]):
+        score += w["domain_black"]
+        reasons.append(f"domain_blacklisted:{sender_domain}")
+
+    # 白名單網域可作為降權（此處僅保留，是否要減分看你策略）
+    if sender_domain and sender_domain in (d.lower() for d in cfg["whitelist_domains"]):
+        # 視情境可做小幅減分；先不改動分數，只記錄原因
+        reasons.append(f"domain_whitelisted:{sender_domain}")
+
+    return int(score), reasons
+
+
+__all__ = ["load_rules", "score_email"]

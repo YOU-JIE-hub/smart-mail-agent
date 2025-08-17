@@ -5,8 +5,10 @@ import json
 
 
 def _heuristic_spam_score(text: str) -> float:
+    """極簡啟發式打分：命中常見垃圾字詞與可疑連結加分，分數上限 0.99。"""
     if not text:
         return 0.0
+
     lowers = text.lower()
     kws = [
         "free",
@@ -19,8 +21,6 @@ def _heuristic_spam_score(text: str) -> float:
         "limited time",
         "act now",
         "click here",
-        "http://",
-        "https://",
         "獎",
         "中獎",
         "免費",
@@ -30,46 +30,40 @@ def _heuristic_spam_score(text: str) -> float:
         "加密",
         "博彩",
     ]
+
     score = 0.0
     for k in kws:
         if k in lowers:
             score += 0.08
-    if "http://" in lowers or "https://" in lowers:
+
+    # 帶連結再加權
+    if ("http://" in lowers) or ("https://" in lowers):
         score += 0.10
+
     return min(score, 0.99)
 
 
-def _classify(subject: str, content: str, sender: str | None = None) -> dict:
-    text = f"{subject}\n{content}\n{sender or ''}"
+def check_spam(subject: str, content: str, sender: str | None) -> dict[str, object]:
+    text = f"{subject or ''}\n{content or ''}\n{sender or ''}"
     score = _heuristic_spam_score(text)
     return {
         "subject": subject,
         "sender": sender,
         "score": round(score, 2),
         "is_spam": score >= 0.5,
-        "engine": "heuristic-v0",
+        "engine": "heuristic-v1",
     }
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(
-        prog="sma-spamcheck",
-        description="垃圾信偵測（輕量 CLI 包裝器，可替換為正式 orchestrator）",
-    )
-    ap.add_argument("--subject", required=True)
-    ap.add_argument("--content", required=True)
-    ap.add_argument("--sender")
-    ap.add_argument("--json", action="store_true", help="輸出 JSON（預設為人讀格式）")
-    args = ap.parse_args(argv)
+    p = argparse.ArgumentParser(description="Simple spam score checker")
+    p.add_argument("--subject", required=True, help="mail subject")
+    p.add_argument("--content", required=True, help="mail content")
+    p.add_argument("--sender", default=None, help="mail from (optional)")
+    args = p.parse_args(argv)
 
-    res = _classify(args.subject, args.content, args.sender)
-    if args.json:
-        print(json.dumps(res, ensure_ascii=False))
-    else:
-        print(
-            f"subject={res['subject']!r} sender={res['sender']!r} "
-            f"is_spam={res['is_spam']} score={res['score']} engine={res['engine']}"
-        )
+    res = check_spam(args.subject, args.content, args.sender)
+    print(json.dumps(res, ensure_ascii=False, indent=2))
     return 0
 
 
