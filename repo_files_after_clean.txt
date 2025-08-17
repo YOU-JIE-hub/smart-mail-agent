@@ -42,6 +42,7 @@ docs/index.md
 mkdocs.yml
 pyproject.toml
 pytest.ini
+repo_files_after_clean.txt
 scripts/bin/smarun
 scripts/online_check.py
 scripts/run_pipeline.sh
@@ -144,10 +145,8 @@ tests/e2e/conftest.py
 tests/e2e/test_actions_matrix_ext.py
 tests/e2e/test_cli_flags.py
 tests/e2e/test_cli_scripts.py
-tests/e2e/test_cli_scripts.py.bak.20250813-081617
 tests/e2e/test_complaint_policy.py
 tests/e2e/test_label_routing_offline.py
-tests/e2e/test_label_routing_offline.py.bak.20250813-081617
 tests/e2e/test_new_intents.py
 tests/e2e/test_offline_suite.py
 tests/e2e/test_policy_expansion.py
@@ -220,8 +219,6 @@ tests/unit/test_send_with_attachment_smoke.py
 tests/unit/test_spam_pipeline_smoke.py
 tests/unit/test_spam_rules_min.py
 tests/unit/test_spam_stack.py
-tests/unit/test_spam_stack.py.bak.20250813-081730
 tests/unit/test_tasks_minimal.py
-tests/unit/test_tasks_minimal.py.bak.20250813-081730
 tests/unit/test_utils_pdf_safe_top.py
 tox.ini
