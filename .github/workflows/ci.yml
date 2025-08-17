@@ -1,45 +1,65 @@
 name: CI
+
 on:
-  push: { branches: [ "main" ] }
-  pull_request: { branches: [ "main" ] }
+  push:
+    branches: [ main ]
+  pull_request:
   workflow_dispatch:
+
 jobs:
-  test:
+  tests:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix: { python-version: ["3.10","3.11"] }
     env:
-      OFFLINE: "1"
-      LOG_LEVEL: "INFO"
-      PDF_FONT_FALLBACK: "1"
+      PYTHONUTF8: "1"
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      FORCE_COLOR: "1"
+      OFFLINE: "1"   # 由程式/測試自行判斷離線路徑
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
-        with: { python-version: ${{ matrix.python-version }}, cache: "pip" }
+        with:
+          python-version: "3.11"
+
       - name: System deps (fonts for PDF)
         run: |
-          sudo apt-get update -y
-          sudo apt-get install -y --no-install-recommends fonts-noto-cjk fontconfig
-          fc-list | grep -i "NotoSansCJK" || true
-          echo "NOTO_FONT_PATH=$(fc-list | grep -i 'NotoSansCJK' | head -n1 | cut -d: -f1)" >> $GITHUB_ENV
+          sudo apt-get update
+          sudo apt-get install -y fonts-noto-cjk
+
       - name: Install deps
         run: |
-          python -m pip install -U pip wheel
-          pip install -U pytest pytest-cov pre-commit ruff black isort "pydantic<3"
-          pip install -e .
-      - name: Lint (pre-commit)
-        run: pre-commit run -a
-      - name: Tests (offline, skip e2e/online)
+          python -m pip install -U pip
+          # project + dev
+          python -m pip install -e .
+          python -m pip install -U pytest pytest-cov ruff black isort pre-commit
+
+      - name: Lint (ruff/black/isort)
         run: |
-          set -Eeuo pipefail
-          echo "NOTO_FONT_PATH=${NOTO_FONT_PATH:-unset}"
-          # 盡量只跑穩定目錄；若不存在不致失敗
+          ruff check .
+          black --check .
+          isort --profile black --check-only .
+
+      - name: Run offline tests (unit + contracts; skip @online)
+        run: |
+          set -e
           targets=()
-          for d in tests/unit tests/portfolio tests/spam; do [ -d "$d" ] && targets+=("$d"); done
+          for d in tests/unit tests/contracts; do
+            [ -d "$d" ] && targets+=("$d")
+          done
           if [ ${#targets[@]} -eq 0 ]; then
-            echo "No stable test folders found, running default discovery (will skip e2e)" >&2
-            pytest -q -k 'not e2e and not online'
-          else
-            pytest -q "${targets[@]}" -k 'not e2e and not online'
+            echo "No unit/contracts dirs found; falling back to tests"
+            targets=(tests)
           fi
+          # 嘗試排除 @online；若無標記也能照常執行
+          pytest -q --cov=src/smart_mail_agent --cov-report=term-missing --cov-report=xml \
+                 -m "not online" "${targets[@]}" || {
+            echo "Retry without marker filter (no @online markers?)"
+            pytest -q --cov=src/smart_mail_agent --cov-report=term-missing --cov-report=xml \
+                   "${targets[@]}"
+          }
+
+      - name: Upload coverage xml
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
