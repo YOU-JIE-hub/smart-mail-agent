@@ -1,5 +1,9 @@
 # Smart Mail Agent
 
+[![CI](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/ci.yml)
+
+# Smart Mail Agent
+
 ![](assets/badges/coverage.svg)
 
 ## 快速開始
