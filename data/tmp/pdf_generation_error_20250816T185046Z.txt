@@ -1,1 +1,0 @@
-PDF generation failed: simulated failure.
