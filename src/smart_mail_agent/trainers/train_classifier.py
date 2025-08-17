@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 
 from datasets import Dataset
-
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
