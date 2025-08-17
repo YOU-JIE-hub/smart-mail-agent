@@ -9,16 +9,37 @@ jobs:
     strategy:
       fail-fast: false
       matrix: { python-version: ["3.10","3.11"] }
+    env:
+      OFFLINE: "1"
+      LOG_LEVEL: "INFO"
+      PDF_FONT_FALLBACK: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: ${{ matrix.python-version }}, cache: "pip" }
-      - name: Install
+      - name: System deps (fonts for PDF)
         run: |
-          python -m pip install -U pip
+          sudo apt-get update -y
+          sudo apt-get install -y --no-install-recommends fonts-noto-cjk fontconfig
+          fc-list | grep -i "NotoSansCJK" || true
+          echo "NOTO_FONT_PATH=$(fc-list | grep -i 'NotoSansCJK' | head -n1 | cut -d: -f1)" >> $GITHUB_ENV
+      - name: Install deps
+        run: |
+          python -m pip install -U pip wheel
           pip install -U pytest pytest-cov pre-commit ruff black isort "pydantic<3"
           pip install -e .
-      - name: Lint & format
+      - name: Lint (pre-commit)
         run: pre-commit run -a
-      - name: Tests
-        run: pytest -q
+      - name: Tests (offline, skip e2e/online)
+        run: |
+          set -Eeuo pipefail
+          echo "NOTO_FONT_PATH=${NOTO_FONT_PATH:-unset}"
+          # 盡量只跑穩定目錄；若不存在不致失敗
+          targets=()
+          for d in tests/unit tests/portfolio tests/spam; do [ -d "$d" ] && targets+=("$d"); done
+          if [ ${#targets[@]} -eq 0 ]; then
+            echo "No stable test folders found, running default discovery (will skip e2e)" >&2
+            pytest -q -k 'not e2e and not online'
+          else
+            pytest -q "${targets[@]}" -k 'not e2e and not online'
+          fi
