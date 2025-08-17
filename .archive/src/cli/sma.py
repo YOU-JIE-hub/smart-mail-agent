@@ -85,7 +85,9 @@ def spam_scan(inbox: Path, out_dir: Path) -> dict[str, Any]:
         "<style>body{font-family:system-ui,Segoe UI,Arial} table{border-collapse:collapse;width:100%} th,td{border:1px solid #ddd;padding:6px} th{background:#fafafa;text-align:left}</style>"
         "<h2>Spam Scan Report</h2>"
         f"<p>Total: {len(rows)}</p>"
-        "<table><tr><th>File</th><th>Label</th><th>Score</th><th>Subject</th><th>Reasons</th></tr>" + "".join(table_rows) + "</table>"
+        "<table><tr><th>File</th><th>Label</th><th>Score</th><th>Subject</th><th>Reasons</th></tr>"
+        + "".join(table_rows)
+        + "</table>"
     )
     html_path.write_text(html_doc, encoding="utf-8")
     return {

@@ -7,8 +7,9 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
 from utils.logger import logger  # 統一日誌
+
+from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
 
 # !/usr/bin/env python3
 # 檔案位置：src/classifier.py
@@ -105,7 +106,8 @@ class IntentClassifier:
             result = result_list[0] if isinstance(result_list, list) else result_list
             model_label = str(result.get("label", "unknown"))
             confidence = float(result.get("score", 0.0))
-        except Exception as e:  # 不得因單一錯誤中斷流程
+        except Exception as e:
+            # 不得因單一錯誤中斷流程
             logger.error(f"[IntentClassifier] 推論失敗：{e}")
             return {
                 "predicted_label": "unknown",

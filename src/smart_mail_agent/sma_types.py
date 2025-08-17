@@ -7,7 +7,8 @@ try:
     from pydantic import BaseModel, Field  # v2
 
     _V2 = True
-except Exception:  # pragma: no cover
+except Exception:
+    # pragma: no cover
     from pydantic import BaseModel, Field  # type: ignore  # v1
 
     _V2 = False

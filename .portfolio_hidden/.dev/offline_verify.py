@@ -90,7 +90,9 @@ def demo_actions() -> dict[str, Any]:
                 }
             )
     # 總覽寫檔
-    (OUT / "offline_verify_summary.json").write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
+    (OUT / "offline_verify_summary.json").write_text(
+        json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     return results
 
 

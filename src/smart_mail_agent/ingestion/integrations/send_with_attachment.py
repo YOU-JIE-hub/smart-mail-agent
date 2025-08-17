@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 # 檔案位置：src/send_with_attachment.py
 # 模組用途：寄送 Email（支援 HTML 內文、附件、錯誤處理、環境參數與 log 紀錄）
 import argparse
@@ -12,7 +14,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from reportlab.pdfgen import canvas
-
 from utils.logger import logger
 
 # 強制指定 .env 位置

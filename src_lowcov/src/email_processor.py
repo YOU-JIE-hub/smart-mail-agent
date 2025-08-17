@@ -5,13 +5,13 @@ import argparse
 import json
 import os
 
-from dotenv import load_dotenv
-
 from action_handler import route_action
+from dotenv import load_dotenv
 from inference_classifier import classify_intent
-from spam.spam_filter_orchestrator import SpamFilterOrchestrator
 from utils.log_writer import write_log
 from utils.logger import logger
+
+from spam.spam_filter_orchestrator import SpamFilterOrchestrator
 
 load_dotenv()
 
@@ -65,8 +65,12 @@ def main():
         result = spam_filter.is_legit(subject, body, sender)
 
         if not result["allow"]:
-            logger.warning(f"[Spam] 被過濾：階段 {result.get('stage') or result.get('engine', 'blocked')}")
-            data.update({"label": "spam", "predicted_label": "spam", "confidence": 0.0, "summary": ""})
+            logger.warning(
+                f"[Spam] 被過濾：階段 {result.get('stage') or result.get('engine', 'blocked')}"
+            )
+            data.update(
+                {"label": "spam", "predicted_label": "spam", "confidence": 0.0, "summary": ""}
+            )
             write_classification_result(data, input_path)
             write_log(
                 subject,
@@ -90,7 +94,9 @@ def main():
 
         logger.info(f"[Classifier] 分類為：{label}（信心值：{confidence_val:.4f}）")
 
-        data.update({"label": label, "predicted_label": label, "confidence": round(confidence_val, 4)})
+        data.update(
+            {"label": label, "predicted_label": label, "confidence": round(confidence_val, 4)}
+        )
         write_classification_result(data, input_path)
 
         try:

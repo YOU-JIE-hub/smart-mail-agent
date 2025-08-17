@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# mypy: ignore-errors
-# 檔案位置：src/spam/ml_spam_classifier.py
-# 模組用途：使用 fine-tuned BERT 模型進行垃圾郵件分類預測
+from __future__ import annotations
+
+from utils.logger import logger
 
 import torch
 from transformers import (
@@ -9,7 +9,10 @@ from transformers import (
     AutoTokenizer,
     TextClassificationPipeline,
 )
-from utils.logger import logger
+
+# mypy: ignore-errors
+# 檔案位置：src/spam/ml_spam_classifier.py
+# 模組用途：使用 fine-tuned BERT 模型進行垃圾郵件分類預測
 
 
 def smart_truncate(text: str, max_chars: int = 1000) -> str:

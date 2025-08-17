@@ -5,7 +5,6 @@ import os
 # 模組用途：使用 GPT 模型 + FAQ 知識庫進行回應生成（中文 Retrieval-Augmented Generation）
 from dotenv import load_dotenv
 from openai import OpenAI, OpenAIError
-
 from utils.logger import logger
 
 load_dotenv()

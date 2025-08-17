@@ -1,1 +1,1 @@
-# Legacy shim: allow tests to `import src.*`.
+# Legacy shim: allow tests to `import smart_mail_agent.*`.

@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-# 檔案位置：src/utils/priority_evaluator.py
-# 模組用途：根據主旨、內容、分類與信心分數，評估技術工單的優先等級
+from __future__ import annotations
 
 from typing import Literal
 
 from utils.logger import logger
+
+# 檔案位置：src/utils/priority_evaluator.py
+# 模組用途：根據主旨、內容、分類與信心分數，評估技術工單的優先等級
+
 
 PriorityLevel = Literal["high", "medium", "low"]
 
@@ -42,11 +45,11 @@ def evaluate_priority(
     根據分類與信心值評估工單優先順序
 
     規則：
-        - 命中高風險關鍵字 ➜ high
-        - 技術支援 + 信心 > 0.8 ➜ high
-        - 投訴與抱怨 ➜ medium
-        - 詢問流程 ➜ low
-        - 其他 ➜ 預設 medium
+        - 命中高風險關鍵字  high
+        - 技術支援 + 信心 > 0.8  high
+        - 投訴與抱怨  medium
+        - 詢問流程  low
+        - 其他  預設 medium
 
     :param subject: 信件主旨
     :param content: 信件內文
@@ -59,22 +62,22 @@ def evaluate_priority(
         combined = f"{subject} {content}".lower()
 
         if contains_critical_keywords(combined):
-            logger.info("[priority_evaluator] 命中高風險詞 ➜ 優先等級：high")
+            logger.info("[priority_evaluator] 命中高風險詞  優先等級：high")
             return "high"
 
         if category == "請求技術支援" and confidence >= 0.8:
-            logger.info("[priority_evaluator] 技術支援 + 高信心 ➜ 優先等級：high")
+            logger.info("[priority_evaluator] 技術支援 + 高信心  優先等級：high")
             return "high"
 
         if category == "投訴與抱怨":
-            logger.info("[priority_evaluator] 分類為投訴與抱怨 ➜ 優先等級：medium")
+            logger.info("[priority_evaluator] 分類為投訴與抱怨  優先等級：medium")
             return "medium"
 
         if category == "詢問流程或規則":
-            logger.info("[priority_evaluator] 分類為詢問流程 ➜ 優先等級：low")
+            logger.info("[priority_evaluator] 分類為詢問流程  優先等級：low")
             return "low"
 
-        logger.info("[priority_evaluator] 未命中條件 ➜ 優先等級：medium")
+        logger.info("[priority_evaluator] 未命中條件  優先等級：medium")
         return "medium"
 
     except Exception as e:

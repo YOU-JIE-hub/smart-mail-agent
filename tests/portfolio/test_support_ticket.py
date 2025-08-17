@@ -3,7 +3,7 @@ import pathlib
 import sqlite3
 import sys
 
-from src import support_ticket as st
+from smart_mail_agent.features.support import support_ticket as st
 
 
 def _reset_db():

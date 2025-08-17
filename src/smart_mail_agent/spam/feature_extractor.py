@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-# 檔案位置：src/spam/feature_extractor.py
-# 模組用途：從原始 Email 字串中擷取關鍵特徵，用於垃圾郵件判斷（供 ML 模型使用）
+from __future__ import annotations
 
 import re
 from email import message_from_string
+
+# 檔案位置：src/spam/feature_extractor.py
+# 模組用途：從原始 Email 字串中擷取關鍵特徵，用於垃圾郵件判斷（供 ML 模型使用）
 
 
 def extract_features(raw_email: str) -> dict[str, int]:
