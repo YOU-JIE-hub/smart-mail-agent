@@ -1,6 +1,3 @@
-import pathlib
-import tempfile
-
 import smart_mail_agent.smart_mail_agent.utils.pdf_safe as ps
 
 

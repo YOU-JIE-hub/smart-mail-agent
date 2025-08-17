@@ -19,4 +19,6 @@ def test_runner_outputs():
     with outs[0].open(encoding="utf-8") as fh:
         data = json.load(fh)
     # 放寬：頂層 logged_path 不一定有，但應至少有 meta 或 attachments 供後續流程使用
-    assert ("logged_path" in data) or ("meta" in data and isinstance(data["meta"], dict))
+    assert ("logged_path" in data) or (
+        "meta" in data and isinstance(data["meta"], dict)
+    )

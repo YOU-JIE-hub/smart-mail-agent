@@ -8,7 +8,12 @@ from datetime import datetime
 
 from datasets import Dataset
 from sklearn.utils import shuffle
-from transformers import BertForSequenceClassification, BertTokenizer, Trainer, TrainingArguments
+from transformers import (
+    BertForSequenceClassification,
+    BertTokenizer,
+    Trainer,
+    TrainingArguments,
+)
 
 LABEL2ID = {"ham": 0, "spam": 1}
 ID2LABEL = {0: "ham", 1: "spam"}
@@ -24,7 +29,9 @@ def load_data(path):
         label = item.get("label")
         if label not in LABEL2ID:
             continue
-        data.append({"text": subject.strip() + "\n" + content.strip(), "label": LABEL2ID[label]})
+        data.append(
+            {"text": subject.strip() + "\n" + content.strip(), "label": LABEL2ID[label]}
+        )
         stats[label] = stats.get(label, 0) + 1
     print(" 資料分布：", stats)
     return shuffle(data, random_state=42)
@@ -79,7 +86,9 @@ def main():
     )
 
     print("[INFO] 開始訓練...")
-    trainer = Trainer(model=model, tokenizer=tokenizer, args=training_args, train_dataset=tokenized)
+    trainer = Trainer(
+        model=model, tokenizer=tokenizer, args=training_args, train_dataset=tokenized
+    )
 
     trainer.train()
 

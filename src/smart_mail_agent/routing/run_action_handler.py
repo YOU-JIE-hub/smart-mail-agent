@@ -82,7 +82,9 @@ def build_response(
         body = "我們已收到您的商務詢問，附件為需求摘要，稍後由業務與您聯繫。"
         meta["next_step"] = "安排需求澄清會議並由業務跟進"
         md = f"# 商務詢問摘要（{rid}）\n\n- 來信主旨：{obj.get('subject', '')}\n- 來信者：{obj.get('from', '')}\n- 內文：\n{obj.get('body', '')}\n"
-        attachments.append({"filename": f"needs_summary_{rid}.md", "size": len(md.encode("utf-8"))})
+        attachments.append(
+            {"filename": f"needs_summary_{rid}.md", "size": len(md.encode("utf-8"))}
+        )
     elif action == "complaint":
         subject = "[自動回覆] 投訴受理通知"
         body = "我們已受理您的意見，內部將儘速處理。"
@@ -91,7 +93,10 @@ def build_response(
             meta["priority"] = "P1"
             meta["SLA_eta"] = "4h"
             meta["cc"] = sorted(
-                set((meta.get("cc") or []) + ["ops@company.example", "qa@company.example"])
+                set(
+                    (meta.get("cc") or [])
+                    + ["ops@company.example", "qa@company.example"]
+                )
             )
 
     out = {
@@ -144,7 +149,9 @@ try:
                     _d = json.loads(_out.read_text(encoding="utf-8"))
                     if _args.dry_run and not _d.get("dry_run", False):
                         _d["dry_run"] = True
-                        _out.write_text(json.dumps(_d, ensure_ascii=False), encoding="utf-8")
+                        _out.write_text(
+                            json.dumps(_d, ensure_ascii=False), encoding="utf-8"
+                        )
         except Exception:
             pass  # 後處理失敗不影響主流程
 
@@ -181,7 +188,8 @@ try:
                         )
                         _d["meta"] = _meta
                         _out.write_text(
-                            _j2.dumps(_d, ensure_ascii=False, indent=2), encoding="utf-8"
+                            _j2.dumps(_d, ensure_ascii=False, indent=2),
+                            encoding="utf-8",
                         )
         except Exception:
             pass

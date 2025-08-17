@@ -80,7 +80,9 @@ def send_email_with_attachment(
         if os.path.exists(attachment_path):
             try:
                 with open(attachment_path, "rb") as f:
-                    part = MIMEApplication(f.read(), Name=os.path.basename(attachment_path))
+                    part = MIMEApplication(
+                        f.read(), Name=os.path.basename(attachment_path)
+                    )
                     part["Content-Disposition"] = (
                         f'attachment; filename="{os.path.basename(attachment_path)}"'
                     )
@@ -116,7 +118,10 @@ def main():
     args = parser.parse_args()
 
     result = send_email_with_attachment(
-        recipient=args.to, subject=args.subject, body_html=args.body, attachment_path=args.file
+        recipient=args.to,
+        subject=args.subject,
+        body_html=args.body,
+        attachment_path=args.file,
     )
 
     if result:

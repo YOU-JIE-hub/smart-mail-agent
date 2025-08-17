@@ -16,7 +16,9 @@ for p in (BASE, BASE.parent):
 try:
     from action_handler import handle as _orig_handle  # type: ignore
 except Exception:
-    from smart_mail_agent.routing.action_handler import handle as _orig_handle  # type: ignore
+    from smart_mail_agent.routing.action_handler import (
+        handle as _orig_handle,  # type: ignore
+    )
 
 try:
     from utils.pdf_safe import write_pdf_or_txt

@@ -1,6 +1,3 @@
-import json
-import pathlib
-import tempfile
 import textwrap
 
 import smart_mail_agent.smart_mail_agent.spam.rules as rules

@@ -8,7 +8,9 @@ class EmailSendError(Exception):
     pass
 
 
-def notify_sales(*, client_name: str, package: str, pdf_path: str | None = None) -> bool:
+def notify_sales(
+    *, client_name: str, package: str, pdf_path: str | None = None
+) -> bool:
     """
     測試呼叫樣式：
         notify_sales(client_name=..., package=..., pdf_path=...)

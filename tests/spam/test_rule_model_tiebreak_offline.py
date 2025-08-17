@@ -9,7 +9,9 @@ import pytest
 spam_orch = None
 rule_filter = None
 try:
-    spam_orch = importlib.import_module("smart_mail_agent.spam.spam_filter_orchestrator")
+    spam_orch = importlib.import_module(
+        "smart_mail_agent.spam.spam_filter_orchestrator"
+    )
 except Exception:
     pass
 try:
@@ -53,7 +55,7 @@ def test_rule_model_tiebreak(monkeypatch, rule_says_spam, model_says_spam):
         stub_model = _mk_stub_model("SPAM" if model_says_spam else "HAM", 0.91)
         label, conf = spam_orch.decide(text, rules=spam_orch.rules, model=stub_model)
         assert label in {"SPAM", "HAM"}
-        assert isinstance(conf, (int, float))
+        assert isinstance(conf, (int | float))
         # 若兩者一致 → 必須一致
         if rule_says_spam == model_says_spam:
             expect = "SPAM" if rule_says_spam else "HAM"
@@ -64,4 +66,4 @@ def test_rule_model_tiebreak(monkeypatch, rule_says_spam, model_says_spam):
         stub_model = _mk_stub_model("SPAM" if model_says_spam else "HAM", 0.91)
         label, conf = rule_filter.decide(text, rules=stub_rules, model=stub_model)
         assert label in {"SPAM", "HAM"}
-        assert isinstance(conf, (int, float))
+        assert isinstance(conf, (int | float))

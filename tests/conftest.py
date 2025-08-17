@@ -40,12 +40,16 @@ def pytest_configure(config: pytest.Config) -> None:
     config._run_online = _should_run_online(config)  # type: ignore[attr-defined]
 
 
-def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+def pytest_collection_modifyitems(
+    config: pytest.Config, items: list[pytest.Item]
+) -> None:
     """
     若未允許 online，則跳過所有 @pytest.mark.online 的測試。
     """
     run_online = getattr(config, "_run_online", False)
-    skip_online = pytest.mark.skip(reason="skipping @online tests (use --online or OFFLINE=0)")
+    skip_online = pytest.mark.skip(
+        reason="skipping @online tests (use --online or OFFLINE=0)"
+    )
     if not run_online:
         for item in items:
             if "online" in item.keywords:

@@ -33,7 +33,9 @@ class HeuristicClassifier:
         "博彩",
     )
 
-    def predict(self, subject: str = "", body: str = "", sender: str = "") -> dict[str, object]:
+    def predict(
+        self, subject: str = "", body: str = "", sender: str = ""
+    ) -> dict[str, object]:
         subj = (subject or "").strip()
         cont = (body or "").strip()
         text = f"{subj} {cont}".lower()
@@ -104,13 +106,19 @@ class SpamFilterOrchestrator:
     def __init__(self) -> None:
         self.clf = HeuristicClassifier()
 
-    def analyze(self, subject: str = "", content: str = "", sender: str = "") -> dict[str, object]:
+    def analyze(
+        self, subject: str = "", content: str = "", sender: str = ""
+    ) -> dict[str, object]:
         return self.clf.predict(subject=subject, body=content, sender=sender)
 
-    def is_spam(self, subject: str = "", content: str = "", sender: str = "") -> dict[str, object]:
+    def is_spam(
+        self, subject: str = "", content: str = "", sender: str = ""
+    ) -> dict[str, object]:
         return self.analyze(subject, content, sender)
 
-    def is_legit(self, subject: str = "", content: str = "", sender: str = "") -> dict[str, object]:
+    def is_legit(
+        self, subject: str = "", content: str = "", sender: str = ""
+    ) -> dict[str, object]:
         return self.analyze(subject, content, sender)
 
 

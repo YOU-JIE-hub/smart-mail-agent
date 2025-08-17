@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 #!/usr/bin/env python3
 from __future__ import annotations
 
@@ -26,7 +27,8 @@ def _decode_imap_bytes(v: bytes | tuple[bytes, ...] | bytearray) -> str:
 import re
 
 from dotenv import load_dotenv
-from utils.logger import logger
+
+from smart_mail_agent.utils.logger import logger
 
 load_dotenv()
 

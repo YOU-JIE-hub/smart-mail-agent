@@ -30,5 +30,7 @@ def test_smtp_live_send_ok() -> None:
         capture_output=True,
         check=False,
     )
-    assert proc.returncode == 0, f"online_check.py 退出碼非 0：\n{proc.stderr or proc.stdout}"
+    assert (
+        proc.returncode == 0
+    ), f"online_check.py 退出碼非 0：\n{proc.stderr or proc.stdout}"
     assert "SMTP 寄信成功" in proc.stdout, f"未偵測到 SMTP 成功訊息：\n{proc.stdout}"

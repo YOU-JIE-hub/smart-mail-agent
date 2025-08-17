@@ -1,36 +1,26 @@
 repos:
-  - repo: https://github.com/psf/black
-    rev: 24.8.0
-    hooks: [ { id: black } ]
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
-    hooks: [ { id: isort, args: ["--profile=black"] } ]
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.4
-    hooks: [ { id: ruff, args: ["--fix"] } ]
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+  - repo: local
     hooks:
-      - id: end-of-file-fixer
-      - id: trailing-whitespace
-      - id: check-merge-conflict
-      - id: mixed-line-ending
-        args: ["--fix=lf"]
-exclude: |
-  ^(
-    \.archive/|
-    \.portfolio_hidden/|
-    audit_bundle.*|
-    src_lowcov/|
-    review_pack/|
-    share/|
-    tmp/|
-    assets/fonts/|
-    data/|
-    dist/|
-    build/|
-    \.venv/|
-    \.mypy_cache/|
-    \.ruff_cache/|
-    \.pytest_cache/
-  )
+      - id: black
+        name: black
+        entry: black
+        language: system
+        types_or: [python]
+        files: ^(src|tests|scripts|configs|docs)/|^pyproject\.toml$|^README\.md$
+
+      - id: isort
+        name: isort (black profile)
+        entry: isort --profile black
+        language: system
+        types_or: [python]
+        files: ^(src|tests|scripts|configs|docs)/|^pyproject\.toml$
+
+      - id: ruff
+        name: ruff (fix)
+        entry: ruff check --fix --exit-non-zero-on-fix
+        language: system
+        types_or: [python]
+        files: ^(src|tests|scripts)/
+
+# 不設定 default_stages（舊寫法會有棄用警告）
+# 依預設：於 pre-commit 階段執行；手動可跑 pre-commit run -a

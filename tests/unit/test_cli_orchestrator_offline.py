@@ -6,7 +6,9 @@ from smart_mail_agent.spam import orchestrator_offline as oo
 
 def test_cli_json_output(capsys, monkeypatch):
     monkeypatch.setattr(
-        sys, "argv", ["prog", "--subject", "Hello", "--content", "http://x.io", "--json"]
+        sys,
+        "argv",
+        ["prog", "--subject", "Hello", "--content", "http://x.io", "--json"],
     )
     code = oo._main()
     assert code == 0

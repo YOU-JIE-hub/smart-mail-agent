@@ -48,7 +48,9 @@ def init_db():
         conn.commit()
 
 
-def create_ticket(subject, content, summary="", sender=None, category=None, confidence=None):
+def create_ticket(
+    subject, content, summary="", sender=None, category=None, confidence=None
+):
     init_db()
     subject = subject or "(未填寫)"
     content = content or ""
@@ -143,12 +145,14 @@ def update_ticket(ticket_id: int, status=None, summary=None):
     with sqlite3.connect(DB_PATH) as conn:
         if status:
             conn.execute(
-                f"UPDATE {TABLE} SET status=?, updated_at=? WHERE id=?", (status, now, ticket_id)
+                f"UPDATE {TABLE} SET status=?, updated_at=? WHERE id=?",
+                (status, now, ticket_id),
             )
             updated_fields.append("狀態")
         if summary:
             conn.execute(
-                f"UPDATE {TABLE} SET summary=?, updated_at=? WHERE id=?", (summary, now, ticket_id)
+                f"UPDATE {TABLE} SET summary=?, updated_at=? WHERE id=?",
+                (summary, now, ticket_id),
             )
             updated_fields.append("摘要")
         conn.commit()
@@ -188,7 +192,12 @@ def main():
     args = parse_args()
     if args.command == "create":
         create_ticket(
-            args.subject, args.content, args.summary, args.sender, args.category, args.confidence
+            args.subject,
+            args.content,
+            args.summary,
+            args.sender,
+            args.category,
+            args.confidence,
         )
     elif args.command == "list":
         list_tickets()

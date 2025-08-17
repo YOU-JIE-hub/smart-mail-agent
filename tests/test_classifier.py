@@ -17,14 +17,20 @@ def mock_pipeline_quote(text, truncation=True):
 
 
 def test_classifier_inference_with_high_confidence():
-    clf = IntentClassifier(model_path="dummy", pipeline_override=mock_pipeline_high_confidence)
-    result = clf.classify("我要辦理退款流程", "想請問申請退費的具體流程")  # 避開 fallback 條件
+    clf = IntentClassifier(
+        model_path="dummy", pipeline_override=mock_pipeline_high_confidence
+    )
+    result = clf.classify(
+        "我要辦理退款流程", "想請問申請退費的具體流程"
+    )  # 避開 fallback 條件
     assert result["predicted_label"] == "詢問流程或規則"
     assert result["confidence"] == 0.95
 
 
 def test_classifier_inference_with_low_confidence_trigger_fallback():
-    clf = IntentClassifier(model_path="dummy", pipeline_override=mock_pipeline_low_confidence)
+    clf = IntentClassifier(
+        model_path="dummy", pipeline_override=mock_pipeline_low_confidence
+    )
     result = clf.classify("Hi", "Hello")  # fallback: is_generic + low confidence
     assert result["predicted_label"] == "其他"
     assert result["confidence"] == 0.2

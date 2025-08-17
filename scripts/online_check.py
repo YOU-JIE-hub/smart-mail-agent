@@ -18,18 +18,23 @@ def main() -> int:
 
     if not all([user, pw, host, port, to]):
         print(
-            "缺少必要環境變數 (SMTP_USER/SMTP_PASS/SMTP_HOST/SMTP_PORT/REPLY_TO)", file=sys.stderr
+            "缺少必要環境變數 (SMTP_USER/SMTP_PASS/SMTP_HOST/SMTP_PORT/REPLY_TO)",
+            file=sys.stderr,
         )
         return 2
 
     msg = EmailMessage()
-    msg["Subject"] = f"[Online Check] Smart Mail Agent smoke {time.strftime('%Y-%m-%d %H:%M:%S')}"
+    msg["Subject"] = (
+        f"[Online Check] Smart Mail Agent smoke {time.strftime('%Y-%m-%d %H:%M:%S')}"
+    )
     msg["From"] = user
     msg["To"] = to
     msg.set_content("這是一封線上冒煙測試信（請忽略）。")
 
     try:
-        with smtplib.SMTP_SSL(host, port, context=ssl.create_default_context(), timeout=20) as s:
+        with smtplib.SMTP_SSL(
+            host, port, context=ssl.create_default_context(), timeout=20
+        ) as s:
             s.login(user, pw)
             s.send_message(msg)
     except Exception as e:

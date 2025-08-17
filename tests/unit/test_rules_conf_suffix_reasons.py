@@ -1,7 +1,4 @@
-import json
 import textwrap
-
-import pytest
 
 from smart_mail_agent.spam import rules
 
