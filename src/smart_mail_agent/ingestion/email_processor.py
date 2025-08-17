@@ -148,3 +148,45 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# === compatibility: allow both (data, path) and (path, data) ===
+try:
+    _orig_write_classification_result = write_classification_result  # type: ignore[name-defined]
+except Exception:
+    _orig_write_classification_result = None
+
+
+def _write_classification_result_compat(a, b):
+    """Back-compat: accept both (data, path) and (path, data).
+    Returns the written path (str).
+    """
+    import json
+    import os
+    import pathlib
+    from collections.abc import Mapping
+
+    def is_path(x):
+        return isinstance(x, (str | bytes | os.PathLike))
+
+    def is_data(x):
+        return isinstance(x, Mapping) or isinstance(x, dict)
+
+    if is_path(a) and is_data(b):
+        path, data = a, b
+    elif is_path(b) and is_data(a):
+        path, data = b, a
+    else:
+        # 退回原本定義（若存在），否則假設 (data, path)
+        if _orig_write_classification_result:
+            return _orig_write_classification_result(a, b)  # type: ignore[misc]
+        path, data = b, a
+
+    pth = pathlib.Path(path)
+    pth.parent.mkdir(parents=True, exist_ok=True)
+    with pth.open("w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    return str(pth)
+
+
+# 覆蓋導出的同名函式
+write_classification_result = _write_classification_result_compat  # type: ignore[assignment]

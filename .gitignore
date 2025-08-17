@@ -1,45 +1,37 @@
-# venv / caches
-.venv/
+# Project outputs
+# Python
 __pycache__/
-*.pyc
-.pytest_cache/
-# build artifacts
-build/
-dist/
+*.py[cod]
 *.egg-info/
-# editor
-*.swp
-.DS_Store
-# data outputs (保留版本但可視需要忽略)
+dist/
+build/
+# Virtual env
+.venv/
+ENV/
+env/
+# Coverage / test artifacts
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+assets/badges/coverage.svg
+# Logs / outputs
+*.log
 data/output/
-# local env
+share/
+# Local env & secrets
 .env
+.env.local
+.env.*.local
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
 reports/
-audit_bundle_*
-src_lowcov/
-data/*.db
-/.venv/
-/dist/
-/build/
-/.coverage
-/.pytest_cache/
-/.ruff_cache/
-/tmp/
-/share/
-/review_pack/
-/audit_bundle*
-/src_lowcov/
-/.portfolio_hidden/
-/.archive/
-/assets/fonts/
-/data/
-/reports/
-/site/
-/.coverage.*
-/repo-inventory-*.txt
-/review_files.lst
-/.review_cursor
-/.env.smtp-test
-/__pycache__/
+data/tmp/
+data/complaints/
+data/leads/
+repo-inventory-*
 repo_files_after_clean.txt
-.env.smtp-test
+review_files.lst
