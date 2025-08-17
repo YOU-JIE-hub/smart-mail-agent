@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
-from typing import Any, Dict, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from .orchestrator_offline import SpamFilterOrchestratorOffline, Thresholds
 from .rules import has_suspicious_attachment, label_email
@@ -12,13 +13,13 @@ from .rules import has_suspicious_attachment, label_email
 
 def analyze(
     email_or_subject: Mapping[str, Any] | str, content: str | None = None
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     if isinstance(email_or_subject, dict):
         email = dict(email_or_subject)
         subject = str(email.get("subject", "") or "")
         body = str(email.get("content", "") or "")
         attachments = email.get("attachments", [])
-        if not isinstance(attachments, (list, tuple)):
+        if not isinstance(attachments, (list | tuple)):
             attachments = []
             email["attachments"] = attachments
     else:

@@ -66,7 +66,10 @@ def generate_rag_reply(query: str, faq_path: str, model: str = "gpt-3.5-turbo") 
         response = client.chat.completions.create(
             model=model,
             messages=[
-                {"role": "system", "content": "你是客服 AI 專員，回答使用者關於流程與規則的問題。"},
+                {
+                    "role": "system",
+                    "content": "你是客服 AI 專員，回答使用者關於流程與規則的問題。",
+                },
                 {"role": "user", "content": prompt},
             ],
             max_tokens=400,

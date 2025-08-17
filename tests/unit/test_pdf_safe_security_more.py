@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib
-import os
 from pathlib import Path
 
 # 走 shim：優先 utils.pdf_safe，若無則 smart_mail_agent.utils.pdf_safe

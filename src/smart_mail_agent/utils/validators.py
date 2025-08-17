@@ -4,7 +4,10 @@ import re
 from collections.abc import Iterable
 
 try:
-    from email_validator import EmailNotValidError, validate_email  # provided by email-validator
+    from email_validator import (  # provided by email-validator
+        EmailNotValidError,
+        validate_email,
+    )
 except Exception:
     validate_email = None
     EmailNotValidError = Exception

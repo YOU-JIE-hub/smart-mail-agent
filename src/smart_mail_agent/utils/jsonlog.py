@@ -62,7 +62,10 @@ def log_event(result: Any, request: dict[str, Any] | None = None) -> str:
             row["req_from"] = request.get("from")
         with p.open("a", encoding="utf-8") as f:
             f.write(
-                json.dumps({k: _jsonable(v) for k, v in row.items()}, ensure_ascii=False) + "\n"
+                json.dumps(
+                    {k: _jsonable(v) for k, v in row.items()}, ensure_ascii=False
+                )
+                + "\n"
             )
         try:
             if isinstance(result, dict):

@@ -13,7 +13,15 @@ def run_cli(payload: dict) -> dict:
     out_p = ROOT / "data/output/out_c.json"
     in_p.parent.mkdir(parents=True, exist_ok=True)
     in_p.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
-    cmd = [PY, "-m", "src.run_action_handler", "--input", str(in_p), "--output", str(out_p)]
+    cmd = [
+        PY,
+        "-m",
+        "src.run_action_handler",
+        "--input",
+        str(in_p),
+        "--output",
+        str(out_p),
+    ]
     env = dict(os.environ)
     env["OFFLINE"] = "1"
     subprocess.run(cmd, cwd=str(ROOT), check=True, env=env)

@@ -36,7 +36,10 @@ def test_double_ext_and_long_name_and_mime_mismatch_trigger_review():
         "attachments": [
             {"filename": "invoice.pdf.exe", "mime": "application/x-msdownload"},
             {"filename": "A" * 130 + ".pdf", "mime": "application/pdf"},
-            {"filename": "report.pdf", "mime": "application/octet-stream"},  # 與副檔名推測不符
+            {
+                "filename": "report.pdf",
+                "mime": "application/octet-stream",
+            },  # 與副檔名推測不符
         ],
     }
     out = _run_cli(payload, "--dry-run")

@@ -14,7 +14,15 @@ def _run_cli(payload: dict, tmpdir: Path) -> dict:
     env = os.environ.copy()
     env["OFFLINE"] = "1"
     env["PYTHONPATH"] = str(Path("src").resolve())
-    cmd = [sys.executable, "-m", "src.run_action_handler", "--input", str(i), "--output", str(o)]
+    cmd = [
+        sys.executable,
+        "-m",
+        "src.run_action_handler",
+        "--input",
+        str(i),
+        "--output",
+        str(o),
+    ]
     subprocess.run(cmd, check=True, env=env)
     return json.loads(o.read_text(encoding="utf-8"))
 

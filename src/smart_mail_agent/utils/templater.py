@@ -15,7 +15,11 @@ def _template_dirs() -> list[str]:
     ]
     dirs = []
     for r in roots:
-        for p in [r / "templates", r / "src" / "templates", r / "src" / "src" / "templates"]:
+        for p in [
+            r / "templates",
+            r / "src" / "templates",
+            r / "src" / "src" / "templates",
+        ]:
             if p.exists():
                 dirs.append(str(p))
     seen, out = set(), []

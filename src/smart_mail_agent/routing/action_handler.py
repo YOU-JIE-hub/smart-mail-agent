@@ -89,7 +89,9 @@ def _addr_book() -> dict[str, str]:
     return {
         "from": os.getenv("SMTP_FROM", "noreply@example.com"),
         "reply_to": os.getenv("REPLY_TO", "service@example.com"),
-        "sales": os.getenv("SALES_EMAIL", os.getenv("SMTP_FROM", "noreply@example.com")),
+        "sales": os.getenv(
+            "SALES_EMAIL", os.getenv("SMTP_FROM", "noreply@example.com")
+        ),
     }
 
 
@@ -97,7 +99,9 @@ def _offline() -> bool:
     return os.getenv("OFFLINE", "1") == "1"
 
 
-def _send(to_addr: str, subject: str, body: str, attachments: list[str] | None = None) -> Any:
+def _send(
+    to_addr: str, subject: str, body: str, attachments: list[str] | None = None
+) -> Any:
     """相容新版與舊版 mailer 簽名；OFFLINE 直接回成功。"""
     if _offline():
         return {
@@ -180,7 +184,13 @@ def _action_reply_faq(payload: dict[str, Any]) -> dict[str, Any]:
     )
     to_addr = payload.get("sender") or _addr_book()["from"]
     resp = _send(to_addr, subject, body)
-    return {"ok": True, "action": "reply_faq", "subject": subject, "to": to_addr, "mailer": resp}
+    return {
+        "ok": True,
+        "action": "reply_faq",
+        "subject": subject,
+        "to": to_addr,
+        "mailer": resp,
+    }
 
 
 def _action_reply_apology(payload: dict[str, Any]) -> dict[str, Any]:
@@ -236,7 +246,12 @@ def handle(payload: dict[str, Any]) -> dict[str, Any]:
         return result
     except Exception as e:
         logger.exception("處理動作例外：%s", e)
-        return {"ok": False, "error": str(e), "action_name": action_name, "predicted_label": label}
+        return {
+            "ok": False,
+            "error": str(e),
+            "action_name": action_name,
+            "predicted_label": label,
+        }
 
 
 # 介面別名：讓 email_processor 可 from action_handler import route_action
@@ -247,7 +262,9 @@ def route_action(label: str, payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Action Handler：依分類結果執行後續動作")
+    parser = argparse.ArgumentParser(
+        description="Action Handler：依分類結果執行後續動作"
+    )
     parser.add_argument("--input", type=str, default="data/output/classify_result.json")
     parser.add_argument("--output", type=str, default="data/output/action_result.json")
     args = parser.parse_args()
@@ -268,7 +285,9 @@ def main() -> None:
 
     out_path = Path(args.output)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    out_path.write_text(
+        json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     logger.info("處理完成：%s", out_path)
 
 

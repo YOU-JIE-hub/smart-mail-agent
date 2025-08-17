@@ -47,7 +47,11 @@ def test_send_quote_simulate_failure_and_require_review():
 
 
 def test_complaint_p1_path():
-    payload = {"predicted_label": "complaint", "subject": "系統宕機", "body": "嚴重 無法使用"}
+    payload = {
+        "predicted_label": "complaint",
+        "subject": "系統宕機",
+        "body": "嚴重 無法使用",
+    }
     out = _run_cli(payload, "--dry-run")
     assert out["action_name"] == "complaint"
     m = out["meta"]

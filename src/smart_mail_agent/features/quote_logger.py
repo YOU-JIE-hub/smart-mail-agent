@@ -16,7 +16,9 @@ DEFAULT_DB_PATH = "data/quote_log.db"
 DEFAULT_TABLE = "quote_records"
 
 
-def ensure_db_exists(db_path: str = DEFAULT_DB_PATH, table_name: str = DEFAULT_TABLE) -> None:
+def ensure_db_exists(
+    db_path: str = DEFAULT_DB_PATH, table_name: str = DEFAULT_TABLE
+) -> None:
     """
     確保 SQLite 資料庫與表格存在，若無則建立
 

@@ -47,7 +47,9 @@ def _import_orch_module():
         return importlib.import_module("spam.spam_filter_orchestrator")
     except Exception:
         try:
-            return importlib.import_module("smart_mail_agent.spam.spam_filter_orchestrator")
+            return importlib.import_module(
+                "smart_mail_agent.spam.spam_filter_orchestrator"
+            )
         except Exception:
             return None
 
@@ -228,7 +230,15 @@ def _pick_bool(d: dict[str, Any], keys, default=None):
             if isinstance(v, int | float):
                 return bool(v)
             if isinstance(v, str):
-                return v.strip().lower() in ("1", "true", "yes", "y", "spam", "junk", "垃圾")
+                return v.strip().lower() in (
+                    "1",
+                    "true",
+                    "yes",
+                    "y",
+                    "spam",
+                    "junk",
+                    "垃圾",
+                )
     return default
 
 

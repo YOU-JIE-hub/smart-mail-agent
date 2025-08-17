@@ -1,10 +1,6 @@
 from __future__ import annotations
 
 import importlib
-import os
-import types
-
-import pytest
 
 oc = importlib.import_module("scripts.online_check")
 

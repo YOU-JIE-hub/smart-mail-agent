@@ -1,5 +1,5 @@
-from __future__ import annotations
+"""Compat shim: keep old import path working."""
 
-"""Compatibility proxy to canonical implementation."""
+from smart_mail_agent.utils.jsonlog import log_event
 
-from utils.jsonlog import log_event  # noqa: F401
+__all__ = ["log_event"]
