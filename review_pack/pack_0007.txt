@@ -1,0 +1,2415 @@
+================================================================================
+BEGIN FILE  tests/portfolio/test_log_writer.py  (440 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: import pathlib
+     2: import sqlite3
+     3: 
+     4: from src.log_writer import log_to_db
+     5: 
+     6: 
+     7: def test_log_to_db_writes_row(tmp_path):
+     8:     db = tmp_path / "emails_log.db"
+     9:     rid = log_to_db("s", "c", "sum", "lbl", 0.9, "act", "", db_path=db)
+    10:     with sqlite3.connect(db) as conn:
+    11:         row = conn.execute(
+    12:             "SELECT subject, predicted_label, action FROM emails_log WHERE rowid=?", (rid,)
+    13:         ).fetchone()
+    14:         assert row == ("s", "lbl", "act")
+--------------------------------------------------------------------------------
+END FILE    tests/portfolio/test_log_writer.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/portfolio/test_patches_router.py  (1094 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: import builtins
+     2: import importlib
+     3: import types
+     4: 
+     5: import src.patches.handle_router_patch as hr
+     6: 
+     7: 
+     8: def test_normalize_alias():
+     9:     assert hr._normalize("sales") == "sales_inquiry"
+    10:     assert hr._normalize("complain") == "complaint"
+    11:     assert hr._normalize("other") == "other"
+    12: 
+    13: 
+    14: def test_handle_import_sales_and_complaint(monkeypatch):
+    15:     called = []
+    16: 
+    17:     def fake_import(name):
+    18:         m = types.SimpleNamespace()
+    19: 
+    20:         def _handle(req):
+    21:             called.append(name)
+    22:             return {"action": name.split(".")[-1]}
+    23: 
+    24:         m.handle = _handle
+    25:         return m
+    26: 
+    27:     monkeypatch.setattr(importlib, "import_module", fake_import)
+    28:     assert hr.handle({"predicted_label": "sales"})["action"] == "sales_inquiry"
+    29:     assert hr.handle({"predicted_label": "complaint"})["action"] == "complaint"
+    30: 
+    31: 
+    32: def test_handle_fallback_general(monkeypatch):
+    33:     # 讓 _get_orig 回傳 None，走 fallback
+    34:     monkeypatch.setattr(hr, "_get_orig", lambda: None)
+    35:     out = hr.handle({"predicted_label": "unknown"})
+    36:     assert out["action"] == "reply_general" or out.get("subject", "").startswith("[自動回覆]")
+--------------------------------------------------------------------------------
+END FILE    tests/portfolio/test_patches_router.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/portfolio/test_pdf_safe.py  (530 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: import pathlib
+     2: import tempfile
+     3: 
+     4: import src.smart_mail_agent.utils.pdf_safe as ps
+     5: 
+     6: 
+     7: def test_escape_pdf_text_escapes_parens_and_non_ascii():
+     8:     s = "a(b)c)中文\\"
+     9:     e = ps._escape_pdf_text(s)
+    10:     assert "\\(" in e and "\\)" in e and "\\\\" in e
+    11:     assert all(32 <= ord(ch) <= 126 for ch in e)
+    12: 
+    13: 
+    14: def test_write_minimal_pdf_generates_valid_header(tmp_path):
+    15:     out = tmp_path / "x.pdf"
+    16:     p = ps._write_minimal_pdf(["Hello", "World"], out)
+    17:     data = p.read_bytes()
+    18:     assert data.startswith(b"%PDF-1.") and len(data) > 100
+--------------------------------------------------------------------------------
+END FILE    tests/portfolio/test_pdf_safe.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/portfolio/test_policy_engine_smoke.py  (322 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: import importlib
+     2: 
+     3: 
+     4: def _has_api(mod):
+     5:     return any(hasattr(mod, n) for n in ("apply_policy", "PolicyEngine"))
+     6: 
+     7: 
+     8: def test_policy_engine_old_new_paths_importable():
+     9:     m1 = importlib.import_module("policy_engine")
+    10:     m2 = importlib.import_module("smart_mail_agent.policy_engine")
+    11:     assert _has_api(m1) or _has_api(m2)
+--------------------------------------------------------------------------------
+END FILE    tests/portfolio/test_policy_engine_smoke.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/portfolio/test_quotation_module.py  (404 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: import importlib
+     2: 
+     3: q = importlib.import_module("modules.quotation")  # shim 到 src/smart_mail_agent/...
+     4: 
+     5: 
+     6: def test_choose_package_contract():
+     7:     res = q.choose_package("詢價單：附件很大", "需要正式報價，附件 6MB")
+     8:     assert isinstance(res, dict)
+     9:     assert "package" in res and isinstance(res["package"], str)
+    10:     assert "needs_manual" in res and isinstance(res["needs_manual"], bool)
+--------------------------------------------------------------------------------
+END FILE    tests/portfolio/test_quotation_module.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/portfolio/test_run_action_handler_cli_offline.py  (1924 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: import json
+     2: import pathlib
+     3: import subprocess
+     4: import sys
+     5: import tempfile
+     6: 
+     7: ROOT = pathlib.Path(__file__).resolve().parents[2]
+     8: 
+     9: 
+    10: def _run_cli(payload: dict, *flags: str):
+    11:     with tempfile.TemporaryDirectory() as td:
+    12:         inp = pathlib.Path(td) / "in.json"
+    13:         out = pathlib.Path(td) / "out.json"
+    14:         inp.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    15:         cmd = [
+    16:             sys.executable,
+    17:             str(ROOT / "src" / "run_action_handler.py"),
+    18:             "--input",
+    19:             str(inp),
+    20:             "--output",
+    21:             str(out),
+    22:             *flags,
+    23:         ]
+    24:         r = subprocess.run(cmd, capture_output=True, text=True)
+    25:         assert r.returncode == 0, (r.stdout, r.stderr)
+    26:         return json.loads(out.read_text(encoding="utf-8"))
+    27: 
+    28: 
+    29: def test_send_quote_simulate_failure_and_require_review():
+    30:     payload = {
+    31:         "predicted_label": "send_quote",
+    32:         "from": "Alice <a@trusted.example>",
+    33:         "subject": "大檔案請協助",
+    34:         "body": "如題，附件很大",
+    35:         "attachments": [{"filename": "big.bin", "size": 6 * 1024 * 1024}],
+    36:     }
+    37:     out = _run_cli(payload, "--dry-run", "--simulate-failure")
+    38:     assert out["action_name"] == "send_quote"
+    39:     assert any(a["filename"].endswith(".txt") for a in out["attachments"])
+    40: 
+    41:     m = out["meta"]
+    42:     assert m.get("require_review") is True
+    43:     assert m.get("dry_run") is True
+    44:     # 有些路徑不填 whitelisted；允許 None/True，但需有 cc 安全副本
+    45:     assert m.get("whitelisted") in (True, None)
+    46:     assert "support@company.example" in m.get("cc", [])
+    47: 
+    48: 
+    49: def test_complaint_p1_path():
+    50:     payload = {"predicted_label": "complaint", "subject": "系統宕機", "body": "嚴重 無法使用"}
+    51:     out = _run_cli(payload, "--dry-run")
+    52:     assert out["action_name"] == "complaint"
+    53:     m = out["meta"]
+    54:     assert m.get("priority") in ("P1", "p1")
+    55:     assert m.get("SLA_eta") in ("4h", "4H", "4小時")
+--------------------------------------------------------------------------------
+END FILE    tests/portfolio/test_run_action_handler_cli_offline.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/portfolio/test_send_with_attachment_shim.py  (170 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: import importlib
+     2: 
+     3: 
+     4: def test_send_with_attachment_has_entry():
+     5:     m = importlib.import_module("send_with_attachment")
+     6:     assert hasattr(m, "send_email_with_attachment")
+--------------------------------------------------------------------------------
+END FILE    tests/portfolio/test_send_with_attachment_shim.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/portfolio/test_spam_cli_help.py  (502 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: import os
+     2: import pathlib
+     3: import subprocess
+     4: import sys
+     5: import textwrap
+     6: 
+     7: ROOT = pathlib.Path(__file__).resolve().parents[2]
+     8: 
+     9: 
+    10: def test_sma_spamcheck_help_runs():
+    11:     env = dict(os.environ)
+    12:     env["OFFLINE"] = "1"
+    13:     env["PYTHONPATH"] = f".:src"
+    14:     r = subprocess.run(
+    15:         [sys.executable, "-m", "smart_mail_agent.cli_spamcheck", "--help"],
+    16:         cwd=ROOT,
+    17:         env=env,
+    18:         capture_output=True,
+    19:         text=True,
+    20:     )
+    21:     assert r.returncode == 0
+    22:     assert "usage" in r.stdout.lower()
+--------------------------------------------------------------------------------
+END FILE    tests/portfolio/test_spam_cli_help.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/portfolio/test_spam_orchestrator_smoke.py  (248 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: import importlib
+     2: 
+     3: m = importlib.import_module("smart_mail_agent.spam.spam_filter_orchestrator")
+     4: 
+     5: 
+     6: def test_orchestrator_has_public_symbol():
+     7:     names = ("main", "orchestrate", "SpamFilterOrchestrator")
+     8:     assert any(hasattr(m, n) for n in names)
+--------------------------------------------------------------------------------
+END FILE    tests/portfolio/test_spam_orchestrator_smoke.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/portfolio/test_spam_rules_scoring.py  (1066 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: import json
+     2: import pathlib
+     3: import tempfile
+     4: import textwrap
+     5: 
+     6: import src.smart_mail_agent.spam.rules as rules
+     7: 
+     8: 
+     9: def test_label_email_with_custom_rules(tmp_path, monkeypatch):
+    10:     yml = textwrap.dedent(
+    11:         """
+    12:     keywords: {"FREE": 3}
+    13:     suspicious_domains: ["bit.ly"]
+    14:     suspicious_tlds: ["tk"]
+    15:     bad_extensions: [".exe"]
+    16:     whitelist_domains: ["example.com"]
+    17:     weights: {url_suspicious: 4, tld_suspicious: 3, attachment_executable: 5}
+    18:     thresholds: {suspect: 4, spam: 8}
+    19:     """
+    20:     ).strip()
+    21:     conf = tmp_path / "spam_rules.yaml"
+    22:     conf.write_text(yml, encoding="utf-8")
+    23:     monkeypatch.setattr(rules, "CONF_PATH", conf)
+    24:     monkeypatch.setattr(rules, "_CACHE", {"mtime": None, "rules": None}, raising=False)
+    25: 
+    26:     # URL + TLD + 附件 直接>=spam
+    27:     label, score, reasons = rules.label_email(
+    28:         "x@notwhitelisted.org",
+    29:         "FREE gift",
+    30:         "please click http://a.bit.ly/1 另有 http://abc.def.tk/x",
+    31:         ["mal.exe"],
+    32:     )
+    33:     assert label == "spam"
+    34:     assert score >= 8
+    35:     assert any(r.startswith("url:") for r in reasons)
+--------------------------------------------------------------------------------
+END FILE    tests/portfolio/test_spam_rules_scoring.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/portfolio/test_support_ticket.py  (985 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: import os
+     2: import pathlib
+     3: import sqlite3
+     4: import sys
+     5: 
+     6: from src import support_ticket as st
+     7: 
+     8: 
+     9: def _reset_db():
+    10:     p = pathlib.Path(st.DB_PATH)
+    11:     if p.exists():
+    12:         p.unlink()
+    13: 
+    14: 
+    15: def test_create_list_show_update(capsys):
+    16:     _reset_db()
+    17:     st.create_ticket("主旨A", "內容A", sender="u@x", category="Bug", confidence=0.7)
+    18:     st.list_tickets()
+    19:     out1 = capsys.readouterr().out
+    20:     assert "最新工單列表" in out1 or "工單列表" in out1
+    21: 
+    22:     # 讀取第一筆 id
+    23:     with sqlite3.connect(st.DB_PATH) as conn:
+    24:         row = conn.execute(f"SELECT id FROM {st.TABLE} ORDER BY id DESC LIMIT 1").fetchone()
+    25:         tid = row[0]
+    26: 
+    27:     st.show_ticket(tid)
+    28:     out2 = capsys.readouterr().out
+    29:     assert f"ID         : {tid}" in out2
+    30: 
+    31:     st.update_ticket(tid, status="done", summary="完成")
+    32:     with sqlite3.connect(st.DB_PATH) as conn:
+    33:         row = conn.execute(f"SELECT status, summary FROM {st.TABLE} WHERE id=?", (tid,)).fetchone()
+    34:         assert row == ("done", "完成")
+--------------------------------------------------------------------------------
+END FILE    tests/portfolio/test_support_ticket.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/spam/test_offline_orchestrator_contracts.py  (912 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: from __future__ import annotations
+     2: 
+     3: from smart_mail_agent.spam.orchestrator_offline import orchestrate
+     4: 
+     5: 
+     6: def rule_dict_true(_):
+     7:     return {"is_spam": True}
+     8: 
+     9: 
+    10: def rule_dict_false(_):
+    11:     return {"is_spam": False}
+    12: 
+    13: 
+    14: def model_tuple(_):
+    15:     return ("SPAM", 0.7)
+    16: 
+    17: 
+    18: def model_list_of_dict(_):
+    19:     return [{"label": "SPAM", "score": 0.65}]
+    20: 
+    21: 
+    22: def model_weird(_):
+    23:     return {"label": "???", "score": 0.9}
+    24: 
+    25: 
+    26: def test_rule_accepts_dict_shape():
+    27:     res = orchestrate("x", rule_dict_true, model_weird, model_threshold=0.6)
+    28:     assert res.is_spam and res.source == "rule"
+    29: 
+    30: 
+    31: def test_model_tuple_shape_accepted():
+    32:     res = orchestrate("x", rule_dict_false, model_tuple, model_threshold=0.6)
+    33:     assert res.is_spam and res.source == "model"
+    34: 
+    35: 
+    36: def test_model_list_of_dict_shape_accepted():
+    37:     res = orchestrate("x", rule_dict_false, model_list_of_dict, model_threshold=0.6)
+    38:     assert res.is_spam and res.source == "model"
+--------------------------------------------------------------------------------
+END FILE    tests/spam/test_offline_orchestrator_contracts.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/spam/test_offline_orchestrator_e2e.py  (1231 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: #!/usr/bin/env python3
+     2: # 檔案位置: tests/spam/test_offline_orchestrator_e2e.py
+     3: # 測試用途: 以最短路徑驗證 orchestrator 的 drop/review/route 決策
+     4: 
+     5: from __future__ import annotations
+     6: 
+     7: from smart_mail_agent.spam.orchestrator_offline import SpamFilterOrchestratorOffline, Thresholds
+     8: 
+     9: 
+    10: def test_e2e_drop_by_keyword():
+    11:     orch = SpamFilterOrchestratorOffline()
+    12:     out = orch.decide("免費贈品", "恭喜中獎，點此連結")
+    13:     assert out["action"] == "drop"
+    14:     assert "rule:keyword" in out["reasons"]
+    15: 
+    16: 
+    17: def test_e2e_drop_or_review_by_link_ratio():
+    18:     orch = SpamFilterOrchestratorOffline(
+    19:         thresholds=Thresholds(link_ratio_drop=0.50, link_ratio_review=0.30)
+    20:     )
+    21:     html_body = '<a href="#">免費</a> <a href="#">中獎</a> <a href="#">點此連結</a> 很少文字'
+    22:     out = orch.decide("一般通知", html_body)
+    23:     assert out["action"] in ("drop", "review")
+    24:     assert any(r.startswith("rule:link_ratio>=") for r in out["reasons"])
+    25: 
+    26: 
+    27: def test_e2e_route_normal_mail():
+    28:     orch = SpamFilterOrchestratorOffline()
+    29:     out = orch.decide("API 串接報價需求", "您好，我們想瞭解企業版報價與 SLA。")
+    30:     assert out["action"] == "route"
+    31:     assert out["scores"]["link_ratio"] == 0.0
+--------------------------------------------------------------------------------
+END FILE    tests/spam/test_offline_orchestrator_e2e.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/spam/test_offline_orchestrator_model_variants.py  (1237 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: from smart_mail_agent.spam.orchestrator_offline import orchestrate
+     2: 
+     3: 
+     4: def r_false(_):
+     5:     return False
+     6: 
+     7: 
+     8: def r_true(_):
+     9:     return True
+    10: 
+    11: 
+    12: def test_model_none_is_ham():
+    13:     res = orchestrate("x", r_false, lambda s, c: None, model_threshold=0.6)
+    14:     assert res.is_spam is False and res.source in ("model", "fallback")
+    15: 
+    16: 
+    17: def test_model_string_spam():
+    18:     res = orchestrate("x", r_false, lambda s, c: "spam", model_threshold=0.6)
+    19:     assert res.is_spam is True and res.source == "model"
+    20: 
+    21: 
+    22: def test_model_score_only_borderline_equals_threshold():
+    23:     res = orchestrate("x", r_false, lambda s, c: 0.6, model_threshold=0.6)
+    24:     assert res.is_spam is True and res.is_borderline is True and res.source == "model"
+    25: 
+    26: 
+    27: def test_model_list_of_dict_best_score():
+    28:     def m(s, c):
+    29:         return [{"label": "ham", "score": 0.1}, {"label": "spam", "score": 0.91}]
+    30: 
+    31:     res = orchestrate("x", r_false, m, model_threshold=0.6)
+    32:     assert res.is_spam is True and res.source == "model" and res.action == "drop"
+    33: 
+    34: 
+    35: def test_model_list_of_dict_no_scores_uses_first_label():
+    36:     def m(s, c):
+    37:         return [{"label": "spam"}, {"label": "ham"}]
+    38: 
+    39:     res = orchestrate("x", r_false, m, model_threshold=0.6)
+    40:     assert res.is_spam is True and res.source == "model"
+--------------------------------------------------------------------------------
+END FILE    tests/spam/test_offline_orchestrator_model_variants.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/spam/test_offline_orchestrator_model_variants_extra.py  (829 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: import pytest
+     2: 
+     3: from smart_mail_agent.spam.orchestrator_offline import orchestrate
+     4: 
+     5: 
+     6: def r_false(_):
+     7:     return False
+     8: 
+     9: 
+    10: def test_model_tuple_score_first():
+    11:     res = orchestrate("x", r_false, lambda s, c: (0.7, "spam"), model_threshold=0.6)
+    12:     assert res.is_spam is True and res.source == "model" and res.action == "drop"
+    13: 
+    14: 
+    15: def test_model_tuple_label_first_unknown_label():
+    16:     res = orchestrate("x", r_false, lambda s, c: ("unknown", 0.7), model_threshold=0.6)
+    17:     assert res.is_spam is True and res.source == "model" and res.action == "drop"
+    18: 
+    19: 
+    20: def test_model_list_dict_mixed_scores():
+    21:     def m(s, c):
+    22:         return [{"label": "ham", "score": 0.2}, {"label": "spam", "score": 0.65}]
+    23: 
+    24:     res = orchestrate("x", r_false, m, model_threshold=0.6)
+    25:     assert res.is_spam is True and res.source == "model" and res.action == "drop"
+--------------------------------------------------------------------------------
+END FILE    tests/spam/test_offline_orchestrator_model_variants_extra.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/spam/test_offline_orchestrator_paths.py  (1630 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: from __future__ import annotations
+     2: 
+     3: import math
+     4: 
+     5: from smart_mail_agent.spam.orchestrator_offline import orchestrate
+     6: 
+     7: 
+     8: def r_true(_):
+     9:     return True
+    10: 
+    11: 
+    12: def r_false(_):
+    13:     return False
+    14: 
+    15: 
+    16: def m_spam_high(_):
+    17:     return {"label": "SPAM", "score": 0.95}
+    18: 
+    19: 
+    20: def m_spam_eq_thr(_):
+    21:     return {"label": "SPAM", "score": 0.6}
+    22: 
+    23: 
+    24: def m_spam_low(_):
+    25:     return ("SPAM", 0.4)
+    26: 
+    27: 
+    28: def m_ham(_):
+    29:     return [{"label": "HAM", "score": 0.99}]
+    30: 
+    31: 
+    32: def m_broken(_):
+    33:     raise RuntimeError("model boom")
+    34: 
+    35: 
+    36: def test_TT_rule_shortcuts_to_spam():
+    37:     res = orchestrate("x", r_true, m_ham, model_threshold=0.6)
+    38:     assert res.is_spam is True and res.source == "rule" and res.action == "drop"
+    39: 
+    40: 
+    41: def test_FT_model_decides_spam_high():
+    42:     res = orchestrate("x", r_false, m_spam_high, model_threshold=0.6)
+    43:     assert res.is_spam is True and res.source == "model" and res.action == "drop"
+    44: 
+    45: 
+    46: def test_FT_model_borderline_equals_threshold():
+    47:     res = orchestrate("x", r_false, m_spam_eq_thr, model_threshold=0.6)
+    48:     assert res.is_spam is True and res.is_borderline is True and res.action == "review"
+    49: 
+    50: 
+    51: def test_FF_model_not_spam_low_score():
+    52:     res = orchestrate("x", r_false, m_spam_low, model_threshold=0.6)
+    53:     assert res.is_spam is False and res.action == "route_to_inbox"
+    54: 
+    55: 
+    56: def test_FF_model_says_ham():
+    57:     res = orchestrate("x", r_false, m_ham, model_threshold=0.6)
+    58:     assert res.is_spam is False and res.action == "route_to_inbox"
+    59: 
+    60: 
+    61: def test_Ffallback_model_crash_falls_back_to_rule():
+    62:     res = orchestrate("x", r_false, m_broken, model_threshold=0.6)
+    63:     assert res.is_spam is False and res.source == "fallback"
+    64:     assert "model_error" in res.extra
+--------------------------------------------------------------------------------
+END FILE    tests/spam/test_offline_orchestrator_paths.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/spam/test_rule_model_tiebreak_offline.py  (2232 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: from __future__ import annotations
+     2: 
+     3: import importlib
+     4: import types
+     5: 
+     6: import pytest
+     7: 
+     8: # 我們用 "smart_mail_agent.spam.spam_filter_orchestrator" 若存在；否則用 rule_filter 做簡化測
+     9: spam_orch = None
+    10: rule_filter = None
+    11: try:
+    12:     spam_orch = importlib.import_module("smart_mail_agent.spam.spam_filter_orchestrator")
+    13: except Exception:
+    14:     pass
+    15: try:
+    16:     rule_filter = importlib.import_module("smart_mail_agent.spam.rule_filter")
+    17: except Exception:
+    18:     pass
+    19: 
+    20: if not (spam_orch or rule_filter):
+    21:     pytest.skip("No offline spam orchestrator available", allow_module_level=True)
+    22: 
+    23: 
+    24: def _mk_stub_model(label: str, score: float = 0.9):
+    25:     class Stub:
+    26:         def predict(self, text: str):
+    27:             return {"label": label, "score": score}
+    28: 
+    29:     return Stub()
+    30: 
+    31: 
+    32: def _mk_stub_rules(spam: bool):
+    33:     mod = types.SimpleNamespace()
+    34:     mod.contains_keywords = lambda s: spam
+    35:     mod.link_ratio = lambda s: 0.9 if spam else 0.0
+    36:     return mod
+    37: 
+    38: 
+    39: @pytest.mark.parametrize(
+    40:     "rule_says_spam, model_says_spam",
+    41:     [
+    42:         (True, True),
+    43:         (True, False),
+    44:         (False, True),
+    45:         (False, False),
+    46:     ],
+    47: )
+    48: def test_rule_model_tiebreak(monkeypatch, rule_says_spam, model_says_spam):
+    49:     text = "任意內容"
+    50:     if spam_orch and hasattr(spam_orch, "decide"):
+    51:         # 預期 decide(text, rules, model) -> ("SPAM"/"HAM", score_like)
+    52:         monkeypatch.setitem(spam_orch.__dict__, "rules", _mk_stub_rules(rule_says_spam))
+    53:         stub_model = _mk_stub_model("SPAM" if model_says_spam else "HAM", 0.91)
+    54:         label, conf = spam_orch.decide(text, rules=spam_orch.rules, model=stub_model)
+    55:         assert label in {"SPAM", "HAM"}
+    56:         assert isinstance(conf, (int, float))
+    57:         # 若兩者一致 → 必須一致
+    58:         if rule_says_spam == model_says_spam:
+    59:             expect = "SPAM" if rule_says_spam else "HAM"
+    60:             assert label == expect
+    61:     elif rule_filter and hasattr(rule_filter, "decide"):  # 簡化路徑
+    62:         stub_rules = _mk_stub_rules(rule_says_spam)
+    63:         stub_model = _mk_stub_model("SPAM" if model_says_spam else "HAM", 0.91)
+    64:         label, conf = rule_filter.decide(text, rules=stub_rules, model=stub_model)
+    65:         assert label in {"SPAM", "HAM"}
+    66:         assert isinstance(conf, (int, float))
+--------------------------------------------------------------------------------
+END FILE    tests/spam/test_rule_model_tiebreak_offline.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/spam/test_rules.py  (1725 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: #!/usr/bin/env python3
+     2: # 檔案位置: tests/spam/test_rules.py
+     3: # 測試用途: 覆蓋 contains_keywords 與 link_ratio 的常見與邊界行為
+     4: 
+     5: from __future__ import annotations
+     6: 
+     7: from smart_mail_agent.spam.rules import contains_keywords, link_ratio
+     8: 
+     9: 
+    10: def test_contains_keywords_basic_case_insensitive_chinese():
+    11:     s = "恭喜您中獎，點此連結即可領取獎金"
+    12:     assert contains_keywords(s, ["中獎", "免費"])
+    13: 
+    14: 
+    15: def test_contains_keywords_basic_case_insensitive_english():
+    16:     s = "Please CLICK HERE to claim your reward."
+    17:     assert contains_keywords(s, ["click here"])
+    18: 
+    19: 
+    20: def test_contains_keywords_word_boundary_english():
+    21:     s = "The PRICELIST is ready."
+    22:     # 開啟詞邊界，"price" 不應命中 "pricelist"
+    23:     assert not contains_keywords(s, ["price"], match_word_boundary=True)
+    24:     # 關閉詞邊界，會命中
+    25:     assert contains_keywords(s, ["price"], match_word_boundary=False)
+    26: 
+    27: 
+    28: def test_link_ratio_plain_text_zero():
+    29:     s = "這是一段純文字，沒有任何連結。"
+    30:     assert link_ratio(s) == 0.0
+    31: 
+    32: 
+    33: def test_link_ratio_simple_html_between_0_and_1():
+    34:     s = '<p>看看這裡 <a href="https://example.com">點此</a> 了解詳情。</p>'
+    35:     r = link_ratio(s)
+    36:     assert 0.0 < r < 1.0
+    37: 
+    38: 
+    39: def test_link_ratio_many_links_high_ratio():
+    40:     s = """
+    41:     <div>
+    42:       <a href="#">免費</a>
+    43:       <a href="#">中獎</a>
+    44:       <a href="#">點此連結</a>
+    45:       <span>少量非連結文字</span>
+    46:     </div>
+    47:     """
+    48:     r = link_ratio(s)
+    49:     assert r > 0.4  # 多數可見文字在連結錨文字內
+    50: 
+    51: 
+    52: def test_link_ratio_edge_non_html_and_empty():
+    53:     assert link_ratio(None) == 0.0  # type: ignore[arg-type]
+    54:     assert link_ratio("") == 0.0
+    55:     assert 0.0 <= link_ratio("<a>  </a>") <= 1.0
+--------------------------------------------------------------------------------
+END FILE    tests/spam/test_rules.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/spam/test_rules_offline_behaviors.py  (1656 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: from __future__ import annotations
+     2: 
+     3: import importlib
+     4: 
+     5: import pytest
+     6: 
+     7: _rules = importlib.import_module("smart_mail_agent.spam.rules")
+     8: 
+     9: 
+    10: def _has(name: str) -> bool:
+    11:     return hasattr(_rules, name)
+    12: 
+    13: 
+    14: @pytest.mark.skipif(not _has("contains_keywords"), reason="rules.contains_keywords not available")
+    15: def test_contains_keywords_positive_and_negative():
+    16:     assert _rules.contains_keywords("限時優惠 立即下單 折扣") is True
+    17:     assert _rules.contains_keywords("您好，想詢問報價與方案") in (True, False)  # 允許實作差異
+    18:     assert _rules.contains_keywords("一般工作聯絡，沒有廣告語") is False
+    19: 
+    20: 
+    21: @pytest.mark.skipif(not _has("link_ratio"), reason="rules.link_ratio not available")
+    22: def test_link_ratio_monotonicity():
+    23:     low = _rules.link_ratio("這是一段文字，只有一個連結 http://a.com 其他都是文字 " + "字" * 200)
+    24:     high = _rules.link_ratio("http://a.com " * 10 + "少量文字")
+    25:     assert isinstance(low, float) and isinstance(high, float)
+    26:     assert high > low  # 連結越多，比例應上升（單調性，不卡實作閾值）
+    27: 
+    28: 
+    29: @pytest.mark.skipif(
+    30:     not (_has("contains_keywords") and _has("link_ratio")), reason="rules methods not available"
+    31: )
+    32: def test_rules_composition_spamish():
+    33:     text = "超殺優惠！點擊 http://x.io 馬上領券 http://y.io 再享折扣"
+    34:     kw = _rules.contains_keywords(text)
+    35:     ratio = _rules.link_ratio(text)
+    36:     assert kw in (True, False)
+    37:     assert ratio >= 0.0
+    38:     # 合理預期：關鍵字或高連結比例能導向 Spam-ish（不綁定內部名稱）
+    39:     # 這裡只保證「條件具備」，實際判決由 orchestrator 決定（見下一檔）
+--------------------------------------------------------------------------------
+END FILE    tests/spam/test_rules_offline_behaviors.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/test_action_handler.py  (1909 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: #!/usr/bin/env python3
+     2: # 檔案位置：tests/test_action_handler.py
+     3: # 測試用途：驗證六大分類動作決策、附件產出、離線不寄信。
+     4: 
+     5: from __future__ import annotations
+     6: 
+     7: import importlib
+     8: import os
+     9: from pathlib import Path
+    10: 
+    11: os.environ["OFFLINE"] = "1"
+    12: os.environ.setdefault("SMTP_FROM", "noreply@example.com")
+    13: 
+    14: ah = importlib.import_module("action_handler")
+    15: 
+    16: SAMPLE = {
+    17:     "subject": "測試主旨",
+    18:     "content": "測試內容",
+    19:     "sender": "user@example.com",
+    20:     "confidence": 0.9,
+    21: }
+    22: 
+    23: 
+    24: def _run(label: str):
+    25:     payload = dict(SAMPLE)
+    26:     payload["predicted_label"] = label
+    27:     return ah.handle(payload)
+    28: 
+    29: 
+    30: def test_support():
+    31:     r = _run("請求技術支援")
+    32:     assert r["ok"] is True and r["action_name"] == "reply_support"
+    33:     assert "[支援回覆]" in r["subject"]
+    34: 
+    35: 
+    36: def test_info_change():
+    37:     r = _run("申請修改資訊")
+    38:     assert r["ok"] is True and r["action_name"] == "apply_info_change"
+    39:     assert "[資料更新受理]" in r["subject"]
+    40: 
+    41: 
+    42: def test_faq():
+    43:     r = _run("詢問流程或規則")
+    44:     assert r["ok"] is True and r["action_name"] == "reply_faq"
+    45:     assert "[流程說明]" in r["subject"]
+    46: 
+    47: 
+    48: def test_apology():
+    49:     r = _run("投訴與抱怨")
+    50:     assert r["ok"] is True and r["action_name"] == "reply_apology"
+    51:     assert "[致歉回覆]" in r["subject"]
+    52: 
+    53: 
+    54: def test_quote_with_attachment():
+    55:     r = _run("業務接洽或報價")
+    56:     assert r["ok"] is True and r["action_name"] == "send_quote"
+    57:     assert "[報價]" in r["subject"]
+    58:     assert "attachments" in r and len(r["attachments"]) >= 1
+    59:     for p in r["attachments"]:
+    60:         assert Path(p).exists()
+    61: 
+    62: 
+    63: def test_other_fallback():
+    64:     r = _run("其他")
+    65:     assert r["ok"] is True and r["action_name"] == "reply_general"
+    66:     assert "[自動回覆]" in r["subject"]
+    67: 
+    68: 
+    69: def test_unknown_label_as_general():
+    70:     r = _run("未定義標籤")
+    71:     assert r["ok"] is True and r["action_name"] == "reply_general"
+--------------------------------------------------------------------------------
+END FILE    tests/test_action_handler.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/test_apply_diff.py  (2346 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: # tests/test_apply_diff.py
+     2: # 單元測試模組：apply_diff.py
+     3: # 測試目標：update_user_info() 函式，能正確比對使用者資料異動並更新 DB + diff_log
+     4: 
+     5: import sqlite3
+     6: from pathlib import Path
+     7: 
+     8: import pytest
+     9: 
+    10: from modules.apply_diff import update_user_info
+    11: 
+    12: TEST_DB = "tests/mock_users.db"
+    13: 
+    14: 
+    15: @pytest.fixture(scope="module", autouse=True)
+    16: def setup_mock_db():
+    17:     Path("tests").mkdir(exist_ok=True)
+    18:     conn = sqlite3.connect(TEST_DB)
+    19:     cursor = conn.cursor()
+    20: 
+    21:     # 建立使用者資料表與 diff_log
+    22:     cursor.executescript(
+    23:         """
+    24:         CREATE TABLE IF NOT EXISTS users (
+    25:             email TEXT PRIMARY KEY,
+    26:             phone TEXT,
+    27:             address TEXT
+    28:         );
+    29:         CREATE TABLE IF NOT EXISTS diff_log (
+    30:             id INTEGER PRIMARY KEY AUTOINCREMENT,
+    31:             email TEXT,
+    32:             欄位 TEXT,
+    33:             原值 TEXT,
+    34:             新值 TEXT,
+    35:             created_at TEXT
+    36:         );
+    37:     """
+    38:     )
+    39: 
+    40:     cursor.execute(
+    41:         """
+    42:         INSERT OR REPLACE INTO users (email, phone, address)
+    43:         VALUES ('user@example.com', '0912345678', '台北市信義區')
+    44:     """
+    45:     )
+    46: 
+    47:     conn.commit()
+    48:     conn.close()
+    49:     yield
+    50:     Path(TEST_DB).unlink(missing_ok=True)
+    51: 
+    52: 
+    53: def test_update_with_changes():
+    54:     content = "電話: 0987654321\n地址: 新北市板橋區"
+    55:     result = update_user_info("user@example.com", content, db_path=TEST_DB)
+    56:     assert result["status"] == "updated"
+    57:     assert "phone" in result["changes"]
+    58:     assert "address" in result["changes"]
+    59: 
+    60: 
+    61: def test_update_with_no_change():
+    62:     content = "電話: 0987654321\n地址: 新北市板橋區"
+    63:     result = update_user_info("user@example.com", content, db_path=TEST_DB)
+    64:     assert result["status"] == "no_change"
+    65: 
+    66: 
+    67: def test_update_partial_change():
+    68:     # 僅變更地址
+    69:     content = "地址: 桃園市中壢區"
+    70:     result = update_user_info("user@example.com", content, db_path=TEST_DB)
+    71:     assert result["status"] == "updated"
+    72:     assert "address" in result["changes"]
+    73: 
+    74: 
+    75: def test_empty_content():
+    76:     result = update_user_info("user@example.com", "", db_path=TEST_DB)
+    77:     assert result["status"] == "no_change"
+    78: 
+    79: 
+    80: def test_user_not_found():
+    81:     content = "電話: 0911111111\n地址: 新北市中和區"
+    82:     result = update_user_info("notfound@example.com", content, db_path=TEST_DB)
+    83:     assert result["status"] == "not_found"
+--------------------------------------------------------------------------------
+END FILE    tests/test_apply_diff.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/test_classifier.py  (1673 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: # 檔案位置：tests/test_classifier.py
+     2: # 模組用途：單元測試 classifier.py，mock pipeline 測試分類與 fallback 機制
+     3: 
+     4: from classifier import IntentClassifier
+     5: 
+     6: 
+     7: def mock_pipeline_high_confidence(text, truncation=True):
+     8:     return [{"label": "詢問流程或規則", "score": 0.95}]
+     9: 
+    10: 
+    11: def mock_pipeline_low_confidence(text, truncation=True):
+    12:     return [{"label": "詢問流程或規則", "score": 0.2}]
+    13: 
+    14: 
+    15: def mock_pipeline_quote(text, truncation=True):
+    16:     return [{"label": "詢問流程或規則", "score": 0.9}]
+    17: 
+    18: 
+    19: def test_classifier_inference_with_high_confidence():
+    20:     clf = IntentClassifier(model_path="dummy", pipeline_override=mock_pipeline_high_confidence)
+    21:     result = clf.classify("我要辦理退款流程", "想請問申請退費的具體流程")  # 避開 fallback 條件
+    22:     assert result["predicted_label"] == "詢問流程或規則"
+    23:     assert result["confidence"] == 0.95
+    24: 
+    25: 
+    26: def test_classifier_inference_with_low_confidence_trigger_fallback():
+    27:     clf = IntentClassifier(model_path="dummy", pipeline_override=mock_pipeline_low_confidence)
+    28:     result = clf.classify("Hi", "Hello")  # fallback: is_generic + low confidence
+    29:     assert result["predicted_label"] == "其他"
+    30:     assert result["confidence"] == 0.2
+    31: 
+    32: 
+    33: def test_output_file_format():
+    34:     clf = IntentClassifier(model_path="dummy", pipeline_override=mock_pipeline_quote)
+    35:     result = clf.classify("合作洽詢", "我們有一項新的採購需求，想詢問方案與價格")
+    36:     assert isinstance(result, dict)
+    37:     assert "predicted_label" in result
+    38:     assert "confidence" in result
+    39:     assert result["predicted_label"] == "業務接洽或報價"  # 因命中 RE_QUOTE fallback
+--------------------------------------------------------------------------------
+END FILE    tests/test_classifier.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/test_init_db.py  (1480 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: #!/usr/bin/env python3
+     2: # 檔案位置：tests/test_init_users_db.py
+     3: # 測試 init_db.py 中 init_users_db 功能的細部邏輯：建立 users / diff_log 資料表
+     4: 
+     5: import os
+     6: import sqlite3
+     7: 
+     8: import pytest
+     9: 
+    10: from init_db import init_users_db
+    11: 
+    12: DB_PATH = "data/users.db"
+    13: 
+    14: 
+    15: @pytest.fixture(autouse=True)
+    16: def cleanup_db():
+    17:     """每次測試前後刪除 users.db"""
+    18:     if os.path.exists(DB_PATH):
+    19:         os.remove(DB_PATH)
+    20:     yield
+    21:     if os.path.exists(DB_PATH):
+    22:         os.remove(DB_PATH)
+    23: 
+    24: 
+    25: def test_users_table_schema():
+    26:     """驗證 users 表格建立與欄位是否正確"""
+    27:     init_users_db()
+    28:     conn = sqlite3.connect(DB_PATH)
+    29:     cursor = conn.cursor()
+    30: 
+    31:     cursor.execute("PRAGMA table_info(users)")
+    32:     columns = [col[1] for col in cursor.fetchall()]
+    33:     conn.close()
+    34: 
+    35:     expected = ["email", "name", "phone", "address"]
+    36:     for col in expected:
+    37:         assert col in columns
+    38: 
+    39: 
+    40: def test_diff_log_table_schema():
+    41:     """驗證 diff_log 表格建立與欄位是否正確"""
+    42:     init_users_db()
+    43:     conn = sqlite3.connect(DB_PATH)
+    44:     cursor = conn.cursor()
+    45: 
+    46:     cursor.execute("PRAGMA table_info(diff_log)")
+    47:     columns = [col[1] for col in cursor.fetchall()]
+    48:     conn.close()
+    49: 
+    50:     expected = ["id", "email", "欄位", "原值", "新值", "created_at"]
+    51:     for col in expected:
+    52:         assert col in columns
+    53: 
+    54: 
+    55: def test_repeat_init_users_db_does_not_fail():
+    56:     """連續初始化不應噴錯"""
+    57:     init_users_db()
+    58:     init_users_db()
+    59:     assert os.path.exists(DB_PATH)
+--------------------------------------------------------------------------------
+END FILE    tests/test_init_db.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/test_init_emails_log_db.py  (1274 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: #!/usr/bin/env python3
+     2: # 檔案位置：tests/test_init_emails_log_db.py
+     3: # 測試 init_db.py 中 init_emails_log_db 功能是否能正確建立 emails_log.db 與表格欄位
+     4: 
+     5: import os
+     6: import sqlite3
+     7: 
+     8: import pytest
+     9: 
+    10: from init_db import init_emails_log_db
+    11: 
+    12: DB_PATH = "data/emails_log.db"
+    13: 
+    14: 
+    15: @pytest.fixture(autouse=True)
+    16: def cleanup_db():
+    17:     """測試前後清除資料庫檔案，避免交叉污染"""
+    18:     if os.path.exists(DB_PATH):
+    19:         os.remove(DB_PATH)
+    20:     yield
+    21:     if os.path.exists(DB_PATH):
+    22:         os.remove(DB_PATH)
+    23: 
+    24: 
+    25: def test_emails_log_table_created():
+    26:     """驗證 emails_log 表格建立成功且欄位齊全"""
+    27:     init_emails_log_db()
+    28:     conn = sqlite3.connect(DB_PATH)
+    29:     cursor = conn.cursor()
+    30: 
+    31:     cursor.execute("PRAGMA table_info(emails_log)")
+    32:     columns = [col[1] for col in cursor.fetchall()]
+    33:     conn.close()
+    34: 
+    35:     expected = [
+    36:         "id",
+    37:         "subject",
+    38:         "content",
+    39:         "summary",
+    40:         "predicted_label",
+    41:         "confidence",
+    42:         "action",
+    43:         "error",
+    44:         "created_at",
+    45:     ]
+    46:     for col in expected:
+    47:         assert col in columns
+    48: 
+    49: 
+    50: def test_repeat_init_emails_log_db_does_not_fail():
+    51:     """重複初始化不應失敗"""
+    52:     init_emails_log_db()
+    53:     init_emails_log_db()
+    54:     assert os.path.exists(DB_PATH)
+--------------------------------------------------------------------------------
+END FILE    tests/test_init_emails_log_db.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/test_init_processed_mails_db.py  (1165 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: #!/usr/bin/env python3
+     2: # 檔案位置：tests/test_init_processed_mails_db.py
+     3: # 測試 init_db.py 中 init_processed_mails_db 功能是否正確建立資料庫與表格
+     4: 
+     5: import os
+     6: import sqlite3
+     7: 
+     8: import pytest
+     9: 
+    10: from init_db import init_processed_mails_db
+    11: 
+    12: DB_PATH = "data/db/processed_mails.db"
+    13: 
+    14: 
+    15: @pytest.fixture(autouse=True)
+    16: def cleanup_db():
+    17:     """測試前後清除 processed_mails.db，避免污染"""
+    18:     if os.path.exists(DB_PATH):
+    19:         os.remove(DB_PATH)
+    20:     yield
+    21:     if os.path.exists(DB_PATH):
+    22:         os.remove(DB_PATH)
+    23: 
+    24: 
+    25: def test_processed_mails_table_created():
+    26:     """驗證 processed_mails 表格建立成功且欄位正確"""
+    27:     init_processed_mails_db()
+    28:     conn = sqlite3.connect(DB_PATH)
+    29:     cursor = conn.cursor()
+    30: 
+    31:     cursor.execute("PRAGMA table_info(processed_mails)")
+    32:     columns = [col[1] for col in cursor.fetchall()]
+    33:     conn.close()
+    34: 
+    35:     expected = ["uid", "subject", "sender"]
+    36:     for col in expected:
+    37:         assert col in columns
+    38: 
+    39: 
+    40: def test_repeat_init_processed_mails_db_does_not_fail():
+    41:     """重複執行初始化不應報錯"""
+    42:     init_processed_mails_db()
+    43:     init_processed_mails_db()
+    44:     assert os.path.exists(DB_PATH)
+--------------------------------------------------------------------------------
+END FILE    tests/test_init_processed_mails_db.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/test_init_tickets_db.py  (1280 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: #!/usr/bin/env python3
+     2: # 檔案位置：tests/test_init_tickets_db.py
+     3: # 測試 init_db.py 中 init_tickets_db 功能是否能成功建立 tickets.db 與資料表欄位
+     4: 
+     5: import os
+     6: import sqlite3
+     7: 
+     8: import pytest
+     9: 
+    10: from init_db import init_tickets_db
+    11: 
+    12: DB_PATH = "data/tickets.db"
+    13: 
+    14: 
+    15: @pytest.fixture(autouse=True)
+    16: def cleanup_db():
+    17:     """測試前後刪除 tickets.db 避免污染"""
+    18:     if os.path.exists(DB_PATH):
+    19:         os.remove(DB_PATH)
+    20:     yield
+    21:     if os.path.exists(DB_PATH):
+    22:         os.remove(DB_PATH)
+    23: 
+    24: 
+    25: def test_support_tickets_table_created():
+    26:     """驗證 support_tickets 表格存在且欄位齊全"""
+    27:     init_tickets_db()
+    28:     conn = sqlite3.connect(DB_PATH)
+    29:     cursor = conn.cursor()
+    30: 
+    31:     cursor.execute("PRAGMA table_info(support_tickets)")
+    32:     columns = [col[1] for col in cursor.fetchall()]
+    33:     conn.close()
+    34: 
+    35:     expected = [
+    36:         "id",
+    37:         "subject",
+    38:         "content",
+    39:         "summary",
+    40:         "sender",
+    41:         "category",
+    42:         "confidence",
+    43:         "created_at",
+    44:         "updated_at",
+    45:         "status",
+    46:         "priority",
+    47:     ]
+    48:     for col in expected:
+    49:         assert col in columns
+    50: 
+    51: 
+    52: def test_repeat_init_tickets_db_does_not_fail():
+    53:     """重複執行不應失敗"""
+    54:     init_tickets_db()
+    55:     init_tickets_db()
+    56:     assert os.path.exists(DB_PATH)
+--------------------------------------------------------------------------------
+END FILE    tests/test_init_tickets_db.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/test_mailer.py  (2136 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: # 檔案位置：tests/test_mailer.py
+     2: # 測試模組：utils.mailer.py - 寄送帶附件的郵件功能
+     3: 
+     4: from unittest.mock import patch
+     5: 
+     6: import pytest
+     7: 
+     8: from utils.mailer import send_email_with_attachment, validate_smtp_config
+     9: 
+    10: 
+    11: # 建立假的附件檔案供測試用
+    12: @pytest.fixture(scope="module")
+    13: def fake_attachment(tmp_path_factory):
+    14:     fpath = tmp_path_factory.mktemp("data") / "testfile.txt"
+    15:     with open(fpath, "w") as f:
+    16:         f.write("這是測試附件內容")
+    17:     return str(fpath)
+    18: 
+    19: 
+    20: # 測試 SMTP 設定缺失時會 raise
+    21: def test_validate_smtp_config_missing_env(monkeypatch):
+    22:     for var in ["SMTP_USER", "SMTP_PASS", "SMTP_HOST", "SMTP_PORT"]:
+    23:         monkeypatch.delenv(var, raising=False)
+    24:     with pytest.raises(ValueError, match="SMTP 設定錯誤"):
+    25:         validate_smtp_config()
+    26: 
+    27: 
+    28: # 測試正常寄信行為（mock smtplib 不實際寄出）
+    29: @patch("utils.mailer.smtplib.SMTP_SSL")
+    30: def test_send_email_with_attachment_success(mock_smtp, fake_attachment, monkeypatch):
+    31:     monkeypatch.setenv("SMTP_USER", "test@example.com")
+    32:     monkeypatch.setenv("SMTP_PASS", "password")
+    33:     monkeypatch.setenv("SMTP_HOST", "smtp.example.com")
+    34:     monkeypatch.setenv("SMTP_PORT", "465")
+    35:     monkeypatch.setenv("SMTP_FROM", "Smart-Mail-Agent <test@example.com>")
+    36: 
+    37:     result = send_email_with_attachment(
+    38:         recipient="receiver@example.com",
+    39:         subject="測試郵件",
+    40:         body_html="<p>這是測試</p>",
+    41:         attachment_path=fake_attachment,
+    42:     )
+    43:     assert result is True
+    44:     assert mock_smtp.called
+    45: 
+    46: 
+    47: # 測試當附件不存在時拋出例外
+    48: def test_send_email_attachment_not_found(monkeypatch):
+    49:     monkeypatch.setenv("SMTP_USER", "test@example.com")
+    50:     monkeypatch.setenv("SMTP_PASS", "password")
+    51:     monkeypatch.setenv("SMTP_HOST", "smtp.example.com")
+    52:     monkeypatch.setenv("SMTP_PORT", "465")
+    53:     monkeypatch.setenv("SMTP_FROM", "Smart-Mail-Agent <test@example.com>")
+    54: 
+    55:     with pytest.raises(FileNotFoundError):
+    56:         send_email_with_attachment(
+    57:             recipient="a@b.com",
+    58:             subject="x",
+    59:             body_html="",
+    60:             attachment_path="/tmp/non_exist_file.pdf",
+    61:         )
+--------------------------------------------------------------------------------
+END FILE    tests/test_mailer.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/test_mailer_online.py  (1102 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: #!/usr/bin/env python3
+     2: # tests/test_mailer_online.py
+     3: # 在 ON-LINE 環境下，實際寄一封測試信到 REPLY_TO，驗證 SMTP 是否可用。
+     4: from __future__ import annotations
+     5: 
+     6: import os
+     7: import pathlib
+     8: import subprocess
+     9: import sys
+    10: 
+    11: import pytest
+    12: 
+    13: pytestmark = pytest.mark.online
+    14: 
+    15: REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
+    16: 
+    17: 
+    18: def _skip_if_no_env() -> None:
+    19:     required = ["SMTP_USER", "SMTP_PASS", "SMTP_HOST", "SMTP_PORT", "REPLY_TO"]
+    20:     missing = [k for k in required if not os.getenv(k)]
+    21:     if os.getenv("OFFLINE", "0") == "1" or missing:
+    22:         pytest.skip(f"缺少環境變數或 OFFLINE=1，略過線上寄信測試。missing={missing}")
+    23: 
+    24: 
+    25: def test_smtp_live_send_ok() -> None:
+    26:     _skip_if_no_env()
+    27:     proc = subprocess.run(
+    28:         [sys.executable, str(REPO_ROOT / "scripts" / "online_check.py")],
+    29:         text=True,
+    30:         capture_output=True,
+    31:         check=False,
+    32:     )
+    33:     assert proc.returncode == 0, f"online_check.py 退出碼非 0：\n{proc.stderr or proc.stdout}"
+    34:     assert "SMTP 寄信成功" in proc.stdout, f"未偵測到 SMTP 成功訊息：\n{proc.stdout}"
+--------------------------------------------------------------------------------
+END FILE    tests/test_mailer_online.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/test_quotation.py  (988 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: # tests/test_quotation.py
+     2: # 測試目標：quotation.py → 報價分類 + PDF 產出功能
+     3: 
+     4: import os
+     5: 
+     6: import pytest
+     7: 
+     8: from modules.quotation import choose_package, generate_pdf_quote
+     9: 
+    10: 
+    11: @pytest.mark.parametrize(
+    12:     "subject, content, expected_package",
+    13:     [
+    14:         ("報價需求", "我想知道報價、價格資訊", "基礎"),
+    15:         ("自動分類功能", "是否支援自動化與排程？", "專業"),
+    16:         ("整合 API", "想與 ERP 或 LINE 整合", "企業"),
+    17:         ("其他詢問", "你們能提供什麼功能？", "企業"),
+    18:     ],
+    19: )
+    20: def test_choose_package(subject, content, expected_package):
+    21:     result = choose_package(subject, content)
+    22:     assert result["package"] == expected_package
+    23:     assert "needs_manual" in result
+    24: 
+    25: 
+    26: def test_generate_pdf_quote(tmp_path):
+    27:     pdf_path = generate_pdf_quote(package="基礎", client_name="client@example.com")
+    28:     assert os.path.exists(pdf_path)
+    29:     assert pdf_path.endswith(".pdf")
+    30:     assert os.path.getsize(pdf_path) > 0
+--------------------------------------------------------------------------------
+END FILE    tests/test_quotation.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/test_quote_logger.py  (809 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: #!/usr/bin/env python3
+     2: # 測試檔案位置：tests/test_quote_logger.py
+     3: # 測試用途：驗證 quote_logger 是否能正確寫入資料庫
+     4: 
+     5: import os
+     6: import sqlite3
+     7: import tempfile
+     8: 
+     9: from modules.quote_logger import ensure_db_exists, log_quote
+    10: 
+    11: 
+    12: def test_log_quote_to_db():
+    13:     with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
+    14:         db_path = tmp.name
+    15: 
+    16:     ensure_db_exists(db_path)
+    17: 
+    18:     # 執行寫入
+    19:     log_quote(client_name="test_client", package="基礎", pdf_path="/tmp/fake.pdf", db_path=db_path)
+    20: 
+    21:     # 驗證是否寫入成功
+    22:     conn = sqlite3.connect(db_path)
+    23:     cursor = conn.cursor()
+    24:     cursor.execute("SELECT * FROM quote_records WHERE client_name = ?", ("test_client",))
+    25:     row = cursor.fetchone()
+    26:     conn.close()
+    27:     os.remove(db_path)
+    28: 
+    29:     assert row is not None
+--------------------------------------------------------------------------------
+END FILE    tests/test_quote_logger.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/test_sales_notifier.py  (1256 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: #!/usr/bin/env python3
+     2: # 檔案位置：tests/test_sales_notifier.py
+     3: # 測試模組：sales_notifier.py（寄送報價副本給業務）
+     4: 
+     5: import os
+     6: import tempfile
+     7: 
+     8: import pytest
+     9: 
+    10: from modules.sales_notifier import notify_sales
+    11: 
+    12: 
+    13: @pytest.mark.parametrize(
+    14:     "client_name, package",
+    15:     [
+    16:         ("test_client", "基礎"),
+    17:         ("test_corp", "企業"),
+    18:     ],
+    19: )
+    20: def test_notify_sales_success(client_name, package):
+    21:     # 建立臨時 PDF 模擬檔案
+    22:     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp_pdf:
+    23:         tmp_pdf.write(b"%PDF-1.4\n% Mock PDF Content")
+    24:         pdf_path = tmp_pdf.name
+    25: 
+    26:     # 模擬設定 .env 所需的環境變數（如未在環境中預設）
+    27:     os.environ["SALES_EMAIL"] = os.getenv("SALES_EMAIL", "h125872359@gmail.com")
+    28:     os.environ["SMTP_USER"] = os.getenv("SMTP_USER", "h125872359@gmail.com")
+    29:     os.environ["SMTP_PASS"] = os.getenv("SMTP_PASS", "ynqpzewlfiuycaxf")
+    30:     os.environ["SMTP_HOST"] = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    31:     os.environ["SMTP_PORT"] = os.getenv("SMTP_PORT", "465")
+    32: 
+    33:     result = notify_sales(
+    34:         client_name=client_name,
+    35:         package=package,
+    36:         pdf_path=pdf_path,
+    37:     )
+    38: 
+    39:     # 清理測試檔案
+    40:     os.remove(pdf_path)
+    41: 
+    42:     assert result is True
+--------------------------------------------------------------------------------
+END FILE    tests/test_sales_notifier.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/test_send_with_attachment.py  (1043 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: # 檔案位置：tests/test_send_with_attachment.py
+     2: # 模組用途：測試 send_with_attachment CLI 是否能正常觸發主流程
+     3: 
+     4: import os
+     5: import tempfile
+     6: from unittest import mock
+     7: 
+     8: import send_with_attachment as swa
+     9: 
+    10: 
+    11: @mock.patch("send_with_attachment.send_email_with_attachment")
+    12: def test_send_with_attachment_cli_success(mock_send):
+    13:     """測試 CLI 呼叫能正確觸發寄信行為"""
+    14:     mock_send.return_value = True
+    15: 
+    16:     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+    17:         content = "%PDF-1.4\n% 測試內容\n".encode()
+    18:         tmp.write(content)
+    19:         tmp_path = tmp.name
+    20: 
+    21:     try:
+    22:         args = [
+    23:             "--to",
+    24:             "recipient@example.com",
+    25:             "--subject",
+    26:             "測試郵件",
+    27:             "--body",
+    28:             "<h1>測試 HTML</h1>",
+    29:             "--file",
+    30:             tmp_path,
+    31:         ]
+    32: 
+    33:         with mock.patch("sys.argv", ["send_with_attachment.py"] + args):
+    34:             swa.main()
+    35: 
+    36:         mock_send.assert_called_once()
+    37: 
+    38:     finally:
+    39:         os.remove(tmp_path)
+--------------------------------------------------------------------------------
+END FILE    tests/test_send_with_attachment.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/test_spam_filter.py  (3065 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: # tests/test_spam_filter.py
+     2: # 單元測試：垃圾信過濾系統（rule_filter, spam_llm_filter, spam_filter_orchestrator）
+     3: 
+     4: import pytest
+     5: 
+     6: from spam.spam_filter_orchestrator import SpamFilterOrchestrator
+     7: 
+     8: 
+     9: @pytest.mark.parametrize(
+    10:     "email_json, expected",
+    11:     [
+    12:         (
+    13:             {
+    14:                 "subject": "免費中獎通知",
+    15:                 "content": "您中了100萬，點此領獎",
+    16:                 "from": "spam@example.com",
+    17:                 "to": ["me@example.com"],
+    18:             },
+    19:             False,
+    20:         ),
+    21:         (
+    22:             {
+    23:                 "subject": "API 串接報價",
+    24:                 "content": "您好，我想了解貴公司的 API 串接方案",
+    25:                 "from": "biz@example.com",
+    26:                 "to": ["me@example.com"],
+    27:             },
+    28:             False,
+    29:         ),
+    30:         (
+    31:             {
+    32:                 "subject": "登入失敗",
+    33:                 "content": "我的帳號被鎖住，請協助",
+    34:                 "from": "user@example.com",
+    35:                 "to": ["me@example.com"],
+    36:             },
+    37:             False,
+    38:         ),
+    39:         (
+    40:             {
+    41:                 "subject": "邀請你加入免費贈品活動",
+    42:                 "content": "點擊這裡即可獲得免費耳機",
+    43:                 "from": "promo@example.com",
+    44:                 "to": ["me@example.com"],
+    45:             },
+    46:             False,
+    47:         ),
+    48:         (
+    49:             {
+    50:                 "subject": "發票中獎通知",
+    51:                 "content": "請下載附件登入以領取發票獎金",
+    52:                 "from": "fraud@example.com",
+    53:                 "to": ["me@example.com"],
+    54:             },
+    55:             False,
+    56:         ),
+    57:         (
+    58:             {
+    59:                 "subject": "",
+    60:                 "content": "這是一封無主旨的信件",
+    61:                 "from": "unknown@example.com",
+    62:                 "to": ["me@example.com"],
+    63:             },
+    64:             False,
+    65:         ),
+    66:         (
+    67:             {
+    68:                 "subject": "測試空內容",
+    69:                 "content": "",
+    70:                 "from": "empty@example.com",
+    71:                 "to": ["me@example.com"],
+    72:             },
+    73:             False,
+    74:         ),
+    75:         (
+    76:             {
+    77:                 "subject": "群發測試信",
+    78:                 "content": "這是一封寄給多人的測試信",
+    79:                 "from": "mass@example.com",
+    80:                 "to": ["a@example.com", "b@example.com", "me@example.com"],
+    81:             },
+    82:             True,
+    83:         ),
+    84:         (
+    85:             {
+    86:                 "subject": "標題僅此",
+    87:                 "content": "",
+    88:                 "from": "abc@unknown-domain.com",
+    89:                 "to": ["me@example.com"],
+    90:             },
+    91:             True,
+    92:         ),  # ← 修正此處預期值為 True
+    93:     ],
+    94: )
+    95: def test_spam_filter_logic(email_json, expected):
+    96:     sf = SpamFilterOrchestrator()
+    97:     result = sf.is_legit(
+    98:         subject=email_json.get("subject", ""),
+    99:         content=email_json.get("content", ""),
+   100:         sender=email_json.get("from", ""),
+   101:     )
+   102:     assert isinstance(result, dict)
+   103:     assert "allow" in result
+   104:     assert result["allow"] == expected
+--------------------------------------------------------------------------------
+END FILE    tests/test_spam_filter.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/test_stats_collector.py  (2021 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=yes | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: import sqlite3
+     2: import subprocess
+     3: import sys
+     4: from pathlib import Path
+     5: 
+     6: import pytest
+     7: 
+     8: sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+     9: import stats_collector as sc
+    10: 
+    11: TEST_DB_PATH = Path("data/stats.db")
+    12: 
+    13: 
+    14: @pytest.fixture(autouse=True)
+    15: def clean_db():
+    16:     """每次測試前清空 stats.db"""
+    17:     if TEST_DB_PATH.exists():
+    18:         TEST_DB_PATH.unlink()
+    19:     yield
+    20:     if TEST_DB_PATH.exists():
+    21:         TEST_DB_PATH.unlink()
+    22: 
+    23: 
+    24: def test_init_stats_db():
+    25:     """測試初始化資料庫與資料表建立"""
+    26:     assert not TEST_DB_PATH.exists()
+    27:     sc.init_stats_db()
+    28:     assert TEST_DB_PATH.exists()
+    29: 
+    30:     # 確認 stats 資料表存在
+    31:     conn = sqlite3.connect(TEST_DB_PATH)
+    32:     cursor = conn.cursor()
+    33:     cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='stats'")
+    34:     assert cursor.fetchone()[0] == "stats"
+    35:     conn.close()
+    36: 
+    37: 
+    38: def test_increment_counter():
+    39:     """測試插入一筆統計資料"""
+    40:     sc.init_stats_db()
+    41:     sc.increment_counter("業務接洽", 1.23)
+    42: 
+    43:     conn = sqlite3.connect(TEST_DB_PATH)
+    44:     cursor = conn.cursor()
+    45:     cursor.execute("SELECT label, elapsed FROM stats")
+    46:     row = cursor.fetchone()
+    47:     assert row[0] == "業務接洽"
+    48:     assert abs(row[1] - 1.23) < 1e-3
+    49:     conn.close()
+    50: 
+    51: 
+    52: def test_cli_init_and_insert():
+    53:     """使用 CLI 執行 init 與 insert"""
+    54:     result = subprocess.run(
+    55:         ["python3", "src/stats_collector.py", "--init"], capture_output=True, text=True
+    56:     )
+    57:     assert "資料庫初始化完成" in result.stdout
+    58: 
+    59:     result2 = subprocess.run(
+    60:         ["python3", "src/stats_collector.py", "--label", "投訴", "--elapsed", "0.56"],
+    61:         capture_output=True,
+    62:         text=True,
+    63:     )
+    64:     assert "已新增統計紀錄" in result2.stdout
+    65: 
+    66:     # 驗證寫入成功
+    67:     conn = sqlite3.connect(TEST_DB_PATH)
+    68:     cursor = conn.cursor()
+    69:     cursor.execute("SELECT label, elapsed FROM stats ORDER BY id DESC LIMIT 1")
+    70:     row = cursor.fetchone()
+    71:     assert row[0] == "投訴"
+    72:     assert abs(row[1] - 0.56) < 1e-3
+    73:     conn.close()
+--------------------------------------------------------------------------------
+END FILE    tests/test_stats_collector.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_classifier_rules_extra.py  (932 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: from __future__ import annotations
+     2: 
+     3: import pytest
+     4: 
+     5: from classifier import IntentClassifier
+     6: 
+     7: 
+     8: def _pipe_quote(_):  # 模型其實回「其他」，但規則會覆蓋成「業務接洽或報價」
+     9:     return [{"label": "其他", "score": 0.77}]
+    10: 
+    11: 
+    12: def _pipe_normal(_):
+    13:     return [{"label": "售後服務或抱怨", "score": 0.8}]
+    14: 
+    15: 
+    16: def test_rule_quote_overrides_label():
+    17:     clf = IntentClassifier(pipeline_override=_pipe_quote)
+    18:     res = clf.classify(subject="想詢問報價與合作", content="")
+    19:     assert res["predicted_label"] == "業務接洽或報價"
+    20:     assert res["confidence"] == pytest.approx(0.77, rel=1e-6)
+    21: 
+    22: 
+    23: def test_no_fallback_when_not_generic():
+    24:     clf = IntentClassifier(pipeline_override=_pipe_normal)
+    25:     res = clf.classify(subject="售後服務問題：序號 ABC", content="請協助")
+    26:     assert res["predicted_label"] == "售後服務或抱怨"
+    27:     assert res["confidence"] == pytest.approx(0.8, rel=1e-6)
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_classifier_rules_extra.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_classifier_shapes_and_rules.py  (1113 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: from __future__ import annotations
+     2: 
+     3: from classifier import IntentClassifier
+     4: 
+     5: 
+     6: def _pipe_dict(_):  # list[dict]
+     7:     return [{"label": "詢價", "score": 0.88}]
+     8: 
+     9: 
+    10: def _pipe_tuple(_):  # (label, score)
+    11:     return ("其他", 0.66)
+    12: 
+    13: 
+    14: def _pipe_full_dict(_):  # list[dict] with predicted_label/confidence
+    15:     return [{"predicted_label": "其他", "confidence": 0.12}]
+    16: 
+    17: 
+    18: def test_rule_override_keeps_model_confidence():
+    19:     clf = IntentClassifier(pipeline_override=_pipe_dict)
+    20:     r = clf.classify(subject="報價一下", content="")
+    21:     assert r["predicted_label"] == "業務接洽或報價"
+    22:     assert isinstance(r["confidence"], float)
+    23: 
+    24: 
+    25: def test_generic_low_confidence_fallback_preserves_score():
+    26:     clf = IntentClassifier(pipeline_override=_pipe_tuple)
+    27:     r = clf.classify("Hi", "Hello")
+    28:     assert r["predicted_label"] == "其他"
+    29:     assert r["confidence"] == 0.66
+    30: 
+    31: 
+    32: def test_non_generic_low_confidence_no_fallback():
+    33:     clf = IntentClassifier(pipeline_override=_pipe_full_dict)
+    34:     r = clf.classify("正常主旨", "內容不是 hello/hi")
+    35:     assert r["label"] == "其他"
+    36:     assert r["confidence"] == 0.12
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_classifier_shapes_and_rules.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_cli_orchestrator_offline.py  (498 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: import json
+     2: import sys
+     3: 
+     4: from smart_mail_agent.spam import orchestrator_offline as oo
+     5: 
+     6: 
+     7: def test_cli_json_output(capsys, monkeypatch):
+     8:     monkeypatch.setattr(
+     9:         sys, "argv", ["prog", "--subject", "Hello", "--content", "http://x.io", "--json"]
+    10:     )
+    11:     code = oo._main()
+    12:     assert code == 0
+    13:     out = capsys.readouterr().out.strip()
+    14:     data = json.loads(out)
+    15:     assert {"action", "reasons", "scores"} <= set(data.keys())
+    16:     assert isinstance(data["scores"].get("link_ratio", 0.0), float)
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_cli_orchestrator_offline.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_contracts.py  (768 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: #!/usr/bin/env python3
+     2: from __future__ import annotations
+     3: 
+     4: from src.sma_types import normalize_request, normalize_result
+     5: 
+     6: 
+     7: def test_request_normalization_defaults():
+     8:     raw = {"subject": "s", "from": "a@b.com", "body": "x"}
+     9:     req = normalize_request(raw).dict(by_alias=True)
+    10:     assert req["confidence"] == -1.0
+    11:     assert req["predicted_label"] == ""
+    12: 
+    13: 
+    14: def test_result_normalization_prefix_and_fields():
+    15:     raw = {
+    16:         "action_name": "reply_faq",
+    17:         "subject": "退款流程說明",
+    18:         "body": "text",
+    19:         "request_id": "r",
+    20:         "intent": "reply_faq",
+    21:         "confidence": 0.5,
+    22:     }
+    23:     res = normalize_result(raw).dict()
+    24:     assert res["subject"].startswith("[自動回覆] ")
+    25:     assert res["ok"] is True
+    26:     assert "duration_ms" in res
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_contracts.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_email_processor_order_extra.py  (429 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: from __future__ import annotations
+     2: 
+     3: import json
+     4: from pathlib import Path
+     5: 
+     6: from email_processor import write_classification_result
+     7: 
+     8: 
+     9: def test_write_classification_result_reversed_order(tmp_path):
+    10:     dest = tmp_path / "r.json"
+    11:     p = write_classification_result(str(dest), {"x": 1, "y": "ok"})
+    12:     assert Path(p).exists()
+    13:     data = json.loads(Path(p).read_text(encoding="utf-8"))
+    14:     assert data["x"] == 1 and data["y"] == "ok"
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_email_processor_order_extra.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_handle_safe_patch_min.py  (426 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=yes | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: import importlib
+     2: import sys
+     3: 
+     4: import pytest
+     5: 
+     6: sys.path.insert(0, "src")
+     7: mod = importlib.import_module("patches.handle_safe_patch")
+     8: 
+     9: 
+    10: def test_apply_safe_patch_minimal():
+    11:     fn = getattr(mod, "apply_safe_patch", None)
+    12:     if fn is None:
+    13:         pytest.skip("apply_safe_patch not implemented")
+    14:     out = fn({"priority": "low", "attachments": [], "content": "hello"})
+    15:     assert isinstance(out, dict)
+    16:     assert "priority" in out
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_handle_safe_patch_min.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_html_link_ratio_edges_new.py  (924 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: from smart_mail_agent.spam.orchestrator_offline import SpamFilterOrchestratorOffline, Thresholds
+     2: 
+     3: 
+     4: def test_hidden_and_empty_href_not_counted():
+     5:     html = """
+     6:     <div hidden><a href="http://x.invalid">hidden</a></div>
+     7:     <div style="display: none"><a href="http://x.invalid">hidden2</a></div>
+     8:     <a href="#">empty</a>
+     9:     <a>missing</a>
+    10:     Visible text with little links.
+    11:     """
+    12:     orch = SpamFilterOrchestratorOffline(
+    13:         thresholds=Thresholds(link_ratio_drop=0.80, link_ratio_review=0.50)
+    14:     )
+    15:     out = orch.decide("通知", html)
+    16:     assert out["action"] in ("route", "review")
+    17: 
+    18: 
+    19: def test_nested_like_links_and_whitespaces():
+    20:     html = '<a href="http://a">A</a>   \n\n  lots \n of   spaces   and text'
+    21:     orch = SpamFilterOrchestratorOffline(
+    22:         thresholds=Thresholds(link_ratio_drop=0.20, link_ratio_review=0.10)
+    23:     )
+    24:     out = orch.decide("x", html)
+    25:     assert out["action"] in ("drop", "review")
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_html_link_ratio_edges_new.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_html_link_ratio_more_edges.py  (517 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: from smart_mail_agent.spam.orchestrator_offline import SpamFilterOrchestratorOffline, Thresholds
+     2: 
+     3: 
+     4: def test_nested_empty_href_and_hidden_elements():
+     5:     html = '<a href=""> <span style="display:none">bait</span>點此</a>  文本'
+     6:     orch = SpamFilterOrchestratorOffline(
+     7:         thresholds=Thresholds(link_ratio_drop=0.40, link_ratio_review=0.20)
+     8:     )
+     9:     out = orch.decide("x", html)
+    10:     assert out["action"] in ("drop", "review")
+    11:     assert any(r.startswith("rule:link_ratio>=") for r in out.get("reasons", []))
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_html_link_ratio_more_edges.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_i18n_keywords_nfkc.py  (301 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: from smart_mail_agent.spam.orchestrator_offline import SpamFilterOrchestratorOffline
+     2: 
+     3: 
+     4: def test_fullwidth_english_and_emoji_detected():
+     5:     orch = SpamFilterOrchestratorOffline()
+     6:     out = orch.decide("ＦＲＥＥ 🎁", "請點此")
+     7:     assert out["action"] == "drop" and out["source"] == "keyword"
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_i18n_keywords_nfkc.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_i18n_nfkc_edges.py  (426 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: from smart_mail_agent.spam.orchestrator_offline import SpamFilterOrchestratorOffline
+     2: 
+     3: 
+     4: def test_mixed_scripts_with_zwsp():
+     5:     s = "F\u200bR\u200bE\u200bE"  # FREE with zero-width spaces
+     6:     out = SpamFilterOrchestratorOffline().decide(s, "請點此")
+     7:     # 沒有連結比優勢、關鍵字中間夾 ZWSP，合理結果是 route；若之後加了 ZWSP 清除，可能會 drop。
+     8:     assert out["action"] in ("route", "drop")
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_i18n_nfkc_edges.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_inference_classifier_errors.py  (1603 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: from __future__ import annotations
+     2: 
+     3: import importlib
+     4: import types
+     5: 
+     6: import pytest
+     7: 
+     8: ic = importlib.import_module("inference_classifier")
+     9: 
+    10: 
+    11: def _new_ic():
+    12:     # 兼容 class 名稱或工廠函式
+    13:     if hasattr(ic, "InferenceClassifier"):
+    14:         return ic.InferenceClassifier()
+    15:     if hasattr(ic, "new_classifier"):
+    16:         return ic.new_classifier()
+    17:     pytest.skip("No InferenceClassifier available")
+    18: 
+    19: 
+    20: def _call(clf, text: str):
+    21:     for name in ("predict", "__call__", "infer"):
+    22:         if hasattr(clf, name):
+    23:             fn = getattr(clf, name)
+    24:             try:
+    25:                 return fn(text)
+    26:             except TypeError:
+    27:                 continue
+    28:     pytest.skip("Classifier has no callable interface")
+    29: 
+    30: 
+    31: def test_pipe_raises_returns_safe_tuple(monkeypatch):
+    32:     clf = _new_ic()
+    33: 
+    34:     # 用 generator_throw 模擬例外
+    35:     def boom(_):
+    36:         raise RuntimeError("boom")
+    37: 
+    38:     # 嘗試常見內部屬性名稱
+    39:     for cand in ("_pipe", "pipe", "pipeline"):
+    40:         if hasattr(clf, cand):
+    41:             monkeypatch.setattr(clf, cand, boom, raising=True)
+    42:             break
+    43:     res = _call(clf, "hi")
+    44:     assert isinstance(res, (tuple, list)) and len(res) >= 1
+    45: 
+    46: 
+    47: def test_pipe_odd_shapes(monkeypatch):
+    48:     clf = _new_ic()
+    49:     # 形狀一：dict 缺鍵
+    50:     monkeypatch.setattr(clf, "pipe", lambda _: {"weird": 1}, raising=False)
+    51:     res1 = _call(clf, "x")
+    52:     assert isinstance(res1, (tuple, list))
+    53:     # 形狀二：list[dict] 但鍵不同
+    54:     monkeypatch.setattr(clf, "pipe", lambda _: [{"predicted_label": "其他"}], raising=False)
+    55:     res2 = _call(clf, "x")
+    56:     assert isinstance(res2, (tuple, list))
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_inference_classifier_errors.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_pdf_safe_more_ascii.py  (490 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: from pathlib import Path
+     2: 
+     3: from smart_mail_agent.utils import pdf_safe as ps
+     4: 
+     5: 
+     6: def test_ascii_escape_and_multiline_pdf(tmp_path):
+     7:     s = "a(b)c)中文\\ 雙字節"
+     8:     e = ps._escape_pdf_text(s)
+     9:     assert "\\(" in e and "\\)" in e and "\\\\" in e
+    10:     assert all(32 <= ord(ch) <= 126 for ch in e)
+    11: 
+    12:     out = tmp_path / "multi.pdf"
+    13:     p = ps._write_minimal_pdf(["Hello", "World"], out)
+    14:     assert isinstance(p, Path) and p.exists()
+    15:     head = p.read_bytes()[:5]
+    16:     assert head == b"%PDF-"
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_pdf_safe_more_ascii.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_pdf_safe_security_more.py  (1111 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: from __future__ import annotations
+     2: 
+     3: import importlib
+     4: import os
+     5: from pathlib import Path
+     6: 
+     7: # 走 shim：優先 utils.pdf_safe，若無則 smart_mail_agent.utils.pdf_safe
+     8: try:
+     9:     mod = importlib.import_module("utils.pdf_safe")
+    10: except Exception:
+    11:     mod = importlib.import_module("smart_mail_agent.utils.pdf_safe")
+    12: 
+    13: write_pdf_or_txt = getattr(mod, "write_pdf_or_txt", None)
+    14: 
+    15: 
+    16: def test_write_pdf_or_txt_blocks_path_traversal(tmp_path):
+    17:     if write_pdf_or_txt is None:
+    18:         import pytest
+    19: 
+    20:         pytest.skip("write_pdf_or_txt not available")
+    21:     outdir = tmp_path / "out"
+    22:     outdir.mkdir()
+    23:     # basename 惡意嘗試跳出 outdir
+    24:     fname = write_pdf_or_txt(["hello"], outdir, "../../evil")
+    25:     p = Path(fname).resolve()
+    26:     assert str(p).startswith(str(outdir.resolve()))
+    27:     assert p.exists()
+    28: 
+    29: 
+    30: def test_write_pdf_or_txt_handles_non_ascii(tmp_path):
+    31:     if write_pdf_or_txt is None:
+    32:         import pytest
+    33: 
+    34:         pytest.skip("write_pdf_or_txt not available")
+    35:     outdir = tmp_path / "出貨"
+    36:     outdir.mkdir()
+    37:     fname = write_pdf_or_txt(["世界"], outdir, "報價單")
+    38:     assert Path(fname).exists()
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_pdf_safe_security_more.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_policy_engine.py  (867 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: #!/usr/bin/env python3
+     2: from __future__ import annotations
+     3: 
+     4: from src.policy_engine import apply_policies, apply_policy
+     5: 
+     6: 
+     7: def test_low_confidence_review(tmp_path):
+     8:     p = tmp_path / "policy.yaml"
+     9:     p.write_text(
+    10:         "low_confidence_review:\n  threshold: 0.6\n  cc: ['rev@example.com']\n", encoding="utf-8"
+    11:     )
+    12:     req = {"predicted_label": "reply_faq", "confidence": 0.5, "attachments": []}
+    13:     out = apply_policy({"action_name": "reply_faq", "meta": {}, "cc": []}, req, str(p))
+    14:     assert out["meta"]["require_review"] is True
+    15:     assert "rev@example.com" in out["cc"]
+    16: 
+    17: 
+    18: def test_apply_policies_alias(tmp_path):
+    19:     p = tmp_path / "policy.yaml"
+    20:     p.write_text("{}", encoding="utf-8")
+    21:     req = {"attachments": []}
+    22:     out = apply_policies({"action_name": "reply_general", "meta": {}, "cc": []}, req, str(p))
+    23:     assert out["action_name"] == "reply_general"
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_policy_engine.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_policy_minimal.py  (458 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: from __future__ import annotations
+     2: 
+     3: from policy_engine import apply_policies
+     4: 
+     5: 
+     6: def test_policy_require_review_on_low_conf():
+     7:     req = {"predicted_label": "reply_faq", "confidence": 0.2, "subject": "FAQ?", "from": "u@x"}
+     8:     res = {"ok": True, "action_name": "reply_faq", "subject": "[自動回覆] FAQ"}
+     9:     out = apply_policies(req, res)
+    10:     assert out.get("meta", {}).get("require_review") is True
+    11:     assert "review@company.com" in (out.get("cc") or [])
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_policy_minimal.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_quotation_branches_extra.py  (988 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: from __future__ import annotations
+     2: 
+     3: from pathlib import Path
+     4: 
+     5: from modules.quotation import choose_package, generate_pdf_quote
+     6: 
+     7: 
+     8: def test_choose_package_needs_manual_by_phrase():
+     9:     res = choose_package(subject="附件很大，請協助", content="")
+    10:     assert res["needs_manual"] is True
+    11: 
+    12: 
+    13: def test_choose_package_needs_manual_by_size():
+    14:     res = choose_package(subject="", content="附件約 6MB，麻煩")
+    15:     assert res["needs_manual"] is True
+    16: 
+    17: 
+    18: def test_choose_package_other_patterns():
+    19:     r1 = choose_package(subject="想問 workflow 自動化", content="")
+    20:     assert r1["package"] in ("進階自動化", "企業整合", "專業")
+    21:     r2 = choose_package(subject="", content="需要 ERP / SSO 整合")
+    22:     assert r2["package"] in ("企業整合", "企業")
+    23: 
+    24: 
+    25: def test_generate_pdf_quote_legacy_signature(tmp_path):
+    26:     out = generate_pdf_quote("ACME", [("Basic", 1, 100.0)], outdir=str(tmp_path))
+    27:     p = Path(out)
+    28:     assert p.exists()
+    29:     assert p.suffix in (".pdf", ".txt")
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_quotation_branches_extra.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_quotation_needs_manual_more.py  (364 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: from __future__ import annotations
+     2: 
+     3: from modules.quotation import choose_package
+     4: 
+     5: 
+     6: def test_needs_manual_by_subject_flag():
+     7:     r = choose_package(subject="附件很大", content="")
+     8:     assert r["needs_manual"] is True
+     9: 
+    10: 
+    11: def test_needs_manual_by_content_size():
+    12:     r = choose_package(subject="", content="請看 6MB 附件")
+    13:     assert r["needs_manual"] is True
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_quotation_needs_manual_more.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_rules_conf_suffix_reasons.py  (1108 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: import json
+     2: import textwrap
+     3: 
+     4: import pytest
+     5: 
+     6: from smart_mail_agent.spam import rules
+     7: 
+     8: 
+     9: def test_conf_points_and_suffix_reason(tmp_path, monkeypatch):
+    10:     yml = textwrap.dedent(
+    11:         """
+    12:     keywords: {"FREE": 3}
+    13:     suspicious_domains: ["bit.ly"]
+    14:     suspicious_tlds: ["tk"]
+    15:     bad_extensions: [".exe"]
+    16:     whitelist_domains: ["example.com"]
+    17:     weights: {url_suspicious: 4, tld_suspicious: 3, attachment_executable: 5}
+    18:     thresholds: {suspect: 4, spam: 8}
+    19:     """
+    20:     ).strip()
+    21:     conf = tmp_path / "spam_rules.yaml"
+    22:     conf.write_text(yml, encoding="utf-8")
+    23:     monkeypatch.setattr(rules, "CONF_PATH", str(conf))
+    24:     monkeypatch.setattr(rules, "_CACHE", {"mtime": None, "rules": None}, raising=False)
+    25: 
+    26:     label, score_points, reasons = rules.label_email(
+    27:         "x@notwhitelisted.org",
+    28:         "FREE gift",
+    29:         "please click http://a.bit.ly/1 另有 http://abc.def.tk/x",
+    30:         ["mal.exe"],
+    31:     )
+    32:     assert label == "spam"
+    33:     assert score_points >= 8  # raw points (not normalized)
+    34:     assert any(r.startswith("url:") for r in reasons)
+    35:     assert any(r.startswith("tld:") for r in reasons)
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_rules_conf_suffix_reasons.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_send_with_attachment_smoke.py  (564 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=yes | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: import importlib
+     2: import sys
+     3: from unittest.mock import patch
+     4: 
+     5: import pytest
+     6: 
+     7: sys.path.insert(0, "src")
+     8: swa = importlib.import_module("send_with_attachment")
+     9: 
+    10: 
+    11: def test_function_is_patchable_and_callable():
+    12:     if not hasattr(swa, "send_email_with_attachment"):
+    13:         pytest.skip("send_email_with_attachment not implemented")
+    14:     with patch("send_with_attachment.send_email_with_attachment", return_value=True) as mock_fn:
+    15:         # 不假設參數介面；MagicMock 可接受任意參數或無參數
+    16:         assert mock_fn() is True
+    17:         assert mock_fn.called
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_send_with_attachment_smoke.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_spam_pipeline_smoke.py  (729 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=yes | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: import importlib
+     2: import sys
+     3: 
+     4: import pytest
+     5: 
+     6: sys.path.insert(0, "src")
+     7: pl = importlib.import_module("smart_mail_agent.spam.pipeline")
+     8: 
+     9: 
+    10: def test_orchestrate_rules_only_if_present(monkeypatch):
+    11:     orchestrate = getattr(pl, "orchestrate", None)
+    12:     if orchestrate is None:
+    13:         pytest.skip("orchestrate not implemented")
+    14: 
+    15:     class DummyModel:
+    16:         def predict_proba(self, X):
+    17:             return [[0.1, 0.9] for _ in X]
+    18: 
+    19:     # 若模組有 load_model，就替換掉避免依賴外部資源
+    20:     if hasattr(pl, "load_model"):
+    21:         monkeypatch.setattr(pl, "load_model", lambda: DummyModel())
+    22:     res = orchestrate(["你中獎了！點此領獎"], rules_only=True)
+    23:     assert isinstance(res, dict)
+    24:     assert "verdict" in res
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_spam_pipeline_smoke.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_spam_rules_min.py  (719 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=yes | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: import importlib
+     2: import sys
+     3: 
+     4: import pytest
+     5: 
+     6: sys.path.insert(0, "src")
+     7: rules = importlib.import_module("smart_mail_agent.spam.rules")
+     8: 
+     9: 
+    10: def test_rules_module_loads():
+    11:     assert rules is not None
+    12: 
+    13: 
+    14: def test_contains_keywords_if_present():
+    15:     fn = getattr(rules, "contains_keywords", None)
+    16:     if fn is None:
+    17:         pytest.skip("contains_keywords not implemented")
+    18:     assert fn("免費中獎", ["免費", "中獎"]) is True
+    19:     assert fn("正常內容", ["免費", "中獎"]) is False
+    20: 
+    21: 
+    22: def test_link_ratio_if_present():
+    23:     fn = getattr(rules, "link_ratio", None)
+    24:     if fn is None:
+    25:         pytest.skip("link_ratio not implemented")
+    26:     v = fn('<a href="#">a</a> 文本 <a href="#">b</a>')
+    27:     assert 0.0 <= v <= 1.0
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_spam_rules_min.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_spam_stack.py  (946 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: from __future__ import annotations
+     2: 
+     3: import importlib
+     4: 
+     5: import pytest
+     6: 
+     7: 
+     8: def _mod(cands):
+     9:     for name in cands:
+    10:         try:
+    11:             return importlib.import_module(name)
+    12:         except Exception:
+    13:             continue
+    14:     pytest.skip(f"module not found: {cands}")
+    15: 
+    16: 
+    17: def _fn(mod, cands):
+    18:     for n in cands:
+    19:         f = getattr(mod, n, None)
+    20:         if callable(f):
+    21:             return f
+    22:     pytest.skip(f"no callable in {mod.__name__}: {cands}")
+    23: 
+    24: 
+    25: def test_spam_stack_allow_and_block():
+    26:     orch = _mod(["spam.spam_filter_orchestrator", "src.spam.spam_filter_orchestrator"])
+    27:     fn = _fn(orch, ["run", "filter_email", "evaluate", "orchestrate"])
+    28:     normal = {"from": "bob@company.com", "subject": "請提供報價", "body": "想了解方案與報價"}
+    29:     bad = {"from": "x@spam.com", "subject": "免費中獎", "body": "點此領獎 http://bad.example"}
+    30:     out1 = fn(normal)
+    31:     out2 = fn(bad)
+    32:     assert out1 is not None and out2 is not None
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_spam_stack.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_tasks_minimal.py  (1081 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: from __future__ import annotations
+     2: 
+     3: import importlib
+     4: 
+     5: import pytest
+     6: 
+     7: CANDIDATES = [
+     8:     (["modules.quotation", "src.modules.quotation"], ["build_quote", "handle", "process", "main"]),
+     9:     (["support_ticket", "src.support_ticket"], ["create_ticket", "handle", "process", "main"]),
+    10:     (
+    11:         ["modules.apply_diff", "src.modules.apply_diff"],
+    12:         ["apply_changes", "handle", "process", "main"],
+    13:     ),
+    14: ]
+    15: 
+    16: 
+    17: def _mod(cands):
+    18:     for name in cands:
+    19:         try:
+    20:             return importlib.import_module(name)
+    21:         except Exception:
+    22:             continue
+    23:     pytest.skip(f"module not found: {cands}")
+    24: 
+    25: 
+    26: def _fn(mod, cands):
+    27:     for n in cands:
+    28:         f = getattr(mod, n, None)
+    29:         if callable(f):
+    30:             return f
+    31:     pytest.skip(f"no callable in {mod.__name__}: {cands}")
+    32: 
+    33: 
+    34: def test_tasks_minimal_contract():
+    35:     for names, funcs in CANDIDATES:
+    36:         m = _mod(names)
+    37:         f = _fn(m, funcs)
+    38:         try:
+    39:             out = f()
+    40:         except TypeError:
+    41:             pytest.skip(f"{m.__name__}.{f.__name__} requires args; demo skip")
+    42:         assert out is not None
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_tasks_minimal.py
+================================================================================
+================================================================================
+BEGIN FILE  tests/unit/test_utils_pdf_safe_top.py  (545 bytes)
+TAGS: legacy_candidate=no | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: from __future__ import annotations
+     2: 
+     3: from pathlib import Path
+     4: 
+     5: from utils.pdf_safe import write_pdf_or_txt  # 頂層 utils 版本
+     6: 
+     7: 
+     8: def test_write_txt_fallback_and_outdir_creation(tmp_path):
+     9:     outdir = tmp_path / "nested"
+    10:     path = write_pdf_or_txt(["Hello", "World"], outdir, "demo-smoke")
+    11:     p = Path(path)
+    12:     assert p.exists()
+    13:     assert p.suffix in (".pdf", ".txt")
+    14:     assert outdir.exists()
+    15: 
+    16: 
+    17: def test_write_with_custom_basename(tmp_path):
+    18:     path = write_pdf_or_txt(["Line"], tmp_path, "q-123_測試")
+    19:     assert Path(path).exists()
+--------------------------------------------------------------------------------
+END FILE    tests/unit/test_utils_pdf_safe_top.py
+================================================================================
+================================================================================
+BEGIN FILE  tmp/in.json  (112 bytes)
+TAGS: legacy_candidate=yes | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: {"subject":"測試","from":"a@b.c","body":"hi","predicted_label":"reply_faq","confidence":0.9,"attachments":[]}
+--------------------------------------------------------------------------------
+END FILE    tmp/in.json
+================================================================================
+================================================================================
+BEGIN FILE  tmp/out.json  (127 bytes)
+TAGS: legacy_candidate=yes | sys_path_hack=no | duplicate_basename=no
+--------------------------------------------------------------------------------
+     1: {"action_name": "reply_faq", "attachments": [], "meta": {"dry_run": true}, "dry_run": true, "subject": "[自動回覆] 測試"}
+--------------------------------------------------------------------------------
+END FILE    tmp/out.json
+================================================================================

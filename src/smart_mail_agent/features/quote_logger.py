@@ -96,7 +96,7 @@ def get_latest_quote(
                 SELECT client_name, package, pdf_path
                 FROM {table_name}
                 ORDER BY id DESC
-                LIMIT 1;
+                LIMIT 1
             """
             )
             return cursor.fetchone()
