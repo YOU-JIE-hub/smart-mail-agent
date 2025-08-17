@@ -4,6 +4,7 @@
 import os
 
 import pytest
+
 from modules.quotation import choose_package, generate_pdf_quote
 
 
