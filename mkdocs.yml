@@ -1,0 +1,6 @@
+site_name: Smart Mail Agent
+theme: { name: material }
+nav:
+  - Overview: index.md
+  - CLI: cli.md
+  - Architecture: architecture.md
