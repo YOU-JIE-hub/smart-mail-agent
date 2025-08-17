@@ -34,3 +34,9 @@ data/*.db
 /assets/fonts/
 /data/
 /reports/
+/site/
+/.coverage.*
+/repo-inventory-*.txt
+/review_files.lst
+/.review_cursor
+/.env.smtp-test
