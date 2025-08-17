@@ -6,7 +6,6 @@ import os
 import sqlite3
 
 import pytest
-
 from init_db import init_processed_mails_db
 
 DB_PATH = "data/db/processed_mails.db"

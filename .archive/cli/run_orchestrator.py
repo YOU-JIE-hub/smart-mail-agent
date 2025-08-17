@@ -8,10 +8,11 @@ SRC_PATH = os.path.join(os.path.dirname(__file__), "src")
 if SRC_PATH not in sys.path:
     sys.path.insert(0, SRC_PATH)
 
+from utils.logger import logger
+
 from spam.ml_spam_classifier import SpamBertClassifier
 from spam.rule_filter import RuleBasedSpamFilter
 from spam.spam_llm_filter import SpamLLMFilter
-from utils.logger import logger
 
 parser = argparse.ArgumentParser(description="三層 Spam 過濾流程")
 parser.add_argument("--model", required=True, help="BERT 模型路徑")

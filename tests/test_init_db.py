@@ -6,7 +6,6 @@ import os
 import sqlite3
 
 import pytest
-
 from init_db import init_users_db
 
 DB_PATH = "data/users.db"

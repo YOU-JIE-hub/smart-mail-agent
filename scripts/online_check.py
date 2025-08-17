@@ -11,13 +11,15 @@ from email.message import EmailMessage
 
 def main() -> int:
     user = os.getenv("SMTP_USER") or ""
-    pw   = os.getenv("SMTP_PASS") or ""
+    pw = os.getenv("SMTP_PASS") or ""
     host = os.getenv("SMTP_HOST") or ""
     port = int(os.getenv("SMTP_PORT") or "465")
-    to   = os.getenv("REPLY_TO") or user
+    to = os.getenv("REPLY_TO") or user
 
     if not all([user, pw, host, port, to]):
-        print("缺少必要環境變數 (SMTP_USER/SMTP_PASS/SMTP_HOST/SMTP_PORT/REPLY_TO)", file=sys.stderr)
+        print(
+            "缺少必要環境變數 (SMTP_USER/SMTP_PASS/SMTP_HOST/SMTP_PORT/REPLY_TO)", file=sys.stderr
+        )
         return 2
 
     msg = EmailMessage()
@@ -36,6 +38,7 @@ def main() -> int:
 
     print("SMTP 寄信成功")
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

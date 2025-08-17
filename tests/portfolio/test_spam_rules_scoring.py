@@ -3,7 +3,7 @@ import pathlib
 import tempfile
 import textwrap
 
-import src.smart_mail_agent.spam.rules as rules
+import smart_mail_agent.smart_mail_agent.spam.rules as rules
 
 
 def test_label_email_with_custom_rules(tmp_path, monkeypatch):

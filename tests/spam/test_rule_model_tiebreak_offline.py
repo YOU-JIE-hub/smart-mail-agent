@@ -58,7 +58,8 @@ def test_rule_model_tiebreak(monkeypatch, rule_says_spam, model_says_spam):
         if rule_says_spam == model_says_spam:
             expect = "SPAM" if rule_says_spam else "HAM"
             assert label == expect
-    elif rule_filter and hasattr(rule_filter, "decide"):  # 簡化路徑
+    elif rule_filter and hasattr(rule_filter, "decide"):
+        # 簡化路徑
         stub_rules = _mk_stub_rules(rule_says_spam)
         stub_model = _mk_stub_model("SPAM" if model_says_spam else "HAM", 0.91)
         label, conf = rule_filter.decide(text, rules=stub_rules, model=stub_model)

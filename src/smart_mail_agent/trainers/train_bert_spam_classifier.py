@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 # src/trainers/train_bert_spam_classifier.py
 import argparse
 import json
@@ -25,7 +27,7 @@ def load_data(path):
             continue
         data.append({"text": subject.strip() + "\n" + content.strip(), "label": LABEL2ID[label]})
         stats[label] = stats.get(label, 0) + 1
-    print("📊 資料分布：", stats)
+    print(" 資料分布：", stats)
     return shuffle(data, random_state=42)
 
 

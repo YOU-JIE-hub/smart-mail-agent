@@ -13,6 +13,7 @@ for p in (BASE, BASE.parent):
 
 try:
     import action_handler as ah
+
     from patches.handle_safe_patch import handle as patched_handle
 
     ah.handle = patched_handle

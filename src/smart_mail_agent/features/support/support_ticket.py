@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-# 檔案位置：src/support_ticket.py
-# 模組用途：技術支援工單管理（建立 / 查詢 / 更新），自動標定優先等級
+from __future__ import annotations
 
 import argparse
 import sqlite3
@@ -8,6 +7,10 @@ from datetime import datetime
 from pathlib import Path
 
 from utils.logger import logger
+
+# 檔案位置：src/support_ticket.py
+# 模組用途：技術支援工單管理（建立 / 查詢 / 更新），自動標定優先等級
+
 
 try:
     from utils.priority_evaluator import evaluate_priority
