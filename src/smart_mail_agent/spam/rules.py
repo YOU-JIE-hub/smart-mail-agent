@@ -7,73 +7,65 @@ from typing import Any
 
 try:
     import yaml  # type: ignore
-except Exception:
-    # pyyaml 不一定存在
+except Exception:  # pragma: no cover
     yaml = None  # type: ignore
 
+# 供測試 monkeypatch：規則檔路徑與簡易快取
+CONF_PATH: str | None = None
+_CACHE: dict[str, Any] = {"path": None, "mtime": None, "rules": None}
 
-# 預設規則（若專案的 configs/spam_rules.yaml 存在會覆蓋）
+# 內建預設（若無外部 YAML）
 _DEFAULT = {
-    "blacklist_senders": [
-        "scam@bad.com",
-        "noreply@scam.biz",
-    ],
-    "blacklist_domains": [
-        "bad.com",
-        "scam.biz",
-    ],
+    "blacklist_senders": ["scam@bad.com", "noreply@scam.biz"],
+    "blacklist_domains": ["bad.com", "scam.biz"],
     "shorteners": ["bit.ly", "goo.gl", "is.gd", "t.co"],
+    "suspicious_domains": [],
     "suspicious_tlds": ["tk", "gq", "ml", "cf", "ga", "top"],
     "bad_extensions": [".js", ".vbs", ".exe", ".bat", ".cmd", ".scr"],
     "whitelist_domains": ["yourcompany.com", "example.com"],
+    "keywords": {},  # 例：{"FREE": 3}
     "weights": {
         "url_suspicious": 4,
         "tld_suspicious": 3,
         "attachment_executable": 5,
         "sender_black": 5,
         "domain_black": 4,
+        "keyword": 1,  # 關鍵字 fallback 點數
     },
     "thresholds": {"suspect": 4, "spam": 8},
 }
 
-_CACHE: dict[str, Any] = {}
+_URL_RE = re.compile(r"https?://[^\s)>\]]+", re.I)
 
 
 def _load_yaml(path: Path) -> dict[str, Any] | None:
-    if not path.is_file():
-        return None
-    if yaml is None:
+    if not path.is_file() or yaml is None:
         return None
     try:
         data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-        if isinstance(data, dict):
-            return data  # 型別由呼叫端做寬鬆處理
-    except Exception:
-        pass
-    return None
+        return data if isinstance(data, dict) else None
+    except Exception:  # pragma: no cover
+        return None
 
 
 def load_rules(config_path: str | Path | None = None) -> dict[str, Any]:
-    """
-    讀取規則檔；若未提供或檔案缺失，回傳內建預設。
-    優先順序：參數指定 -> configs/spam_rules.yaml -> 內建預設
-    """
-    key = str(config_path or "default")
-    if key in _CACHE:
-        return _CACHE[key]  # type: ignore[return-value]
+    """讀取規則；優先順序：參數 -> CONF_PATH -> configs/spam_rules.yaml -> 內建"""
+    path = Path(config_path or CONF_PATH or "configs/spam_rules.yaml")
+    mtime = path.stat().st_mtime if path.exists() else None
+    if (
+        _CACHE.get("path") == str(path)
+        and _CACHE.get("mtime") == mtime
+        and isinstance(_CACHE.get("rules"), dict)
+    ):
+        return _CACHE["rules"]  # type: ignore[return-value]
 
-    base = dict(_DEFAULT)
-    path = Path(config_path) if config_path else Path("configs/spam_rules.yaml")
+    rules = dict(_DEFAULT)
     override = _load_yaml(path)
     if override:
-        # 淺合併即可（此處不做深層合併，保持簡單可預期）
-        base.update(override)
+        rules.update(override)
 
-    _CACHE[key] = base
-    return base
-
-
-_URL_RE = re.compile(r"https?://[^\s)>\]]+", re.I)
+    _CACHE.update({"path": str(path), "mtime": mtime, "rules": rules})
+    return rules
 
 
 def _iter_urls(text: str) -> Iterable[str]:
@@ -83,7 +75,6 @@ def _iter_urls(text: str) -> Iterable[str]:
 
 
 def _domain_of(url: str) -> str | None:
-    # 極簡擷取 domain（不引入 urllib 以減少依賴）
     m = re.match(r"https?://([^/:?#]+)", url, flags=re.I)
     return m.group(1).lower() if m else None
 
@@ -95,68 +86,21 @@ def _tld_of(domain: str) -> str | None:
 
 
 def _ext_of(path: str) -> str:
-    p = Path(path)
-    return p.suffix.lower()
+    return Path(path).suffix.lower()
 
 
-def score_email(
-    sender: str,
-    subject: str,
-    content: str,
-    attachments: list[str],
-) -> tuple[int, list[str]]:
-    """
-    回傳 (分數, 命中的原因列表)。
-    """
-    cfg = load_rules()
-    w = cfg["weights"]
-    reasons: list[str] = []
-    score = 0
-
-    text = f"{subject or ''}\n{content or ''}"
-
-    # URL 與短網址／可疑 TLD
-    for url in _iter_urls(text):
-        domain = _domain_of(url) or ""
-        if any(s in domain for s in cfg["shorteners"]):
-            score += w["url_suspicious"]
-            reasons.append(f"url_shortener:{domain}")
-        tld = _tld_of(domain)
-        if tld and tld in cfg["suspicious_tlds"]:
-            score += w["tld_suspicious"]
-            reasons.append(f"suspicious_tld:.{tld}")
-
-    # 附件副檔名
-    for a in attachments or []:
-        ext = _ext_of(a)
-        if ext in cfg["bad_extensions"]:
-            score += w["attachment_executable"]
-            reasons.append(f"bad_attachment:{ext}")
-
-    # 寄件者與網域
-    sender_lower = (sender or "").lower()
-    sender_domain = sender_lower.split("@", 1)[-1] if "@" in sender_lower else ""
-    if sender_lower in (x.lower() for x in cfg["blacklist_senders"]):
-        score += w["sender_black"]
-        reasons.append("sender_blacklisted")
-    if sender_domain and sender_domain in (d.lower() for d in cfg["blacklist_domains"]):
-        score += w["domain_black"]
-        reasons.append(f"domain_blacklisted:{sender_domain}")
-
-    # 白名單網域可作為降權（此處僅保留，是否要減分看你策略）
-    if sender_domain and sender_domain in (d.lower() for d in cfg["whitelist_domains"]):
-        # 視情境可做小幅減分；先不改動分數，只記錄原因
-        reasons.append(f"domain_whitelisted:{sender_domain}")
-
-    return int(score), reasons
-
-
-__all__ = ["load_rules", "score_email"]
+def _domain_matches_list(domain: str, lst: list[str]) -> bool:
+    """支援子網域：a.bit.ly 命中 bit.ly"""
+    d = (domain or "").lower()
+    for item in (x.lower() for x in lst or []):
+        if d == item or d.endswith("." + item):
+            return True
+    return False
 
 
 def has_suspicious_attachment(attachments) -> bool:
     """
-    Heuristic: 是否含常見惡意/高風險附檔名或雙重副檔名（.pdf.exe）。
+    Heuristic：是否含高風險副檔名或雙重副檔名（.pdf.exe）。
     attachments: Iterable of dict/obj/str with 'filename'/'name' or str().
     """
     exts = {
@@ -198,45 +142,92 @@ def has_suspicious_attachment(attachments) -> bool:
     return False
 
 
+def score_email(
+    sender: str,
+    subject: str,
+    content: str,
+    attachments: list[str],
+) -> tuple[int, list[str]]:
+    """回傳 (raw_points, reasons)。reasons 前綴符合測試：url:/tld:/attachment: ..."""
+    cfg = load_rules()
+    w = cfg.get("weights", {})
+    reasons: list[str] = []
+    score = 0
+
+    text = f"{subject or ''}\n{content or ''}"
+
+    # URL / 可疑網域 / 可疑 TLD
+    sus_domains = list(cfg.get("suspicious_domains", [])) + list(
+        cfg.get("shorteners", [])
+    )
+    for url in _iter_urls(text):
+        domain = _domain_of(url) or ""
+        if domain and _domain_matches_list(domain, sus_domains):
+            score += int(w.get("url_suspicious", 0))
+            reasons.append(f"url:{domain}")
+        tld = _tld_of(domain)
+        if tld and tld in [x.lower() for x in cfg.get("suspicious_tlds", [])]:
+            score += int(w.get("tld_suspicious", 0))
+            reasons.append(f"tld:.{tld}")
+
+    # 附件
+    for a in attachments or []:
+        ext = _ext_of(a)
+        if ext in [x.lower() for x in cfg.get("bad_extensions", [])]:
+            score += int(w.get("attachment_executable", 0))
+            reasons.append(f"attachment:{ext}")
+
+    # 黑/白名單與關鍵字
+    sender_lower = (sender or "").lower()
+    sender_domain = sender_lower.split("@", 1)[-1] if "@" in sender_lower else ""
+    if sender_lower in (x.lower() for x in cfg.get("blacklist_senders", [])):
+        score += int(w.get("sender_black", 0))
+        reasons.append("sender:blacklisted")
+    if sender_domain and sender_domain in (
+        d.lower() for d in cfg.get("blacklist_domains", [])
+    ):
+        score += int(w.get("domain_black", 0))
+        reasons.append(f"domain:blacklisted:{sender_domain}")
+    if sender_domain and sender_domain in (
+        d.lower() for d in cfg.get("whitelist_domains", [])
+    ):
+        reasons.append(f"domain:whitelisted:{sender_domain}")
+
+    kw_map: dict[str, int] = cfg.get("keywords", {}) or {}
+    for kw, pts in kw_map.items():
+        if kw and re.search(rf"\b{re.escape(kw)}\b", text, flags=re.I):
+            score += int(pts if isinstance(pts, int) else w.get("keyword", 1))
+            reasons.append(f"kw:{kw}")
+
+    return int(score), reasons
+
+
 def label_email(
-    subject: str, content: str, attachments=None, *, threshold: float = 0.8
-):
-    """
-    Heuristic 聚合分數 → ('SPAM'|'HAM', score[0..1])
-    - 關鍵詞、連結密度、可疑附件 加權。
-    -門檻可調，預設 0.8。
-    """
-    import re
+    sender: str,
+    subject: str,
+    content: str,
+    attachments: list[str],
+) -> tuple[str, int, list[str]]:
+    """依 thresholds 產出 label：'spam' / 'suspect' / 'ok'"""
+    cfg = load_rules()
+    thresholds = cfg.get("thresholds", {}) or {}
+    score, reasons = score_email(sender, subject, content, attachments)
+    spam_th = int(thresholds.get("spam", 8))
+    suspect_th = int(thresholds.get("suspect", 4))
+    if score >= spam_th:
+        label = "spam"
+    elif score >= suspect_th:
+        label = "suspect"
+    else:
+        label = "ok"
+    return label, score, reasons
 
-    text = f"{subject}\n{content}".lower()
-    score = 0.0
 
-    # 關鍵詞（可依你的規則擴充）
-    keywords = [
-        "免費",
-        "中獎",
-        "點擊",
-        "立即",
-        "限時",
-        "投資",
-        "比特幣",
-        "優惠",
-        "貸款",
-        "退稅",
-        "發票",
-        "驗證碼",
-        "中签",
-        "中奖",
-    ]
-    score += 0.12 * sum(1 for k in keywords if k in text)
-
-    # 連結密度
-    links = re.findall(r"http[s]?://", text)
-    score += min(0.5, 0.06 * len(links))
-
-    # 可疑附件
-    if has_suspicious_attachment(attachments):
-        score += 0.5
-
-    score = max(0.0, min(1.0, score))
-    return ("SPAM" if score >= threshold else "HAM", score)
+__all__ = [
+    "load_rules",
+    "score_email",
+    "label_email",
+    "has_suspicious_attachment",
+    "CONF_PATH",
+    "_CACHE",
+]
