@@ -16,12 +16,19 @@ def test_log_quote_to_db():
     ensure_db_exists(db_path)
 
     # 執行寫入
-    log_quote(client_name="test_client", package="基礎", pdf_path="/tmp/fake.pdf", db_path=db_path)
+    log_quote(
+        client_name="test_client",
+        package="基礎",
+        pdf_path="/tmp/fake.pdf",
+        db_path=db_path,
+    )
 
     # 驗證是否寫入成功
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM quote_records WHERE client_name = ?", ("test_client",))
+    cursor.execute(
+        "SELECT * FROM quote_records WHERE client_name = ?", ("test_client",)
+    )
     row = cursor.fetchone()
     conn.close()
     os.remove(db_path)

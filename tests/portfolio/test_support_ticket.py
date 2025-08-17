@@ -1,7 +1,5 @@
-import os
 import pathlib
 import sqlite3
-import sys
 
 from smart_mail_agent.features.support import support_ticket as st
 
@@ -21,7 +19,9 @@ def test_create_list_show_update(capsys):
 
     # 讀取第一筆 id
     with sqlite3.connect(st.DB_PATH) as conn:
-        row = conn.execute(f"SELECT id FROM {st.TABLE} ORDER BY id DESC LIMIT 1").fetchone()
+        row = conn.execute(
+            f"SELECT id FROM {st.TABLE} ORDER BY id DESC LIMIT 1"
+        ).fetchone()
         tid = row[0]
 
     st.show_ticket(tid)
@@ -30,5 +30,7 @@ def test_create_list_show_update(capsys):
 
     st.update_ticket(tid, status="done", summary="完成")
     with sqlite3.connect(st.DB_PATH) as conn:
-        row = conn.execute(f"SELECT status, summary FROM {st.TABLE} WHERE id=?", (tid,)).fetchone()
+        row = conn.execute(
+            f"SELECT status, summary FROM {st.TABLE} WHERE id=?", (tid,)
+        ).fetchone()
         assert row == ("done", "完成")

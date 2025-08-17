@@ -1,6 +1,4 @@
 import json
-import pathlib
-import tempfile
 
 from smart_mail_agent.email_processor import extract_fields, write_classification_result
 

@@ -11,7 +11,14 @@ from transformers import (
 )
 
 # 類別對應（順序需與原標籤一致）
-LABELS = ["請求技術支援", "申請修改資訊", "詢問流程或規則", "投訴與抱怨", "業務接洽或報價", "其他"]
+LABELS = [
+    "請求技術支援",
+    "申請修改資訊",
+    "詢問流程或規則",
+    "投訴與抱怨",
+    "業務接洽或報價",
+    "其他",
+]
 label2id = {label: i for i, label in enumerate(LABELS)}
 id2label = {i: label for i, label in enumerate(LABELS)}
 
@@ -62,7 +69,9 @@ args = TrainingArguments(
 )
 
 # Trainer
-trainer = Trainer(model=model, args=args, train_dataset=encoded_dataset, tokenizer=tokenizer)
+trainer = Trainer(
+    model=model, args=args, train_dataset=encoded_dataset, tokenizer=tokenizer
+)
 
 # 開始訓練
 trainer.train()  # type: ignore[attr-defined]

@@ -32,7 +32,9 @@ def test_spam_sample():
 
 
 def test_ham_sample():
-    res = run("會議紀要", "附件為今天會議紀要與行動項，請查收。", "colleague@yourcompany.com")
+    res = run(
+        "會議紀要", "附件為今天會議紀要與行動項，請查收。", "colleague@yourcompany.com"
+    )
     assert res["is_spam"] is False
     assert res["score"] < 0.5
 
@@ -58,7 +60,11 @@ def test_empty_subject_or_content_is_ham():
 
 def test_benign_offer_word_only_is_ham():
     # 僅含單字「offer」但無連結/金額，應低分且非垃圾
-    res = run("We offer to help with docs", "Let's review the draft tomorrow.", "colleague@x.com")
+    res = run(
+        "We offer to help with docs",
+        "Let's review the draft tomorrow.",
+        "colleague@x.com",
+    )
     assert res["is_spam"] is False
     assert res["score"] < 0.5
 

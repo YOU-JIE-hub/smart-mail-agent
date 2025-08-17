@@ -1,5 +1,3 @@
-import pytest
-
 from smart_mail_agent.spam.orchestrator_offline import orchestrate
 
 

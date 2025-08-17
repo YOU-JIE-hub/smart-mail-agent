@@ -1,4 +1,3 @@
-import builtins
 import importlib
 import types
 
@@ -33,4 +32,6 @@ def test_handle_fallback_general(monkeypatch):
     # 讓 _get_orig 回傳 None，走 fallback
     monkeypatch.setattr(hr, "_get_orig", lambda: None)
     out = hr.handle({"predicted_label": "unknown"})
-    assert out["action"] == "reply_general" or out.get("subject", "").startswith("[自動回覆]")
+    assert out["action"] == "reply_general" or out.get("subject", "").startswith(
+        "[自動回覆]"
+    )

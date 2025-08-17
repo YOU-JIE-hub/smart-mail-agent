@@ -23,7 +23,9 @@ def _from_domain(addr: str | None) -> str | None:
     return addr.split("@", 1)[1].lower()
 
 
-def _detect_roles(a: dict[str, Any], b: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+def _detect_roles(
+    a: dict[str, Any], b: dict[str, Any]
+) -> tuple[dict[str, Any], dict[str, Any]]:
     """回傳 (result, request)；自動判別參數順序以相容舊測試。"""
     score_a = int(bool(a.get("action_name") or a.get("ok") or a.get("code")))
     score_b = int(bool(b.get("action_name") or b.get("ok") or b.get("code")))

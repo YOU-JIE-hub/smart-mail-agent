@@ -21,7 +21,9 @@ load_dotenv()
 
 # 預設模型設定
 DEFAULT_CLASSIFIER_PATH = os.getenv("CLASSIFIER_PATH", "model/roberta-zh-checkpoint")
-DEFAULT_SUMMARIZER = os.getenv("SUMMARIZER_MODEL", "uer/pegasus-base-chinese-cluecorpussmall")
+DEFAULT_SUMMARIZER = os.getenv(
+    "SUMMARIZER_MODEL", "uer/pegasus-base-chinese-cluecorpussmall"
+)
 
 
 def load_model(model_path: str):
@@ -29,9 +31,13 @@ def load_model(model_path: str):
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"找不到分類模型路徑：{model_path}")
     tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=True)
-    model = AutoModelForSequenceClassification.from_pretrained(model_path, local_files_only=True)
+    model = AutoModelForSequenceClassification.from_pretrained(
+        model_path, local_files_only=True
+    )
 
-    if not hasattr(model.config, "id2label") or not isinstance(model.config.id2label, dict):
+    if not hasattr(model.config, "id2label") or not isinstance(
+        model.config.id2label, dict
+    ):
         logger.warning("模型缺少 id2label，預設為 0~N")
         model.config.id2label = {i: str(i) for i in range(model.config.num_labels)}
         model.config.label2id = {v: k for k, v in model.config.id2label.items()}
@@ -65,7 +71,9 @@ def smart_truncate(text: str, max_chars: int = 1000) -> str:
 def classify(text: str, tokenizer, model) -> tuple:
     """執行分類推論，回傳 (label, confidence)"""
     text = smart_truncate(text)
-    inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True, max_length=512)
+    inputs = tokenizer(
+        text, return_tensors="pt", truncation=True, padding=True, max_length=512
+    )
     inputs = {k: v.to(model.device) for k, v in inputs.items()}
     with torch.no_grad():
         outputs = model(**inputs)

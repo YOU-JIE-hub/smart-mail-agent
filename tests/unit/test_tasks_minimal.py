@@ -5,8 +5,14 @@ import importlib
 import pytest
 
 CANDIDATES = [
-    (["modules.quotation", "src.modules.quotation"], ["build_quote", "handle", "process", "main"]),
-    (["support_ticket", "src.support_ticket"], ["create_ticket", "handle", "process", "main"]),
+    (
+        ["modules.quotation", "src.modules.quotation"],
+        ["build_quote", "handle", "process", "main"],
+    ),
+    (
+        ["support_ticket", "src.support_ticket"],
+        ["create_ticket", "handle", "process", "main"],
+    ),
     (
         ["modules.apply_diff", "src.modules.apply_diff"],
         ["apply_changes", "handle", "process", "main"],

@@ -10,7 +10,9 @@ from pathlib import Path
 from typing import Any
 
 
-def _env(cfg: dict[str, Any] | None, key: str, default: str | None = None) -> str | None:
+def _env(
+    cfg: dict[str, Any] | None, key: str, default: str | None = None
+) -> str | None:
     return (cfg or {}).get(key) or os.getenv(key) or default
 
 

@@ -25,8 +25,16 @@ def _fn(mod, cands):
 def test_spam_stack_allow_and_block():
     orch = _mod(["spam.spam_filter_orchestrator", "src.spam.spam_filter_orchestrator"])
     fn = _fn(orch, ["run", "filter_email", "evaluate", "orchestrate"])
-    normal = {"from": "bob@company.com", "subject": "請提供報價", "body": "想了解方案與報價"}
-    bad = {"from": "x@spam.com", "subject": "免費中獎", "body": "點此領獎 http://bad.example"}
+    normal = {
+        "from": "bob@company.com",
+        "subject": "請提供報價",
+        "body": "想了解方案與報價",
+    }
+    bad = {
+        "from": "x@spam.com",
+        "subject": "免費中獎",
+        "body": "點此領獎 http://bad.example",
+    }
     out1 = fn(normal)
     out2 = fn(bad)
     assert out1 is not None and out2 is not None

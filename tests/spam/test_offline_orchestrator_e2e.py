@@ -4,7 +4,10 @@
 
 from __future__ import annotations
 
-from smart_mail_agent.spam.orchestrator_offline import SpamFilterOrchestratorOffline, Thresholds
+from smart_mail_agent.spam.orchestrator_offline import (
+    SpamFilterOrchestratorOffline,
+    Thresholds,
+)
 
 
 def test_e2e_drop_by_keyword():
@@ -18,7 +21,9 @@ def test_e2e_drop_or_review_by_link_ratio():
     orch = SpamFilterOrchestratorOffline(
         thresholds=Thresholds(link_ratio_drop=0.50, link_ratio_review=0.30)
     )
-    html_body = '<a href="#">免費</a> <a href="#">中獎</a> <a href="#">點此連結</a> 很少文字'
+    html_body = (
+        '<a href="#">免費</a> <a href="#">中獎</a> <a href="#">點此連結</a> 很少文字'
+    )
     out = orch.decide("一般通知", html_body)
     assert out["action"] in ("drop", "review")
     assert any(r.startswith("rule:link_ratio>=") for r in out["reasons"])

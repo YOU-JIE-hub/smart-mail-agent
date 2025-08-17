@@ -42,7 +42,11 @@ def test_generate_quote_pdf(tmp_path):
     except TypeError:
         rv = fn(str(tmp_path))
 
-    out_path = pathlib.Path(rv) if isinstance(rv, (str, pathlib.Path)) else tmp_path / "quote.pdf"
+    out_path = (
+        pathlib.Path(rv)
+        if isinstance(rv, (str | pathlib.Path))
+        else tmp_path / "quote.pdf"
+    )
     assert _nonempty(out_path), f"no output generated at {out_path}"
     assert out_path.suffix in {".pdf", ".txt"}, f"unexpected suffix: {out_path.suffix}"
 

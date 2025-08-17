@@ -17,7 +17,14 @@ def test_happy_paths():
         ("其他", "reply_general"),
     ]
     for label, expect in cases:
-        res = _h({"predicted_label": label, "subject": "S", "content": "C", "sender": "a@b.com"})
+        res = _h(
+            {
+                "predicted_label": label,
+                "subject": "S",
+                "content": "C",
+                "sender": "a@b.com",
+            }
+        )
         assert res.get("action") == expect
         if expect == "send_quote":
             atts = res.get("attachments") or []
@@ -27,7 +34,14 @@ def test_happy_paths():
 
 
 def test_edge_cases():
-    res = _h({"predicted_label": "未定義分類", "subject": "?", "content": "?", "sender": "x@b.com"})
+    res = _h(
+        {
+            "predicted_label": "未定義分類",
+            "subject": "?",
+            "content": "?",
+            "sender": "x@b.com",
+        }
+    )
     assert res.get("action") == "reply_general"
 
     res = _h({"predicted_label": "其他", "subject": "no sender", "content": "hello"})
@@ -44,7 +58,12 @@ def test_edge_cases():
     assert res.get("action") == "reply_support"
 
     res = _h(
-        {"predicted_label": "詢問流程或規則", "subject": "流程", "content": "", "sender": "n@b.com"}
+        {
+            "predicted_label": "詢問流程或規則",
+            "subject": "流程",
+            "content": "",
+            "sender": "n@b.com",
+        }
     )
     assert res.get("action") == "reply_faq"
 

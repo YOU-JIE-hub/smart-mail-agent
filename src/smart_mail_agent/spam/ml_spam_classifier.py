@@ -41,7 +41,9 @@ class SpamBertClassifier:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         logger.info(f"[SpamBertClassifier] 載入 BERT 模型：{model_path}")
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_path).to(device)
+        self.model = AutoModelForSequenceClassification.from_pretrained(model_path).to(
+            device
+        )
         self.pipeline = TextClassificationPipeline(
             model=self.model,
             tokenizer=self.tokenizer,
@@ -64,7 +66,9 @@ class SpamBertClassifier:
             preds = sorted(preds, key=lambda x: x["score"], reverse=True)
             pred_label = preds[0]["label"]
             confidence = round(preds[0]["score"], 4)
-            logger.debug(f"[SpamBertClassifier] 預測結果：{pred_label} (信心值：{confidence})")
+            logger.debug(
+                f"[SpamBertClassifier] 預測結果：{pred_label} (信心值：{confidence})"
+            )
             return {"label": pred_label, "confidence": confidence}
         except Exception as e:
             logger.error(f"[SpamBertClassifier] 預測失敗：{str(e)}")

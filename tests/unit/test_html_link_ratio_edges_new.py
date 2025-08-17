@@ -1,4 +1,7 @@
-from smart_mail_agent.spam.orchestrator_offline import SpamFilterOrchestratorOffline, Thresholds
+from smart_mail_agent.spam.orchestrator_offline import (
+    SpamFilterOrchestratorOffline,
+    Thresholds,
+)
 
 
 def test_hidden_and_empty_href_not_counted():

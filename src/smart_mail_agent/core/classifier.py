@@ -140,7 +140,9 @@ class IntentClassifier:
 
 def _cli() -> None:
     parser = argparse.ArgumentParser(description="信件意圖分類 CLI")
-    parser.add_argument("--model", type=str, required=True, help="模型路徑（本地路徑或名稱）")
+    parser.add_argument(
+        "--model", type=str, required=True, help="模型路徑（本地路徑或名稱）"
+    )
     parser.add_argument("--subject", type=str, required=True, help="郵件主旨")
     parser.add_argument("--content", type=str, required=True, help="郵件內容")
     parser.add_argument(
@@ -157,7 +159,9 @@ def _cli() -> None:
     args = parser.parse_args()
 
     clf = IntentClassifier(
-        model_path=args.model, pipeline_override=None, local_files_only=not args.allow_online
+        model_path=args.model,
+        pipeline_override=None,
+        local_files_only=not args.allow_online,
     )
     result = clf.classify(subject=args.subject, content=args.content)
 

@@ -51,7 +51,11 @@ def ensure_db() -> None:
 
 
 def log_lead(
-    email: str, package: str, pdf_path: str = "", company: str = "", source: str = "email"
+    email: str,
+    package: str,
+    pdf_path: str = "",
+    company: str = "",
+    source: str = "email",
 ) -> None:
     """
     寫入一筆 leads 記錄至 SQLite。
