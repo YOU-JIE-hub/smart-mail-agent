@@ -7,6 +7,7 @@ from transformers import (
     AutoTokenizer,
     TextClassificationPipeline,
 )
+
 from utils.logger import logger
 
 # mypy: ignore-errors
