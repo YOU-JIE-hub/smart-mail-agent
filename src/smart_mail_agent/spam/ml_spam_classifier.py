@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-from utils.logger import logger
-
 import torch
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
     TextClassificationPipeline,
 )
+from utils.logger import logger
 
 # mypy: ignore-errors
 # 檔案位置：src/spam/ml_spam_classifier.py

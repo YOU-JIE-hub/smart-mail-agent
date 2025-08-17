@@ -41,3 +41,4 @@ data/*.db
 /.review_cursor
 /.env.smtp-test
 /__pycache__/
+repo_files_after_clean.txt
