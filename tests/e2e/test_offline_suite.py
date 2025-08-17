@@ -24,7 +24,7 @@ def test_generate_quote_pdf(tmp_path):
     reportlab 缺/字型缺時，允許 .txt 保底。
     """
     os.environ["OFFLINE"] = "1"
-    # 確保能 import src.*
+    # 確保能 import smart_mail_agent.*
     if str(SRC_DIR) not in sys.path:
         sys.path.insert(0, str(SRC_DIR))
 

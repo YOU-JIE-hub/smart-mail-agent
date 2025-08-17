@@ -7,8 +7,9 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
 from utils.logger import logger  # 統一日誌
+
+from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
 
 # !/usr/bin/env python3
 # 檔案位置：src/classifier.py

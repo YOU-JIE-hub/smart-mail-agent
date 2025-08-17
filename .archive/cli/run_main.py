@@ -8,8 +8,9 @@ if SRC_PATH not in sys.path:
     sys.path.insert(0, SRC_PATH)
 
 from classifier import IntentClassifier
-from spam.spam_filter_orchestrator import SpamFilterOrchestrator
 from utils.logger import logger
+
+from spam.spam_filter_orchestrator import SpamFilterOrchestrator
 
 parser = argparse.ArgumentParser(description="郵件處理主流程")
 parser.add_argument("--spam_model", required=True, help="BERT spam 模型路徑")

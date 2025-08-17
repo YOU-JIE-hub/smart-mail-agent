@@ -2,7 +2,7 @@ import builtins
 import importlib
 import types
 
-import src.patches.handle_router_patch as hr
+import smart_mail_agent.patches.handle_router_patch as hr
 
 
 def test_normalize_alias():

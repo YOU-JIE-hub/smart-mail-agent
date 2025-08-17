@@ -1,7 +1,7 @@
 import pathlib
 import sqlite3
 
-from src.log_writer import log_to_db
+from smart_mail_agent.utils.log_writer import log_to_db
 
 
 def test_log_to_db_writes_row(tmp_path):

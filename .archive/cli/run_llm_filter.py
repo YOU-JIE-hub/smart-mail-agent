@@ -8,8 +8,9 @@ SRC_PATH = os.path.join(os.path.dirname(__file__), "src")
 if SRC_PATH not in sys.path:
     sys.path.insert(0, SRC_PATH)
 
-from spam.spam_llm_filter import SpamLLMFilter
 from utils.logger import logger
+
+from spam.spam_llm_filter import SpamLLMFilter
 
 parser = argparse.ArgumentParser(description="執行 LLM 詐騙語意辨識")
 parser.add_argument("--input", required=True, help="輸入郵件 JSON 檔案")

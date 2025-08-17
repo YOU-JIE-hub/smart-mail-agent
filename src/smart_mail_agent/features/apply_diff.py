@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-# 檔案位置：src/modules/apply_diff.py
-# 模組用途：解析使用者信件內容，從 users.db 中比對異動欄位並更新資料與記錄差異。
+from __future__ import annotations
 
 import re
 import sqlite3
@@ -8,6 +7,10 @@ from datetime import datetime
 from typing import Any
 
 from utils.logger import logger
+
+# 檔案位置：src/modules/apply_diff.py
+# 模組用途：解析使用者信件內容，從 users.db 中比對異動欄位並更新資料與記錄差異。
+
 
 DB_PATH: str = "data/users.db"  # 可由外部 CLI 或環境變數注入路徑
 

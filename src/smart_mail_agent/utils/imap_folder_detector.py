@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 # 檔案位置：src/utils/imap_utils.py
 # 模組用途：偵測 Gmail 的 All Mail 資料夾名稱，支援不同語系與 IMAP 編碼
 import imaplib
@@ -24,7 +26,6 @@ def _decode_imap_bytes(v: bytes | tuple[bytes, ...] | bytearray) -> str:
 import re
 
 from dotenv import load_dotenv
-
 from utils.logger import logger
 
 load_dotenv()
