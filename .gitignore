@@ -35,3 +35,18 @@ data/leads/
 repo-inventory-*
 repo_files_after_clean.txt
 review_files.lst
+# === build/test outputs & cache ===
+/coverage.xml
+/.coverage
+/.pytest_cache/
+/.ruff_cache/
+/reports/
+/share/
+/docs/site/
+/data/output/
+/data/tmp/
+/src/smart_mail_agent.egg-info/
+# === stray ===
+/repo-inventory-*.txt
+/repo_files_after_clean.txt
+/Package:*
