@@ -6,7 +6,7 @@ cd "$root"
 echo "=== 未逐行展開（Ruff: E701/E702/E703/E704）的檔案 ==="
 ruff check --select E701,E702,E703,E704 --output-format=json src tests 2>/dev/null \
 | python3 - <<'PY'
-import json,sys; 
+import json,sys;
 try:
     data=json.load(sys.stdin)
 except Exception:

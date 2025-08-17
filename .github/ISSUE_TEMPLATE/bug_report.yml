@@ -1,0 +1,12 @@
+name: Bug report
+description: 回報錯誤
+labels: ["bug"]
+body:
+  - type: textarea
+    attributes: { label: 問題描述 }
+    validations: { required: true }
+  - type: textarea
+    attributes: { label: 重現步驟 }
+    validations: { required: true }
+  - type: textarea
+    attributes: { label: 期望行為 }

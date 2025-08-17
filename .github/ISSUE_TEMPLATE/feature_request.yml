@@ -1,0 +1,9 @@
+name: Feature request
+description: 提出新功能
+labels: ["enhancement"]
+body:
+  - type: textarea
+    attributes: { label: 需求動機 }
+    validations: { required: true }
+  - type: textarea
+    attributes: { label: 功能說明 }
