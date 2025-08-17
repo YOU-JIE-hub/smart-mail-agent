@@ -9,7 +9,8 @@ try:
     from openai import OpenAI, OpenAIError  # type: ignore
 
     _OPENAI_AVAILABLE = True
-except Exception:  # ImportError or others
+except Exception:
+    # ImportError or others
 
     class OpenAIError(Exception): ...
 
