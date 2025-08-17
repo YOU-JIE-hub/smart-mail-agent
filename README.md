@@ -1,5 +1,7 @@
 # Smart Mail Agent
 
+[![CI](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) ![Python](https://img.shields.io/badge/python-3.10%20|%203.11-blue)
+
 面向企業展示的 AI + RPA 郵件自動化專案：結合 NLP/LLM 與流程自動化，離線可跑、CLI 一鍵驗證，涵蓋垃圾郵件過濾、意圖分類、動作路由（報價 PDF、FAQ 回覆、工單建立、銷售通知）、統計與日誌。
 
 ## 核心特性

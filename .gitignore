@@ -33,3 +33,4 @@ data/*.db
 /.archive/
 /assets/fonts/
 /data/
+/reports/
