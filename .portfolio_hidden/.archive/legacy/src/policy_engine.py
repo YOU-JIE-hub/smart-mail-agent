@@ -1,1 +1,0 @@
-from smart_mail_agent.core.policy_engine import *  # legacy shim
