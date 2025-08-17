@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-# 檔案位置：src/utils/db_tools.py
-# 模組用途：用於查詢 SQLite 使用者資料表（get by email / get all）
+from __future__ import annotations
 
 import sqlite3
 
 from utils.logger import logger
+
+# 檔案位置：src/utils/db_tools.py
+# 模組用途：用於查詢 SQLite 使用者資料表（get by email / get all）
 
 
 def get_user_by_email(db_path: str, email: str) -> dict | None:

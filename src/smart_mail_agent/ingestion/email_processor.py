@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 # 檔案位置：src/email_processor.py
 # 模組用途：主流程入口，整合垃圾信過濾 → 意圖分類 → 執行對應行動模組
 import argparse
 import json
 import os
 
-from dotenv import load_dotenv
-
 from action_handler import route_action
+from dotenv import load_dotenv
 from inference_classifier import classify_intent
-from spam.spam_filter_orchestrator import SpamFilterOrchestrator
 from utils.log_writer import write_log
 from utils.logger import logger
+
+from spam.spam_filter_orchestrator import SpamFilterOrchestrator
 
 load_dotenv()
 

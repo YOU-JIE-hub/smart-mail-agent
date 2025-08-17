@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-# 檔案位置：src/modules/leads_logger.py
-# 模組用途：記錄潛在客戶 leads 資訊至 leads.db，供日後分析與轉換率追蹤
+from __future__ import annotations
 
 import sqlite3
 from datetime import datetime
 from pathlib import Path
 
 from utils.logger import logger
+
+# 檔案位置：src/modules/leads_logger.py
+# 模組用途：記錄潛在客戶 leads 資訊至 leads.db，供日後分析與轉換率追蹤
+
 
 DB_PATH = Path("data/leads.db")
 TABLE_NAME = "leads"

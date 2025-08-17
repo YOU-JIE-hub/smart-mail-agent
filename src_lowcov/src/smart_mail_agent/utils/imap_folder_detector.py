@@ -24,7 +24,6 @@ def _decode_imap_bytes(v: bytes | tuple[bytes, ...] | bytearray) -> str:
 import re
 
 from dotenv import load_dotenv
-
 from utils.logger import logger
 
 load_dotenv()

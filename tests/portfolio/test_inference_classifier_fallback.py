@@ -1,4 +1,4 @@
-import src.inference_classifier as ic
+import smart_mail_agent.inference_classifier as ic
 
 
 def test_smart_truncate_marks_ellipsis():

@@ -1,0 +1,11 @@
+322-        pass
+323-
+324:    label, score, source, err = _call_model_robust(model, email, model_threshold)
+325-
+326-    # ham 標籤一律視為非垃圾：覆寫 score 為 0.0
+327-
+328-    if label == "ham":
+329-
+330-        score = 0.0
+331-
+332-    is_spam = score >= model_threshold

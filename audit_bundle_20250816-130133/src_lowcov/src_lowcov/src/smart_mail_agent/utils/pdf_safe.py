@@ -54,12 +54,24 @@ def _write_minimal_pdf(lines: list[str], out_path: Path) -> Path:
     # 2: Pages
     xref.append(add_obj(b"2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n"))
     # 3: Page
-    xref.append(add_obj(b"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n"))
+    xref.append(
+        add_obj(
+            b"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n"
+        )
+    )
     # 4: Contents (stream)
-    stream = b"4 0 obj\n<< /Length " + str(len(content_bytes)).encode("ascii") + b" >>\nstream\n" + content_bytes + b"endstream\nendobj\n"
+    stream = (
+        b"4 0 obj\n<< /Length "
+        + str(len(content_bytes)).encode("ascii")
+        + b" >>\nstream\n"
+        + content_bytes
+        + b"endstream\nendobj\n"
+    )
     xref.append(add_obj(stream))
     # 5: Font
-    xref.append(add_obj(b"5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n"))
+    xref.append(
+        add_obj(b"5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n")
+    )
 
     # xref & trailer
     xref_start = len(header) + sum(len(x) for x in objs)
@@ -67,7 +79,11 @@ def _write_minimal_pdf(lines: list[str], out_path: Path) -> Path:
     for off in xref:
         xref_table.append((f"{off:010d} 00000 n \n").encode("ascii"))
     xref_bytes = b"".join(xref_table)
-    trailer = b"trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n" + str(xref_start).encode("ascii") + b"\n%%EOF\n"
+    trailer = (
+        b"trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n"
+        + str(xref_start).encode("ascii")
+        + b"\n%%EOF\n"
+    )
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("wb") as f:

@@ -22,7 +22,9 @@ def main():
     rows = []
     for c in cases:
         atts = "<br/>".join(f"<code>{a}</code>" for a in (c.get("attachments") or []))
-        rows.append(f"<tr><td>{c.get('name')}</td><td>{c.get('action')}</td><td>{'✅' if c.get('ok', True) else '❌'}</td><td><code>{c.get('output')}</code></td><td>{atts}</td></tr>")
+        rows.append(
+            f"<tr><td>{c.get('name')}</td><td>{c.get('action')}</td><td>{'✅' if c.get('ok', True) else '❌'}</td><td><code>{c.get('output')}</code></td><td>{atts}</td></tr>"
+        )
     html = f"""<!doctype html><meta charset="utf-8">
 <title>Smart Mail Agent — 離線報告</title>
 <style>body{{font-family:system-ui,Roboto,"PingFang TC","Microsoft JhengHei",sans-serif;padding:24px}}

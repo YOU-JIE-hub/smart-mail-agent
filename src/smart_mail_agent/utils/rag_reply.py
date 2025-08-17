@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 
 #!/usr/bin/env python3
@@ -9,7 +11,8 @@ try:
     from openai import OpenAI, OpenAIError  # type: ignore
 
     _OPENAI_AVAILABLE = True
-except Exception:  # ImportError or others
+except Exception:
+    # ImportError or others
 
     class OpenAIError(Exception): ...
 
