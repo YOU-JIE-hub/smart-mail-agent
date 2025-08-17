@@ -1,6 +1,7 @@
 import json
 
 from datasets import Dataset
+
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
@@ -43,7 +44,9 @@ def tokenize(batch):
 encoded_dataset = dataset.map(tokenize)
 
 # 模型初始化
-model = AutoModelForSequenceClassification.from_pretrained(PRETRAINED_MODEL, num_labels=len(LABELS), label2id=label2id, id2label=id2label)
+model = AutoModelForSequenceClassification.from_pretrained(
+    PRETRAINED_MODEL, num_labels=len(LABELS), label2id=label2id, id2label=id2label
+)
 
 # 訓練參數
 args = TrainingArguments(

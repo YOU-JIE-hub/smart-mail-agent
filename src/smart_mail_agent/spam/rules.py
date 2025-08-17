@@ -7,7 +7,8 @@ from typing import Any
 
 try:
     import yaml  # type: ignore
-except Exception:  # pyyaml 不一定存在
+except Exception:
+    # pyyaml 不一定存在
     yaml = None  # type: ignore
 
 

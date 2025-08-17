@@ -61,7 +61,9 @@ def log_event(result: Any, request: dict[str, Any] | None = None) -> str:
             row["req_subject"] = request.get("subject")
             row["req_from"] = request.get("from")
         with p.open("a", encoding="utf-8") as f:
-            f.write(json.dumps({k: _jsonable(v) for k, v in row.items()}, ensure_ascii=False) + "\n")
+            f.write(
+                json.dumps({k: _jsonable(v) for k, v in row.items()}, ensure_ascii=False) + "\n"
+            )
         try:
             if isinstance(result, dict):
                 result["logged_path"] = str(p)
@@ -72,7 +74,8 @@ def log_event(result: Any, request: dict[str, Any] | None = None) -> str:
         try:
             dbg = _log_dir() / "log_event_error.txt"
             dbg.write_text(
-                (dbg.read_text(encoding="utf-8") if dbg.exists() else "") + f"[{dt.datetime.now().isoformat(timespec='seconds')}] {type(e).__name__}: {e}\n",
+                (dbg.read_text(encoding="utf-8") if dbg.exists() else "")
+                + f"[{dt.datetime.now().isoformat(timespec='seconds')}] {type(e).__name__}: {e}\n",
                 encoding="utf-8",
             )
         except Exception:

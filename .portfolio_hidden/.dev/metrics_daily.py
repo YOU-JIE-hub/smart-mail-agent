@@ -26,7 +26,9 @@ def main() -> int:
         print("no logs found", file=sys.stderr)
         return 0
 
-    metrics: dict[str, dict[str, dict[str, Any]]] = defaultdict(lambda: defaultdict(lambda: {"count": 0, "ok": 0, "fail": 0, "dur_sum": 0, "dur_cnt": 0}))
+    metrics: dict[str, dict[str, dict[str, Any]]] = defaultdict(
+        lambda: defaultdict(lambda: {"count": 0, "ok": 0, "fail": 0, "dur_sum": 0, "dur_cnt": 0})
+    )
 
     for fp in files:
         with fp.open("r", encoding="utf-8") as f:

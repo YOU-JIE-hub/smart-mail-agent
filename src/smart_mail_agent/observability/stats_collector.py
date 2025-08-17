@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-# 檔案位置：src/stats_collector.py
-# 模組用途：記錄分類執行次數與處理耗時，儲存至 SQLite（供統計分析或儀表板視覺化）
+from __future__ import annotations
 
 import argparse
 import sqlite3
@@ -8,6 +7,10 @@ from datetime import datetime
 from pathlib import Path
 
 from utils.logger import logger
+
+# 檔案位置：src/stats_collector.py
+# 模組用途：記錄分類執行次數與處理耗時，儲存至 SQLite（供統計分析或儀表板視覺化）
+
 
 # === 統一路徑設定 ===
 DB_PATH = Path("data/stats.db")

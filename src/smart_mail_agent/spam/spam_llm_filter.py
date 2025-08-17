@@ -1,11 +1,11 @@
+from __future__ import annotations
+
 import os
 
 #!/usr/bin/env python3
-# 檔案位置：src/spam/spam_llm_filter.py
 # 模組用途：使用 OpenAI GPT 模型判斷信件是否具詐騙/釣魚嫌疑（L2）
 from dotenv import load_dotenv
 from openai import OpenAI, OpenAIError
-
 from utils.logger import logger
 
 load_dotenv()

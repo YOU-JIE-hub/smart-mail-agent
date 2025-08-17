@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 # Auto-generated compat proxy: src/spam/__init__.py
 from importlib import import_module as _imp
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-from src.sma_types import normalize_request, normalize_result
+from smart_mail_agent.sma_types import normalize_request, normalize_result
 
 
 def test_request_normalization_defaults():

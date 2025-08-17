@@ -41,7 +41,9 @@ def decide_action(pred: str | None) -> str:
     return mapping.get((pred or "").strip().lower(), "reply_general")
 
 
-def build_response(obj: dict[str, Any], simulate_failure: str | None, dry_run: bool) -> dict[str, Any]:
+def build_response(
+    obj: dict[str, Any], simulate_failure: str | None, dry_run: bool
+) -> dict[str, Any]:
     rid = _req_id()
     pred = obj.get("predicted_label")
     action = decide_action(pred)
@@ -71,7 +73,9 @@ def build_response(obj: dict[str, Any], simulate_failure: str | None, dry_run: b
         if simulate_failure:  # 只要帶了 simulate-failure 就走文字備援
             meta["simulate_failure"] = simulate_failure
             content = "PDF 生成失敗，附上文字版報價說明。"
-            attachments.append({"filename": "quote_fallback.txt", "size": len(content.encode("utf-8"))})
+            attachments.append(
+                {"filename": "quote_fallback.txt", "size": len(content.encode("utf-8"))}
+            )
     elif action == "sales_inquiry":
         subject = "[自動回覆] 商務詢問回覆"
         body = "我們已收到您的商務詢問，附件為需求摘要，稍後由業務與您聯繫。"
@@ -85,7 +89,9 @@ def build_response(obj: dict[str, Any], simulate_failure: str | None, dry_run: b
         if re.search(r"down|宕機|無法使用|嚴重|故障", text, flags=re.I):
             meta["priority"] = "P1"
             meta["SLA_eta"] = "4h"
-            meta["cc"] = sorted(set((meta.get("cc") or []) + ["ops@company.example", "qa@company.example"]))
+            meta["cc"] = sorted(
+                set((meta.get("cc") or []) + ["ops@company.example", "qa@company.example"])
+            )
 
     out = {
         "action_name": action,
@@ -163,10 +169,19 @@ try:
                 if _out.exists():
                     _d = _j2.loads(_out.read_text(encoding="utf-8"))
                     _meta = _d.get("meta") or {}
-                    if _d.get("action_name") == "complaint" and isinstance(_meta, dict) and _meta.get("priority") == "P1" and not _meta.get("next_step"):
-                        _meta["next_step"] = "啟動P1流程：建立 incident/bridge，通知 OPS/QA，SLA 4h 內回覆客戶"
+                    if (
+                        _d.get("action_name") == "complaint"
+                        and isinstance(_meta, dict)
+                        and _meta.get("priority") == "P1"
+                        and not _meta.get("next_step")
+                    ):
+                        _meta["next_step"] = (
+                            "啟動P1流程：建立 incident/bridge，通知 OPS/QA，SLA 4h 內回覆客戶"
+                        )
                         _d["meta"] = _meta
-                        _out.write_text(_j2.dumps(_d, ensure_ascii=False, indent=2), encoding="utf-8")
+                        _out.write_text(
+                            _j2.dumps(_d, ensure_ascii=False, indent=2), encoding="utf-8"
+                        )
         except Exception:
             pass
 

@@ -139,10 +139,14 @@ def update_ticket(ticket_id: int, status=None, summary=None):
 
     with sqlite3.connect(DB_PATH) as conn:
         if status:
-            conn.execute(f"UPDATE {TABLE} SET status=?, updated_at=? WHERE id=?", (status, now, ticket_id))
+            conn.execute(
+                f"UPDATE {TABLE} SET status=?, updated_at=? WHERE id=?", (status, now, ticket_id)
+            )
             updated_fields.append("狀態")
         if summary:
-            conn.execute(f"UPDATE {TABLE} SET summary=?, updated_at=? WHERE id=?", (summary, now, ticket_id))
+            conn.execute(
+                f"UPDATE {TABLE} SET summary=?, updated_at=? WHERE id=?", (summary, now, ticket_id)
+            )
             updated_fields.append("摘要")
         conn.commit()
 
@@ -180,7 +184,9 @@ def parse_args():
 def main():
     args = parse_args()
     if args.command == "create":
-        create_ticket(args.subject, args.content, args.summary, args.sender, args.category, args.confidence)
+        create_ticket(
+            args.subject, args.content, args.summary, args.sender, args.category, args.confidence
+        )
     elif args.command == "list":
         list_tickets()
     elif args.command == "show":

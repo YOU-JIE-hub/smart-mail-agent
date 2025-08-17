@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 # 檔案位置: src/smart_mail_agent/cli/sma.py
 import subprocess
 import sys

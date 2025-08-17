@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.spam.pipeline import analyze
+from smart_mail_agent.spam.pipeline import analyze
 
 
 def test_ham_is_legit():

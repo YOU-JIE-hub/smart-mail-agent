@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-# 檔案位置：src/init_db.py
-# 模組用途：初始化專案所需的所有 SQLite 資料庫與資料表
+from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
 
 from utils.logger import logger
+
+# 檔案位置：src/init_db.py
+# 模組用途：初始化專案所需的所有 SQLite 資料庫與資料表
+
 
 # ===== 資料夾與路徑設定 =====
 DATA_DIR = Path("data")

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 # 檔案位置: src/smart_mail_agent/__main__.py
 """
 主進入點：轉呼叫現有專案的 src.run_action_handler 以維持相容。

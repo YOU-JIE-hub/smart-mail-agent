@@ -48,7 +48,9 @@ def main():
         rows.append({"name": s["name"], **r})
     out = OUT / "spam_demo.json"
     out.write_text(
-        json.dumps({"ts": time.strftime("%Y-%m-%d %H:%M:%S"), "rows": rows}, ensure_ascii=False, indent=2),
+        json.dumps(
+            {"ts": time.strftime("%Y-%m-%d %H:%M:%S"), "rows": rows}, ensure_ascii=False, indent=2
+        ),
         encoding="utf-8",
     )
     print("[SPAM] demo ->", out)
