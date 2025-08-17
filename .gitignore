@@ -67,3 +67,20 @@ review_files.lst
 /*.bak.*
 /repo-inventory-*.txt
 /repo_files_after_clean.txt
+# === build/test outputs & cache ===
+/coverage.xml
+/.coverage
+/.pytest_cache/
+/.ruff_cache/
+/reports/
+/share/
+/docs/site/
+/data/output/
+/data/tmp/
+/src/smart_mail_agent.egg-info/
+# === temporary/backups ===
+/*.bak.*
+/repo-inventory-*.txt
+/repo_files_after_clean.txt
+site/
+project_file_list.txt
