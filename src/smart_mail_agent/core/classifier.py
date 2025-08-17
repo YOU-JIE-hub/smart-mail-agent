@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
+
 from utils.logger import logger  # 統一日誌
 
 # !/usr/bin/env python3

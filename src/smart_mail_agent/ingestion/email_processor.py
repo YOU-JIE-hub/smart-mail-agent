@@ -7,8 +7,9 @@ import argparse
 import json
 import os
 
-from action_handler import route_action
 from dotenv import load_dotenv
+
+from action_handler import route_action
 from inference_classifier import classify_intent
 from spam.spam_filter_orchestrator import SpamFilterOrchestrator
 from utils.log_writer import write_log

@@ -12,8 +12,9 @@ for p in (BASE, BASE.parent):
         sys.path.insert(0, sp)
 
 try:
-    import action_handler as ah
     from patches.handle_safe_patch import handle as patched_handle
+
+    import action_handler as ah
 
     ah.handle = patched_handle
 except Exception:

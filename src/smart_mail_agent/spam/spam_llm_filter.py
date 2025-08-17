@@ -6,6 +6,7 @@ import os
 # 模組用途：使用 OpenAI GPT 模型判斷信件是否具詐騙/釣魚嫌疑（L2）
 from dotenv import load_dotenv
 from openai import OpenAI, OpenAIError
+
 from utils.logger import logger
 
 load_dotenv()

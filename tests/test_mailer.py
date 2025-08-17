@@ -4,6 +4,7 @@
 from unittest.mock import patch
 
 import pytest
+
 from utils.mailer import send_email_with_attachment, validate_smtp_config
 
 
