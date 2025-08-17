@@ -7,16 +7,15 @@ import argparse
 import json
 import os
 
-from dotenv import load_dotenv
-from utils.logger import logger
-
 import torch
+from dotenv import load_dotenv
 from transformers import (
     AutoModelForSeq2SeqLM,
     AutoModelForSequenceClassification,
     AutoTokenizer,
     pipeline,
 )
+from utils.logger import logger
 
 load_dotenv()
 

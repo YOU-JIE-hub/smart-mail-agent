@@ -8,7 +8,6 @@ from datetime import datetime
 
 from datasets import Dataset
 from sklearn.utils import shuffle
-
 from transformers import BertForSequenceClassification, BertTokenizer, Trainer, TrainingArguments
 
 LABEL2ID = {"ham": 0, "spam": 1}
