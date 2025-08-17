@@ -40,3 +40,4 @@ data/*.db
 /review_files.lst
 /.review_cursor
 /.env.smtp-test
+/__pycache__/
