@@ -6,7 +6,6 @@ import sqlite3
 from pathlib import Path
 
 import pytest
-
 from modules.apply_diff import update_user_info
 
 TEST_DB = "tests/mock_users.db"

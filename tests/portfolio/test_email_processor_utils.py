@@ -2,7 +2,7 @@ import json
 import pathlib
 import tempfile
 
-from src.email_processor import extract_fields, write_classification_result
+from smart_mail_agent.email_processor import extract_fields, write_classification_result
 
 
 def test_extract_fields_various_keys():

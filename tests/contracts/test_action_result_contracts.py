@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from src.sma_types import ActionResult, AttachmentMeta
+from smart_mail_agent.sma_types import ActionResult, AttachmentMeta
 
 ALLOWED_ACTIONS = {
     "send_quote",

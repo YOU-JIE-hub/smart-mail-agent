@@ -25,7 +25,8 @@ def main():
 
     files = {
         # ---- Dockerfile ----
-        ROOT / "Dockerfile": dedent(
+        ROOT
+        / "Dockerfile": dedent(
             """
             # syntax=docker/dockerfile:1.6
             # 檔案位置：Dockerfile
@@ -75,7 +76,9 @@ def main():
         """
         ).lstrip(),
         # ---- docker/entrypoint.sh ----
-        ROOT / "docker" / "entrypoint.sh": dedent(
+        ROOT
+        / "docker"
+        / "entrypoint.sh": dedent(
             """
             #!/usr/bin/env bash
             # 檔案位置：docker/entrypoint.sh
@@ -99,7 +102,8 @@ def main():
         """
         ).lstrip(),
         # ---- .dockerignore ----
-        ROOT / ".dockerignore": dedent(
+        ROOT
+        / ".dockerignore": dedent(
             """
             # 檔案位置：.dockerignore
             # 模組用途：避免把不必要檔案打包進 Docker context
@@ -122,7 +126,8 @@ def main():
         """
         ).lstrip(),
         # ---- docker-compose.yml ----
-        ROOT / "docker-compose.yml": dedent(
+        ROOT
+        / "docker-compose.yml": dedent(
             """
             # 檔案位置：docker-compose.yml
             # 模組用途：本地或伺服器一鍵啟動 Smart-Mail-Agent
@@ -145,7 +150,10 @@ def main():
         """
         ).lstrip(),
         # ---- GitHub Actions：Docker build（驗證能建置） ----
-        ROOT / ".github" / "workflows" / "docker.yml": dedent(
+        ROOT
+        / ".github"
+        / "workflows"
+        / "docker.yml": dedent(
             """
             # 檔案位置：.github/workflows/docker.yml
             # 模組用途：在 PR 與 main push 驗證 Docker 能成功 build

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-from src.policy_engine import apply_policies, apply_policy
+from smart_mail_agent.policy_engine import apply_policies, apply_policy
 
 
 def test_low_confidence_review(tmp_path):

@@ -1,0 +1,97 @@
+=== GIT STATUS (branch / upstream) ===
+## fix/ham-score-zero...origin/fix/ham-score-zero
+MM data/complaints/log.csv
+MM src/smart_mail_agent/spam/orchestrator_offline.py
+?? tmp/healthcheck_20250817T050700.txt
+
+--- HEADS (should be identical if no changes pending) ---
+HEAD                       20fb68fb1
+origin/main                20fb68fb1
+origin/fix/ham-score-zero  20fb68fb1
+
+--- COMPARE main vs fix/ham-score-zero (should be empty) ---
+
+=== KEY FILE CHECKS ===
+[orchestrator_offline.py] expect 'ham→score=0.0' + 'decide by score only' + link_ratio reasons
+   280	                "is_borderline": True,
+   281	                "source": "link_ratio",
+   282	                "reasons": reasons,
+   283	                "scores": scores,
+   284	            }
+   285	
+   286	        # 關鍵字（放後面，避免覆蓋 link_ratio 的 reasons）
+   287	        text_norm = _nfkc_upper(subject + " " + content)
+   288	        if any(k in text_norm for k in ("FREE", "免費", "贈品", "中獎", "中奖")):
+   289	            return {
+   290	                "action": "drop",
+   291	                "is_spam": True,
+   292	                "is_borderline": False,
+   293	                "source": "keyword",
+   294	                "reasons": ["rule:keyword"],
+   295	                "scores": scores,
+   296	            }
+   297	
+   298	        # fallback：交給 orchestrate（rule+model）
+   299	        email = {"subject": subject, "content": content, "attachments": []}
+   300	        res = orchestrate(email, self.rule, self.model, model_threshold=self.thresholds.model)
+   301	        act = getattr(res, "action", "route_to_inbox")
+   302	        return {
+   303	            "action": ("route" if act == "route_to_inbox" else act),
+   304	            "is_spam": bool(getattr(res, "is_spam", False)),
+   305	            "is_borderline": bool(getattr(res, "is_borderline", False)),
+   306	            "source": getattr(res, "source", "model"),
+   307	            "reasons": reasons,
+   308	            "scores": scores,
+   309	        }
+   310	
+   311	
+   312	def orchestrate(
+   313	    subject_or_email: Union[str, Email], rule: RuleFn, model: ModelFn, model_threshold: float = 0.6
+   314	) -> SimpleNamespace:
+   315	    email = _normalize_email(subject_or_email)
+   316	    # 規則捷徑
+   317	    try:
+   318	        rs = _apply_rule_shortcut(rule, email)
+   319	        if rs is not None:
+   320	            return rs
+
+grep checks:
+324:    label, score, source, err = _call_model_robust(model, email, model_threshold)
+328:    if label == "ham":
+193:            reasons.append(f"rule:link_ratio>={d}")
+203:            reasons.append(f"rule:link_ratio>={r}")
+266:            reasons.append(f"rule:link_ratio>={d}")
+276:            reasons.append(f"rule:link_ratio>={r}")
+
+=== TESTS (summary) ===
+.sssssssssssssssssssssssss.............................................. [ 31%]
+........................................................................ [ 62%]
+........................s..............................s.....ss......... [ 94%]
+.....s...ss..                                                            [100%]
+=============================== warnings summary ===============================
+../../.local/lib/python3.10/site-packages/pydantic/_internal/_config.py:323
+  /home/youjie/.local/lib/python3.10/site-packages/pydantic/_internal/_config.py:323: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+../../.local/lib/python3.10/site-packages/pydantic/_internal/_config.py:373
+  /home/youjie/.local/lib/python3.10/site-packages/pydantic/_internal/_config.py:373: UserWarning: Valid config keys have changed in V2:
+  * 'allow_population_by_field_name' has been renamed to 'validate_by_name'
+    warnings.warn(message, UserWarning)
+
+<frozen importlib._bootstrap>:283
+  <frozen importlib._bootstrap>:283: DeprecationWarning: the load_module() method is deprecated and slated for removal in Python 3.12; use exec_module() instead
+
+tests/unit/test_contracts.py::test_request_normalization_defaults
+  /home/youjie/projects/smart-mail-agent/tests/unit/test_contracts.py:9: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    req = normalize_request(raw).dict(by_alias=True)
+
+tests/unit/test_contracts.py::test_result_normalization_prefix_and_fields
+  /home/youjie/projects/smart-mail-agent/tests/unit/test_contracts.py:23: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    res = normalize_result(raw).dict()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+197 passed, 32 skipped, 5 warnings in 0.87s
+
+=== LINT/FORMAT ===
+All checks passed!
+Formatted with black + isort.

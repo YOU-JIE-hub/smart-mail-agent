@@ -1,7 +1,7 @@
 import pathlib
 import tempfile
 
-import src.smart_mail_agent.utils.pdf_safe as ps
+import smart_mail_agent.smart_mail_agent.utils.pdf_safe as ps
 
 
 def test_escape_pdf_text_escapes_parens_and_non_ascii():

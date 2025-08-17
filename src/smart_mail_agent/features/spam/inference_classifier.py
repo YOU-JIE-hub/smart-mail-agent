@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 # 檔案位置：src/inference_classifier.py
 # 模組用途：繁體郵件意圖分類與內容摘要推論（支援本地訓練模型與中文 summarizer）
 import argparse
@@ -6,6 +8,7 @@ import json
 import os
 
 from dotenv import load_dotenv
+from utils.logger import logger
 
 import torch
 from transformers import (
@@ -14,7 +17,6 @@ from transformers import (
     AutoTokenizer,
     pipeline,
 )
-from utils.logger import logger
 
 load_dotenv()
 
@@ -154,7 +156,7 @@ def main():
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
 
-    logger.info(f"[Output] 分類完成：{label}（信心值：{score:.4f}） ➜ {output_path}")
+    logger.info(f"[Output] 分類完成：{label}（信心值：{score:.4f}）  {output_path}")
 
 
 if __name__ == "__main__":

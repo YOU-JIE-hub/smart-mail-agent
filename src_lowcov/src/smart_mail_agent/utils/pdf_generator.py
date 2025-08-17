@@ -11,7 +11,6 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
-
 from utils.logger import logger
 
 load_dotenv()
@@ -53,7 +52,9 @@ def generate_info_change_pdf(info_dict: dict, save_path: str):
 
         # 系統說明
         c.setFont(FONT_NAME, 12)
-        c.drawString(margin, y, "以下為客戶主動申請之資料異動內容，已由 Smart-Mail-Agent 系統自動紀錄：")
+        c.drawString(
+            margin, y, "以下為客戶主動申請之資料異動內容，已由 Smart-Mail-Agent 系統自動紀錄："
+        )
         y -= line_height * 2
 
         # 異動欄位列出

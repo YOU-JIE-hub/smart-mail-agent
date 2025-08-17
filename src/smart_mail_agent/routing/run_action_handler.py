@@ -70,7 +70,8 @@ def build_response(
     elif action == "send_quote":
         subject = "[自動回覆] 報價說明"
         body = "您好，這是報價附件與說明。"
-        if simulate_failure:  # 只要帶了 simulate-failure 就走文字備援
+        if simulate_failure:
+            # 只要帶了 simulate-failure 就走文字備援
             meta["simulate_failure"] = simulate_failure
             content = "PDF 生成失敗，附上文字版報價說明。"
             attachments.append(

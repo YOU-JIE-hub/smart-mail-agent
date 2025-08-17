@@ -6,7 +6,6 @@ import os
 import tempfile
 
 import pytest
-
 from modules.sales_notifier import notify_sales
 
 
