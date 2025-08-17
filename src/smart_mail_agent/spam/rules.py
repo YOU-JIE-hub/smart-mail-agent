@@ -152,3 +152,91 @@ def score_email(
 
 
 __all__ = ["load_rules", "score_email"]
+
+
+def has_suspicious_attachment(attachments) -> bool:
+    """
+    Heuristic: 是否含常見惡意/高風險附檔名或雙重副檔名（.pdf.exe）。
+    attachments: Iterable of dict/obj/str with 'filename'/'name' or str().
+    """
+    exts = {
+        ".exe",
+        ".scr",
+        ".js",
+        ".bat",
+        ".cmd",
+        ".com",
+        ".vbs",
+        ".jar",
+        ".apk",
+        ".ps1",
+        ".lnk",
+        ".cab",
+        ".msi",
+        ".dll",
+        ".iso",
+        ".img",
+        ".7z",
+        ".zip",
+        ".rar",
+    }
+
+    def _name(a):
+        if isinstance(a, dict):
+            return (a.get("filename") or a.get("name") or "").lower()
+        try:
+            return str(getattr(a, "filename", getattr(a, "name", a))).lower()
+        except Exception:
+            return str(a).lower()
+
+    for a in attachments or []:
+        n = _name(a)
+        if any(n.endswith(e) for e in exts):
+            return True
+        if ".pdf." in n or ".doc." in n or ".xls." in n:
+            return True
+    return False
+
+
+def label_email(
+    subject: str, content: str, attachments=None, *, threshold: float = 0.8
+):
+    """
+    Heuristic 聚合分數 → ('SPAM'|'HAM', score[0..1])
+    - 關鍵詞、連結密度、可疑附件 加權。
+    -門檻可調，預設 0.8。
+    """
+    import re
+
+    text = f"{subject}\n{content}".lower()
+    score = 0.0
+
+    # 關鍵詞（可依你的規則擴充）
+    keywords = [
+        "免費",
+        "中獎",
+        "點擊",
+        "立即",
+        "限時",
+        "投資",
+        "比特幣",
+        "優惠",
+        "貸款",
+        "退稅",
+        "發票",
+        "驗證碼",
+        "中签",
+        "中奖",
+    ]
+    score += 0.12 * sum(1 for k in keywords if k in text)
+
+    # 連結密度
+    links = re.findall(r"http[s]?://", text)
+    score += min(0.5, 0.06 * len(links))
+
+    # 可疑附件
+    if has_suspicious_attachment(attachments):
+        score += 0.5
+
+    score = max(0.0, min(1.0, score))
+    return ("SPAM" if score >= threshold else "HAM", score)
