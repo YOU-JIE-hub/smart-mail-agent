@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [ -x "$ROOT/.venv/bin/activate" ]; then . "$ROOT/.venv/bin/activate"; fi
+export PYTHONPATH="$ROOT/src"
+exec python -m src.run_action_handler "$@"

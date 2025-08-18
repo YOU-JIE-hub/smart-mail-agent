@@ -1,0 +1,13 @@
+{
+  "dry_run": false,
+  "label": "reply_faq",
+  "action_name": "reply_faq",
+  "action": "reply_faq",
+  "subject": "[自動回覆] 一般詢問",
+  "meta": {
+    "dry_run": false,
+    "risks": [],
+    "require_review": false,
+    "whitelisted": true
+  }
+}

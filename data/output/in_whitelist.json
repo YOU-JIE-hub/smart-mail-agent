@@ -1,0 +1,1 @@
+{"subject": "一般詢問", "from": "alice@trusted.example", "body": "這是白名單寄件者。", "predicted_label": "reply_faq", "confidence": 0.9, "attachments": []}

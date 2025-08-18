@@ -1,0 +1,20 @@
+{
+  "dry_run": false,
+  "label": "complaint",
+  "action_name": "complaint",
+  "action": "escalate_case",
+  "subject": "[自動回覆] 系統當機導致客戶無法使用",
+  "meta": {
+    "dry_run": false,
+    "priority": "P1",
+    "SLA_eta": "4h",
+    "cc": [
+      "qa@company.example",
+      "ops@company.example"
+    ],
+    "next_step": "page_oncall",
+    "risks": [],
+    "require_review": false,
+    "whitelisted": false
+  }
+}

@@ -1,0 +1,1 @@
+{"subject": "系統當機導致客戶無法使用", "from": "user@example.com", "body": "目前服務 down，影響交易，請立即處理。", "predicted_label": "complaint", "confidence": 0.92, "attachments": []}

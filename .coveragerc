@@ -1,8 +1,5 @@
 [run]
+source = smart_mail_agent
 branch = True
-source = src/smart_mail_agent
-
 [report]
 show_missing = True
-skip_empty = True
-precision = 1
