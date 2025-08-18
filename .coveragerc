@@ -1,5 +1,0 @@
-[run]
-source = smart_mail_agent
-branch = True
-[report]
-show_missing = True
