@@ -38,3 +38,13 @@ review_files.lst
 *.bak.*
 pytest.ini.broken.*
 repo-inventory-*.txt
+# env & secrets
+.env*
+!.env.example
+# editor & os junk
+.idea/
+.vscode/
+# build / cache / venv
+# reports / site （只保留 .gitkeep）
+# local junk / backups
+.review_cursor
