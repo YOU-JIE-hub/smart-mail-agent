@@ -24,3 +24,13 @@ __pycache__/
 *.swp
 .DS_Store
 Thumbs.db
+# keep empty runtime dirs
+# local env/artifacts
+.venv/
+*.egg-info/
+stats.db
+share/
+quote.pdf
+project_file_list.txt
+review_files.lst
+.github/workflows-archive/
