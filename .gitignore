@@ -20,3 +20,10 @@ Thumbs.db
 site/
 reports/
 data/output/
+# keep empty runtime dirs
+site/*
+!site/.gitkeep
+reports/*
+!reports/.gitkeep
+data/output/*
+!data/output/.gitkeep
