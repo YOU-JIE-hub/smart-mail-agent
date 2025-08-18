@@ -1,7 +1,0 @@
-[pytest]
-addopts = -q -ra
-testpaths = tests
-markers =
-    online: tests that require network or external services
-addopts = -q
-testpaths = tests
