@@ -34,3 +34,7 @@ quote.pdf
 project_file_list.txt
 review_files.lst
 .github/workflows-archive/
+# backups & local lists
+*.bak.*
+pytest.ini.broken.*
+repo-inventory-*.txt
