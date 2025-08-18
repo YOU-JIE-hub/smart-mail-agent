@@ -35,4 +35,4 @@ jobs:
         env:
           OFFLINE: "1"
           PYTHONWARNINGS: "ignore"
-        run: PYTHONPATH=".:src" pytest -q tests
+        run: PYTHONPATH=".:src" mkdir -p reports && PYTHONPATH=".:src" pytest -q --cov=smart_mail_agent --cov-branch --cov-report=term-missing:skip-covered tests | tee reports/coverage.txt
