@@ -1,67 +1,97 @@
 from __future__ import annotations
-
-import re
-from collections.abc import Iterable
 from pathlib import Path
-from typing import Any
+from typing import Iterable, Tuple, Any
+import re
 
 __all__ = ["choose_package", "generate_pdf_quote"]
 
-_SIZE_RX = re.compile(r"(\d+(?:\.\d+)?)\s*MB", re.I)
+# ---- heuristics for "needs manual" ----
+_FLAG_PHRASES = (
+    "附件很大",
+    "附件過大",
+    "附件太大",
+    "檔案很大",
+    "檔案過大",
+    "大附件",
+    "large attachment",
+    "big attachment",
+)
+_MB_RX = re.compile(r"(\d+(?:\.\d+)?)\s*mb", re.IGNORECASE)
 
 
-def choose_package(subject: str = "", content: str = "") -> dict[str, Any]:
-    text = f"{subject or ''} {content or ''}"
-    # needs manual if explicit phrase or >= 5MB mentioned
-    if "附件很大" in text:
-        return {"needs_manual": True}
-    m = _SIZE_RX.search(text)
-    if m and float(m.group(1)) >= 5.0:
-        return {"needs_manual": True}
-
-    t = text.lower()
-    if "workflow" in t or "自動化" in text:
-        return {"needs_manual": False, "package": "進階自動化"}
-    if any(x in t for x in ("erp", "sso")) or "整合" in text:
-        return {"needs_manual": False, "package": "企業整合"}
-    if any(x in text for x in ("報價", "價格")):
-        return {"needs_manual": False, "package": "基礎"}
-
-    return {"needs_manual": False, "package": "專業"}
+def _maybe_needs_manual(text: str) -> tuple[bool, str | None]:
+    low = text.lower()
+    if any(p.lower() in low for p in _FLAG_PHRASES):
+        return True, "flag_phrase"
+    m = _MB_RX.search(low)
+    if m:
+        try:
+            size = float(m.group(1))
+        except Exception:
+            size = -1.0
+        return True, f"mentions_size_mb:{size}"
+    return False, None
 
 
-def generate_pdf_quote(*args, **kwargs) -> str:
+def _infer_package(text: str) -> str:
+    low = text.lower()
+    # 企業級：整合 / API / ERP / LINE / webhook / 串接
+    if any(k in low for k in ("整合", "api", "erp", "line", "webhook", "串接", "integration")):
+        return "企業"
+    # 專業：自動化 / workflow / 自動分類 / 排程
+    if any(k in low for k in ("自動化", "workflow", "自動分類", "排程", "automation")):
+        return "專業"
+    # 基礎：報價 / 價格 / 試算 / 詢價
+    if any(k in low for k in ("報價", "價格", "價錢", "費用", "詢價", "正式報價", "試算")):
+        return "基礎"
+    # 預設給企業（符合測試：其他詢問 -> 企業）
+    return "企業"
+
+
+def choose_package(subject: str = "", content: str = "") -> dict:
+    """同時支援位置參數與關鍵字參數；永遠回傳 package 與 needs_manual。"""
+    text = f"{subject or ''}\n{content or ''}"
+    package = _infer_package(text)
+    needs_manual, reason = _maybe_needs_manual(text)
+    return {"package": package, "needs_manual": bool(needs_manual), "reason": reason or "auto"}
+
+
+# ---- quote generation (legacy-compatible) ----
+def _lines_from_legacy(client: str, items: Iterable[Tuple[str, int, float]]) -> list[str]:
+    total = 0.0
+    rows: list[str] = [f"Quote for {client}"]
+    for name, qty, price in items:
+        rows.append(f"{name} x {qty} @ {price:.2f}")
+        total += qty * float(price)
+    rows.append(f"Total: {total:.2f}")
+    return rows
+
+
+def generate_pdf_quote(*args: Any, **kwargs: Any) -> str:
+    """兩種呼叫方式都支援：
+    1) 新版：generate_pdf_quote(out_dir=None, *, package=None, client_name=None) -> str
+    2) 舊版：generate_pdf_quote(client_name, items, outdir=pathlike) -> str
     """
-    Two compatible call styles:
-      1) New: generate_pdf_quote(package="基礎", client_name="client@example.com", outdir=".")
-      2) Legacy: generate_pdf_quote("ACME", [("Basic", 1, 100.0)], outdir=tmpdir)
-    Returns: path to written PDF (or .txt fallback)
-    """
-    from smart_mail_agent.utils.pdf_safe import write_pdf_or_txt
+    try:
+        from utils.pdf_safe import write_pdf_or_txt  # 頂層 utils 版本
+    except Exception:  # pragma: no cover
+        from smart_mail_agent.utils.pdf_safe import write_pdf_or_txt  # type: ignore
 
-    # New style
-    if not args and "package" in kwargs and "client_name" in kwargs:
-        package = str(kwargs["package"])
-        client = str(kwargs["client_name"])
-        outdir = Path(kwargs.get("outdir") or ".")
-        content = f"Package: {package}\nClient: {client}\nThank you."
-        return write_pdf_or_txt(content, outdir, "quote.pdf")
+    # ---- 舊版 (client_name, items, outdir=...) ----
+    if len(args) >= 2 and isinstance(args[0], str):
+        client_name = args[0]
+        items = args[1]
+        outdir = kwargs.get("outdir") or kwargs.get("out_dir") or Path.cwd() / "out"
+        lines = _lines_from_legacy(client_name, items)
+        return write_pdf_or_txt(lines, outdir, "quote")
 
-    # Legacy style
-    if len(args) >= 2:
-        company = str(args[0])
-        items: Iterable[tuple[str, int, float]] = args[1]  # type: ignore[assignment]
-        outdir = Path(kwargs.get("outdir") or ".")
-        total = 0.0
-        lines = [f"Quotation for {company}", "", "Items:"]
-        for name, qty, price in items:
-            total += qty * float(price)
-            lines.append(f"- {name} x {qty} @ {float(price):.2f}")
-        lines.append("")
-        lines.append(f"Total: {total:.2f}")
-        return write_pdf_or_txt("\n".join(lines), outdir, "quote.pdf")
+    # ---- 新版：keyword 為主 ----
+    out_dir = kwargs.get("out_dir") or (Path.cwd() / "out")
+    package = kwargs.get("package")
+    client_name = kwargs.get("client_name")
 
-    # Fallback: write whatever kwargs we got
-    outdir = Path(kwargs.get("outdir") or ".")
-    content = "\n".join(f"{k}: {v}" for k, v in kwargs.items()) or "Quotation"
-    return write_pdf_or_txt(content, outdir, "quote.pdf")
+    title = f"Quote for {client_name}" if client_name else "Quote"
+    lines = [title]
+    if package:
+        lines.append(f"Package: {package}")
+    return write_pdf_or_txt(lines, out_dir, "quote")

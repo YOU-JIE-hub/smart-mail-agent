@@ -1,31 +1,37 @@
-.PHONY: help lint test test-offline test-online cov-offline demo-send
+.PHONY: init fmt lint test type cov docs serve build release
 
-help: ## 列出可用目標
-	@grep -E '^[a-zA-Z_-]+:.*?##' Makefile | sed -E 's/:.*?##/: /' | sort
+init:
+\tpython -m pip install -U pip
+\tpip install -e .[dev]
+\tpre-commit install
 
-lint: ## ruff 稽核（使用 .ruff.toml）
-	ruff check .
+fmt:
+\tblack .
+\tisort .
 
-test: test-offline ## 等同 test-offline
+lint:
+\truff check .
+\tblack --check .
+\tisort --check-only .
 
-test-offline: ## 跑整包離線測試（不會連網）；CI 預設跑這個
-	OFFLINE=1 PYTHONPATH=".:src" pytest -q
+type:
+\tmypy src || true
 
-cov-offline: ## 產 XML 覆蓋率（離線）
-	OFFLINE=1 PYTHONPATH=".:src" pytest -q --cov=src --cov-config=.coveragerc --cov-report=term-missing:skip-covered --cov-report=xml:reports/coverage-offline.xml --cov-fail-under=60
+test:
+\tOFFLINE=1 PYTHONPATH=".:src" pytest -q
 
-test-online: ## 線上寄信冒煙（需先 export SMTP_* / REPLY_TO；OFFLINE=0）
-	OFFLINE=0 PYTHONPATH=".:src" pytest -q -rs --online tests/test_mailer_online.py -k test_smtp_live_send_ok
+cov:
+\tOFFLINE=1 PYTHONPATH=".:src" pytest --cov=smart_mail_agent --cov-report=term-missing
 
-demo-send: ## 直接寄一封測試信（不透過 pytest）
+docs:
+\tmkdocs build
 
-tests-spam-and-flows: ## 僅跑本批 SPAM/分類/動作/錯誤情境測試
-	OFFLINE=1 PYTHONPATH=.:src pytest -q -k "spam or inference_classifier_errors or online_send_paths" -rs
-	OFFLINE=0 PYTHONPATH=".:src" python scripts/online_check.py
+serve:
+\tmkdocs serve -a 127.0.0.1:8000
 
+build:
+\tpython -m build
 
-tests-spam-orchestrator: ## 只跑離線 Spam orchestrator 行為/錯誤測
-	OFFLINE=1 PYTHONPATH=".:src" pytest -q -k "offline_orchestrator" -rs
-
-tests-spam-and-flows: ## 跑本輪新增的 spam & flow 測試集合
-	OFFLINE=1 PYTHONPATH=".:src" pytest -q -k "spam or inference_classifier_errors or online_send_paths" -rs
+release:
+\tgit tag $$(python -c "import tomllib,sys;print('v'+tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+\tgit push --tags

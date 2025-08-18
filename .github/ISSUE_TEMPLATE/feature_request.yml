@@ -1,9 +1,11 @@
 name: Feature request
-description: 提出新功能
+description: 功能需求
 labels: ["enhancement"]
 body:
   - type: textarea
-    attributes: { label: 需求動機 }
+    id: goal
+    attributes: { label: 目標, description: 使用情境與價值 }
     validations: { required: true }
   - type: textarea
-    attributes: { label: 功能說明 }
+    id: spec
+    attributes: { label: 規格草案, description: 介面/資料格式/驗收準則 }

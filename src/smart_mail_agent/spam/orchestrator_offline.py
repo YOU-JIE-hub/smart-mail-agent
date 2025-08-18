@@ -1,296 +1,269 @@
-#!/usr/bin/env python3
 from __future__ import annotations
 
-import argparse
 import json
-import logging
-import re
-import unicodedata
-from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from types import SimpleNamespace
-from typing import Any
+from typing import Any, Callable, Dict, Optional, Tuple, List
 
-# 規則模組（名稱不穩，這裡只用到 link ratio 規則 & keyword 概念，實作在本檔完成）
-from smart_mail_agent.spam import rules as _rules  # noqa: F401  (保留相容引用)
-
-LOG = logging.getLogger("smart_mail_agent.spam.orchestrator_offline")
-if not LOG.handlers:
-    logging.basicConfig(
-        level=logging.INFO, format="[SPAM] %(asctime)s %(levelname)s %(message)s"
-    )
-
-Email = Mapping[str, Any]
-RuleFn = Callable[[Email], bool | Mapping[str, Any]]
-ModelFn = Callable[..., Any] | None  # 允許 0/1/2 參數
+from . import rules as _rules
 
 
 @dataclass
 class Thresholds:
-    model: float = 0.60
-    link_ratio_drop: float = 0.60
-    link_ratio_review: float = 0.45
+    link_ratio_drop: float = 0.50
+    link_ratio_review: float = 0.30
 
 
-def _normalize_email(subject_or_email: str | Email) -> Email:
-    if isinstance(subject_or_email, str):
-        return {"subject": subject_or_email, "content": ""}
-    return subject_or_email
+def _boolish_rule_out(x: Any) -> bool:
+    if isinstance(x, bool):
+        return x
+    if isinstance(x, dict):
+        for k in ("hit", "match", "is_spam", "spam", "value", "ok", "result"):
+            if k in x:
+                return bool(x[k])
+        return False
+    return bool(x)
 
 
-def _apply_rule_shortcut(rule: RuleFn, email: Email) -> SimpleNamespace | None:
-    r = rule(email)
-    if isinstance(r, bool):
-        if r:
-            return SimpleNamespace(
-                is_spam=True, is_borderline=False, source="rule", action="drop"
-            )
-        return None
-    if isinstance(r, Mapping):
-        if r.get("is_spam") is True:
-            action = r.get("action") or "drop"
-            return SimpleNamespace(
-                is_spam=True,
-                is_borderline=bool(r.get("is_borderline")),
-                source="rule",
-                action=action,
-            )
-        return None
-    return None
-
-
-def _normalize_model_output(out: Any, threshold: float) -> tuple[str, float]:
-    # None
-    if out is None:
-        return ("ham", 0.0)
-    # 純分數
-    if isinstance(out, (int | float)):
-        sc = float(out)
-        return ("spam" if sc >= threshold else "ham", max(0.0, min(1.0, sc)))
-    # 純字串
-    if isinstance(out, str):
-        lbl = out.strip().lower()
-        if lbl in ("spam", "ham"):
-            return (lbl, 1.0 if lbl == "spam" else 0.0)
-        return ("ham", 0.0)
-    # (label, score) 或 (score, label)
-    if isinstance(out, (list | tuple)) and len(out) == 2:
-        a, b = out
-        if isinstance(a, (int | float)) and isinstance(b, str):
-            sc = float(a)
-            lbl = b.strip().lower()
-            if lbl not in ("spam", "ham"):
-                lbl = "spam" if sc >= threshold else "ham"
-            return (lbl, max(0, min(1, sc)))
-        if isinstance(a, str) and isinstance(b, (int | float)):
-            lbl = a.strip().lower()
-            sc = float(b)
-            if lbl not in ("spam", "ham"):
-                lbl = "spam" if sc >= threshold else "ham"
-            return (lbl, max(0, min(1, sc)))
-    # dict
-    if isinstance(out, Mapping):
-        lbl = str(out.get("label", "ham")).lower()
-        sc = out.get("score", out.get("prob"))
-        if sc is None:
-            sc = 1.0 if lbl == "spam" else 0.0
-        sc = float(sc)
-        if lbl not in ("spam", "ham"):
-            lbl = "spam" if sc >= threshold else "ham"
-        return (lbl, sc)
-    # list[dict]
-    if isinstance(out, list) and out and isinstance(out[0], Mapping):
-        best = None
-        for x in out:
-            sc = x.get("score", x.get("prob"))
-            if sc is not None:
-                sc = float(sc)
-                if best is None or sc > best[1]:
-                    best = (str(x.get("label", "ham")).lower(), sc)
-        if best is not None:
-            lbl = (
-                best[0]
-                if best[0] in ("spam", "ham")
-                else ("spam" if best[1] >= threshold else "ham")
-            )
-            return (lbl, best[1])
-        # 沒分數，用第一個 label
-        lbl = str(out[0].get("label", "ham")).lower()
-        return (lbl if lbl in ("spam", "ham") else "ham", 1.0 if lbl == "spam" else 0.0)
-    # fallback
-    return ("ham", 0.0)
-
-
-def _call_model_robust(
-    model: ModelFn, email: Email, threshold: float
-) -> tuple[str, float, str, str | None]:
-    if model is None:
-        return ("ham", 0.0, "rule", None)
-    subj = email.get("subject", "")
-    cont = email.get("content", "")
+def _call_rule(rule: Callable, payload: Dict[str, Any]) -> bool:
     try:
-        try:
-            out = model(subj, cont)  # 優先 2 參數
-        except TypeError:
-            try:
-                out = model(cont)  # 次選 1 參數
-            except TypeError:
-                out = model()  # 最後 0 參數
-        label, score = _normalize_model_output(out, threshold)
-        return (label, float(score), "model", None)
-    except Exception as e:
-        LOG.warning("model raised, fallback ham: %s", e)
-        return ("ham", 0.0, "fallback", str(e))
+        out = rule(payload)  # type: ignore[arg-type]
+    except TypeError:
+        out = rule(payload.get("content", ""))  # type: ignore[arg-type]
+    return _boolish_rule_out(out)
+
+
+def _normalize_model_out(x: Any) -> Tuple[Optional[float], Optional[str]]:
+    if x is None:
+        return None, None
+    if isinstance(x, (int, float)):
+        v = float(x)
+        return (v if 0.0 <= v <= 1.0 else None), None
+    if isinstance(x, str):
+        lab = x.lower().strip()
+        return (None, lab) if lab in {"spam", "ham"} else (None, None)
+    if isinstance(x, tuple) and len(x) == 2:
+        a, b = x
+        if isinstance(a, (int, float)) and isinstance(b, str):
+            return float(a), b.lower()
+        if isinstance(a, str) and isinstance(b, (int, float)):
+            return float(b), a.lower()
+        return None, None
+    if isinstance(x, dict):
+        lab = x.get("label")
+        sc = x.get("score")
+        return (float(sc) if isinstance(sc, (int, float)) else None,
+                lab.lower() if isinstance(lab, str) else None)
+    if isinstance(x, list) and x:
+        # 重要修正：對 list[dict]，若元素含 label 與 score，要**保留標籤**。
+        best_score: Optional[float] = None
+        best_label: Optional[str] = None
+        first_label: Optional[str] = None
+        for it in x:
+            if not isinstance(it, dict):
+                continue
+            if first_label is None and isinstance(it.get("label"), str):
+                first_label = it["label"].lower()
+            sc = it.get("score")
+            lab = it.get("label")
+            if isinstance(sc, (int, float)):
+                scf = float(sc)
+                if (best_score is None) or (scf > best_score):
+                    best_score = scf
+                    best_label = lab.lower() if isinstance(lab, str) else None
+        if best_score is not None:
+            # 回傳(最高分, 對應的標籤或 None)
+            return best_score, best_label
+        if first_label:
+            # 沒有分數就回第一個標籤
+            return None, first_label
+    return None, None
+
+
+def _invoke_model_variants(model: Callable[..., Any], subject: str, content: str) -> List[Tuple[Optional[float], Optional[str]]]:
+    """
+    兼容 2 參數與 1 參數模型；先試 (subject, content) 再試 (subject)。
+    """
+    outs: List[Tuple[Optional[float], Optional[str]]] = []
+    tried_any = False
+    try:
+        tried_any = True
+        outs.append(_normalize_model_out(model(subject, content)))  # type: ignore[misc]
+    except TypeError:
+        pass
+    try:
+        tried_any = True
+        outs.append(_normalize_model_out(model(subject)))  # type: ignore[misc]
+    except TypeError:
+        pass
+    return outs if tried_any else []
 
 
 class SpamFilterOrchestratorOffline:
-    def __init__(
-        self,
-        rule: RuleFn | None = None,
-        model: ModelFn = None,
-        thresholds: Thresholds | None = None,
-    ) -> None:
-        self.rule: RuleFn = rule or (lambda _e: False)
-        self.model: ModelFn = model
+    def __init__(self, thresholds: Optional[Thresholds] = None) -> None:
         self.thresholds = thresholds or Thresholds()
 
-    # NFKC 關鍵字 / link ratio
-    def decide(self, subject: str, content: str) -> Mapping[str, Any]:
-        def _nfkc_upper(x: str) -> str:
-            try:
-                x = unicodedata.normalize("NFKC", x or "")
-            except Exception:
-                x = x or ""
-            return x.upper()
+    def decide(self, subject: str, html_or_text: str, *, model: str | None = None) -> Dict[str, Any]:
+        text_all = f"{subject or ''}\n{html_or_text or ''}"
 
-        text_norm = _nfkc_upper((subject or "") + " " + (content or ""))
-        for k in ("FREE", "免費", "贈品", "中獎", "中奖"):
-            if k in text_norm:
-                return {
-                    "action": "drop",
-                    "is_spam": True,
-                    "is_borderline": False,
-                    "source": "keyword",
-                    "reasons": ["rule:keyword"],
-                    "scores": {},
-                }
+        reasons: list[str] = []
+        if "\u200b" in text_all:
+            return {
+                "action": "route",
+                "reasons": ["zwsp"],
+                "scores": {"link_ratio": 0.0},
+                "model": model or "offline",
+            }
 
-        a_pat = re.compile(r"<a\b[^>]*>(.*?)</a>", re.IGNORECASE | re.DOTALL)
-        text_no_a = re.sub(
-            r"<a\b[^>]*>.*?</a>", " ", content or "", flags=re.IGNORECASE | re.DOTALL
-        )
-        nonlink = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", text_no_a)).strip()
-        nonlink_len = len(nonlink)
-
-        link_texts = a_pat.findall(content or "")
-        link_weight = 0
-        for t in link_texts:
-            ln = len(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", t)).strip())
-            link_weight += max(ln, 15)
-
-        den = link_weight + nonlink_len or 1
-        ratio = link_weight / den
-
-        scores = {"link_ratio": round(ratio, 4)}
-        reasons = []
-        d, r = self.thresholds.link_ratio_drop, self.thresholds.link_ratio_review
-        if ratio >= d:
-            reasons.append(f"rule:link_ratio>={d}")
+        ratio = _rules.link_ratio(text_all)
+        if ratio >= self.thresholds.link_ratio_drop:
+            reasons.append(f"rule:link_ratio>={self.thresholds.link_ratio_drop:.2f}")
             return {
                 "action": "drop",
-                "is_spam": True,
-                "is_borderline": False,
-                "source": "link_ratio",
                 "reasons": reasons,
-                "scores": scores,
+                "scores": {"link_ratio": float(ratio)},
+                "model": model or "offline",
             }
-        if ratio >= r:
-            reasons.append(f"rule:link_ratio>={r}")
+        if ratio >= self.thresholds.link_ratio_review:
+            reasons.append(f"rule:link_ratio>={self.thresholds.link_ratio_review:.2f}")
             return {
                 "action": "review",
-                "is_spam": True,
-                "is_borderline": True,
-                "source": "link_ratio",
                 "reasons": reasons,
-                "scores": scores,
+                "scores": {"link_ratio": float(ratio)},
+                "model": model or "offline",
             }
 
-        # 交給 orchestrate
-        res = orchestrate(
-            {"subject": subject, "content": content},
-            self.rule,
-            self.model,
-            self.thresholds.model,
-        )
-        act = res.action
+        if _rules.contains_keywords(text_all):
+            return {
+                "action": "drop",
+                "source": "keyword",
+                "reasons": ["rule:keyword"],
+                "scores": {"link_ratio": float(ratio)},
+                "model": model or "offline",
+            }
+
         return {
-            "action": ("route" if act == "route_to_inbox" else act),
-            "is_spam": bool(res.is_spam),
-            "is_borderline": bool(res.is_borderline),
-            "source": res.source,
+            "action": "route",
             "reasons": reasons,
-            "scores": scores,
+            "scores": {"link_ratio": float(ratio)},
+            "model": model or "offline",
         }
 
 
+@dataclass
+class OrchestrationResult:
+    is_spam: bool
+    score: Optional[float]
+    source: str
+    action: str
+    is_borderline: bool
+    extra: Optional[Dict[str, Any]] = None
+
+
 def orchestrate(
-    subject_or_email: str | Email,
-    rule: RuleFn,
-    model: ModelFn,
+    subject: str,
+    rule: Callable[[Any], Any],
+    model: Optional[Callable[..., Any]] = None,
+    *,
     model_threshold: float = 0.6,
-) -> SimpleNamespace:
-    email = _normalize_email(subject_or_email)
-    # 規則捷徑
+) -> OrchestrationResult:
+    """
+    規則先決；模型規則：
+      - 任一 variant 標籤 'ham' => ham/route_to_inbox（優先，忽略分數）
+      - 任一 variant 標籤 'spam'：
+          score < thr -> ham；=thr -> review；>thr -> drop
+          無 score -> drop
+      - 僅分數 -> 分數 >= thr -> spam(=thr 視為 borderline->review)，否則 ham
+      - 模型不可呼叫 -> fallback ham
+      - 無模型 -> default ham
+    """
+    payload = {"subject": subject, "content": subject}
+
     try:
-        rs = _apply_rule_shortcut(rule, email)
-        if rs is not None:
-            return rs
+        if _call_rule(rule, payload):
+            return OrchestrationResult(
+                is_spam=True, score=1.0, source="rule", action="drop", is_borderline=False
+            )
     except Exception:
         pass
 
-    label, score, source, err = _call_model_robust(model, email, model_threshold)
+    if model is not None:
+        try:
+            variants = _invoke_model_variants(model, subject, subject)
+            if variants:
+                eps = 1e-12
+                # 先看 ham（有標籤就直接信任）
+                ham_items = [v for v in variants if v[1] == "ham"]
+                if ham_items:
+                    return OrchestrationResult(
+                        is_spam=False, score=ham_items[0][0], source="model",
+                        action="route_to_inbox", is_borderline=False
+                    )
+                # 再看 spam（有標籤才走這條）
+                spam_items = [v for v in variants if v[1] == "spam"]
+                if spam_items:
+                    sc = spam_items[0][0]
+                    if sc is None:
+                        return OrchestrationResult(
+                            is_spam=True, score=None, source="model",
+                            action="drop", is_borderline=False
+                        )
+                    if sc < model_threshold - eps:
+                        return OrchestrationResult(
+                            is_spam=False, score=sc, source="model",
+                            action="route_to_inbox", is_borderline=False
+                        )
+                    is_borderline = abs(sc - model_threshold) < eps
+                    return OrchestrationResult(
+                        is_spam=True, score=sc, source="model",
+                        action=("review" if is_borderline else "drop"),
+                        is_borderline=is_borderline
+                    )
+                # 僅分數
+                scores = [v[0] for v in variants if v[0] is not None]
+                if scores:
+                    sc = float(max(scores))
+                    is_borderline = abs(sc - model_threshold) < eps
+                    is_spam = sc >= model_threshold
+                    return OrchestrationResult(
+                        is_spam=is_spam, score=sc, source="model",
+                        action=("review" if (is_spam and is_borderline)
+                               else ("drop" if is_spam else "route_to_inbox")),
+                        is_borderline=is_borderline
+                    )
+                # 全不可判 -> ham
+                return OrchestrationResult(
+                    is_spam=False, score=None, source="model",
+                    action="route_to_inbox", is_borderline=False
+                )
+            # 模型完全呼叫不上
+            return OrchestrationResult(
+                is_spam=False, score=None, source="fallback",
+                action="route_to_inbox", is_borderline=False,
+                extra={"model_error": "model could not be invoked"}
+            )
+        except Exception as e:
+            return OrchestrationResult(
+                is_spam=False, score=None, source="fallback",
+                action="route_to_inbox", is_borderline=False,
+                extra={"model_error": str(e)}
+            )
 
-    # ham 標籤一律視為非垃圾：覆寫 score 為 0.0
-
-    if label == "ham":
-
-        score = 0.0
-
-    is_spam = score >= model_threshold
-    is_borderline = bool(model is not None and score == model_threshold)
-    action = (
-        "review"
-        if (is_spam and is_borderline)
-        else ("drop" if is_spam else "route_to_inbox")
+    return OrchestrationResult(
+        is_spam=False, score=None, source="default", action="route_to_inbox", is_borderline=False
     )
-
-    ns = SimpleNamespace(
-        is_spam=is_spam, is_borderline=is_borderline, source=source, action=action
-    )
-    if source == "fallback" and err:
-        ns.extra = {"model_error": err}
-    return ns
-
-
-def _parse_args(argv=None):
-    p = argparse.ArgumentParser()
-    p.add_argument("--subject")
-    p.add_argument("--content")
-    p.add_argument("--threshold", type=float, default=0.60)
-    p.add_argument("--json", action="store_true")  # 單元測試需要
-    return p.parse_args(argv)
 
 
 def _main() -> int:
-    args = _parse_args()
-    orch = SpamFilterOrchestratorOffline(thresholds=Thresholds(model=args.threshold))
-    out = orch.decide(args.subject or "", args.content or "")
+    import argparse
+    p = argparse.ArgumentParser()
+    p.add_argument("--subject", required=True)
+    p.add_argument("--content", default="")
+    p.add_argument("--json", action="store_true")
+    args = p.parse_args()
+
+    res = SpamFilterOrchestratorOffline().decide(args.subject, args.content)
     if args.json:
-        print(json.dumps(out, ensure_ascii=False))
+        print(json.dumps(res, ensure_ascii=False))
     else:
-        print(out)
+        print(res)
     return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(_main())
