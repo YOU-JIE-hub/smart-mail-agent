@@ -1,13 +1,17 @@
-# Smart Mail Agent / Docs
+# Smart Mail Agent
 
-這是簡化版文件讓 GitHub Pages 可以發布。
+一個可離線驗證的 AI + RPA 郵件處理範例專案。  
+快速連結：
+- [Architecture](architecture.md)
+- [Cookbook](cookbook.md)
 
-## 快速開始
-1. python3 -m venv .venv
-2. . .venv/bin/activate
-3. pip install -U pip && pip install -e .
-4. cp -n .env.example .env
+**離線展示：**
+```bash
+scripts/demo_offline.sh
+離線測試：
 
-## 常用指令
-- python -m smart_mail_agent.cli_spamcheck --subject "免費中獎" --body "恭喜獲得獎金"
-- OFFLINE=1 python -m smart_mail_agent.routing.run_action_handler --input data/sample/email.json
+bash
+Copy
+Edit
+pytest -q tests/unit tests/contracts -m "not online" \
+  --cov=src/smart_mail_agent --cov-report=term-missing --cov-report=xml

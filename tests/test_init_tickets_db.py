@@ -6,6 +6,7 @@ import os
 import sqlite3
 
 import pytest
+
 from init_db import init_tickets_db
 
 DB_PATH = "data/tickets.db"

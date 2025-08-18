@@ -1,0 +1,222 @@
+=== Repo ===
+ROOT: /home/youjie/projects/smart-mail-agent
+Branch: main
+Remote: origin
+Ahead(local not pushed): 0
+Behind(remote not pulled): 0
+
+=== Test & Coverage (local) ===
+src/smart_mail_agent/features/spam/inference_classifier.py              102     83     10      1  17.9%   32-46, 51-57, 62-69, 74-85, 90-95, 108-117, 121-167, 171
+src/smart_mail_agent/features/spam/ml_spam_classifier.py                  6      6      4      0   0.0%   1-10
+src/smart_mail_agent/features/spam/pipeline.py                            6      6      4      0   0.0%   1-10
+src/smart_mail_agent/features/spam/rule_filter.py                         6      6      4      0   0.0%   1-10
+src/smart_mail_agent/features/spam/rules.py                               6      6      4      0   0.0%   1-10
+src/smart_mail_agent/features/spam/spam_filter_orchestrator.py            6      6      4      0   0.0%   1-10
+src/smart_mail_agent/ingestion/email_processor.py                        93     59     12      2  34.3%   28-31, 41-42, 46-144, 150, 155-156, 176-182
+src/smart_mail_agent/ingestion/integrations/send_with_attachment.py      86     62     20      1  23.6%   34-39, 44-50, 61-108, 113-131, 135
+src/smart_mail_agent/observability/log_writer.py                         38     25      4      2  35.7%   13->19, 25-40, 68-102, 107-128
+src/smart_mail_agent/patches/__init__.py                                  1      0      0      0 100.0%
+src/smart_mail_agent/patches/handle_router_patch.py                      21     21      6      0   0.0%   1-36
+src/smart_mail_agent/patches/handle_safe_patch.py                        40     24     16      0  35.7%   18-19, 25-26, 30-36, 40-52
+src/smart_mail_agent/policy_engine.py                                    56     15     22      2  70.5%   11-17, 21-23, 37-39, 67-68, 73->72
+src/smart_mail_agent/routing/__init__.py                                  2      0      0      0 100.0%
+src/smart_mail_agent/routing/action_handler.py                          139    108     14      1  20.9%   23-27, 31-66, 89, 99, 106-120, 124-138, 149-155, 165-171, 181-187, 197-201, 211-215, 235, 239-249, 259-261, 265-291, 295
+src/smart_mail_agent/routing/run_action_handler.py                      128    128     30      0   0.0%   1-203
+src/smart_mail_agent/sma_types.py                                        68     11     12      4  76.2%   10-14, 23, 63-66, 74-77, 88->91, 92->95
+src/smart_mail_agent/spam/__init__.py                                     1      0      0      0 100.0%
+src/smart_mail_agent/spam/feature_extractor.py                           10     10      0      0   0.0%   2-38
+src/smart_mail_agent/spam/ml_spam_classifier.py                          32     32      2      0   0.0%   2-76
+src/smart_mail_agent/spam/orchestrator_offline.py                       178     78     68     10  48.8%   18->23, 37, 45, 49-59, 64-121, 129-143, 162-163, 247-249, 255->259, 271, 291, 296
+src/smart_mail_agent/spam/pipeline.py                                    41     30      8      1  24.5%   17-41, 51-55, 59-62, 66
+src/smart_mail_agent/spam/rule_filter.py                                 28     28     12      0   0.0%   2-87
+src/smart_mail_agent/spam/rules.py                                      113     26     46     10  71.1%   43, 64->67, 73, 84, 106-142, 176->174, 184-185, 189-190, 194, 198->197, 219-222
+src/smart_mail_agent/spam/spam_filter_orchestrator.py                    29     18     10      0  28.2%   39-92, 107, 112, 117, 122
+src/smart_mail_agent/spam/spam_llm_filter.py                             27     27      2      0   0.0%   1-60
+src/smart_mail_agent/utils/__init__.py                                    2      0      0      0 100.0%
+src/smart_mail_agent/utils/config.py                                     12     12      0      0   0.0%   1-17
+src/smart_mail_agent/utils/db_tools.py                                   39     39      6      0   0.0%   2-93
+src/smart_mail_agent/utils/env.py                                        12     12      6      0   0.0%   1-17
+src/smart_mail_agent/utils/errors.py                                      7      7      0      0   0.0%   1-19
+src/smart_mail_agent/utils/font_check.py                                 16     16      4      0   0.0%   1-23
+src/smart_mail_agent/utils/fonts.py                                      14     14      6      0   0.0%   2-21
+src/smart_mail_agent/utils/imap_folder_detector.py                       46     46     16      0   0.0%   3-76
+src/smart_mail_agent/utils/imap_login.py                                 15     15      2      0   0.0%   1-24
+src/smart_mail_agent/utils/jsonlog.py                                    58     58     12      0   0.0%   1-91
+src/smart_mail_agent/utils/log_writer.py                                  7      0      0      0 100.0%
+src/smart_mail_agent/utils/logger.py                                     18      5      4      1  63.6%   14->16, 20-24
+src/smart_mail_agent/utils/logging_setup.py                              28     28      8      0   0.0%   1-46
+src/smart_mail_agent/utils/mailer.py                                     51     39      8      0  20.3%   16, 20-31, 41-70
+src/smart_mail_agent/utils/pdf_generator.py                              51     51      6      0   0.0%   1-94
+src/smart_mail_agent/utils/pdf_safe.py                                  129     21     42      6  84.2%   25-26, 32-36, 46-48, 51-52, 98-99, 106-108, 119, 121, 127-128
+src/smart_mail_agent/utils/priority_evaluator.py                         27     27      8      0   0.0%   2-85
+src/smart_mail_agent/utils/rag_reply.py                                  41     41      6      0   0.0%   1-89
+src/smart_mail_agent/utils/templater.py                                  24     24     12      0   0.0%   1-50
+src/smart_mail_agent/utils/tracing.py                                    12     12      0      0   0.0%   1-15
+src/smart_mail_agent/utils/validators.py                                 37     37     16      0   0.0%   1-51
+-----------------------------------------------------------------------------------------------------------------
+TOTAL                                                                  2279   1652    554     42  26.3%
+Coverage XML written to file coverage.xml
+
+Coverage:
+COVERAGE_PCT 28
+
+=== GitHub Actions ===
+ci.yml: status=unknown conclusion=unknown url=(fetch failed: HTTP Error 404: Not Found)
+pages.yml: status=unknown conclusion=unknown url=(fetch failed: HTTP Error 404: Not Found)
+
+=== 未提交/未追蹤 ===
+
+=== 可疑內容掃描（API key/密鑰/私鑰/密碼字眼）===
+./src_lowcov/src/smart_mail_agent/spam/spam_llm_filter.py:20:        api_key = os.getenv("OPENAI_API_KEY")
+./src_lowcov/src/smart_mail_agent/spam/spam_llm_filter.py:22:            raise ValueError("[SpamLLMFilter] 缺少必要環境變數 OPENAI_API_KEY")
+./src_lowcov/src/smart_mail_agent/spam/rules.py:27:            "PASSWORD RESET": 2,
+./src_lowcov/src/smart_mail_agent/utils/rag_reply.py:48:        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+./src/smart_mail_agent/spam/spam_llm_filter.py:22:        api_key = os.getenv("OPENAI_API_KEY")
+./src/smart_mail_agent/spam/spam_llm_filter.py:24:            raise ValueError("[SpamLLMFilter] 缺少必要環境變數 OPENAI_API_KEY")
+./src/smart_mail_agent/utils/rag_reply.py:65:        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+./src/smart_mail_agent/utils/mailer.py:21:    pwd = _env(cfg, "SMTP_PASS") or _env(cfg, "SMTP_PASSWORD")
+./configs/samples/spam_rules.yaml:8:  "PASSWORD RESET": 2
+
+=== 超大檔（>5MB，僅追蹤檔）===
+
+=== 未追蹤（未被 .gitignore 忽略）===
+
+=== 目錄概要（前兩層）===
+.
+├── .coverage
+├── .coveragerc
+├── .coveragerc.bak.1755461527
+├── .editorconfig
+├── .env.example
+├── .env.smtp-test
+├── .gitattributes
+├── .github
+│   ├── CODEOWNERS
+│   ├── ISSUE_TEMPLATE
+│   ├── dependabot.yml
+│   ├── pull_request_template.md
+│   └── workflows
+├── .gitignore
+├── .pre-commit-config.yaml
+├── .pre-commit-config.yaml.bak.20250818T032817
+├── .pytest_cache
+│   ├── .gitignore
+│   ├── CACHEDIR.TAG
+│   ├── README.md
+│   └── v
+├── .review_cursor
+├── .ruff.toml
+├── .ruff_cache
+│   ├── .gitignore
+│   ├── 0.12.9
+│   ├── 0.6.4
+│   └── CACHEDIR.TAG
+├── CONTRIBUTING.md
+├── LICENSE
+├── Makefile
+├── Package: 基礎\012Client: client@example.com\012Thank you.
+├── README.md
+├── SECURITY.md
+├── assert
+├── assets
+│   └── badges
+├── bin
+│   ├── fmt
+│   ├── lint
+│   └── smarun
+├── configs
+│   ├── default.yml
+│   └── samples
+├── coverage.xml
+├── data
+│   ├── complaints
+│   ├── db
+│   ├── leads
+│   ├── output
+│   └── tmp
+├── docs
+│   ├── architecture.md
+│   ├── cli.md
+│   └── index.md
+├── mkdocs.yml
+├── pyproject.toml
+├── pyproject.toml.bak.20250818T032258
+├── pytest.ini
+├── pytest.ini.bak.20250818T040132
+├── repo-inventory-20250816-084630.txt
+├── repo_files_after_clean.txt
+├── reports
+│   ├── actions_status.txt
+│   ├── audit-last-collect.txt
+│   ├── audit-last-coverage.txt
+│   ├── audit-last.txt
+│   ├── audit-summary.md
+│   ├── coverage-offline.xml
+│   ├── coverage_info.txt
+│   ├── pytest_last.txt
+│   ├── tests-collect-20250816-125637.txt
+│   ├── tree-20250816-124354.txt
+│   ├── tree-20250816-124547.txt
+│   ├── tree-20250816-125335.txt
+│   └── tree-20250816-125637.txt
+├── review_files.lst
+├── scripts
+│   ├── __pycache__
+│   ├── online_check.py
+│   ├── run_pipeline.sh
+│   └── setup_env.sh
+├── share
+│   ├── portfolio_audit_20250818T062818.txt
+│   └── repo_sync_report_20250818T061136.txt
+├── src
+│   ├── __init__.py
+│   ├── __pycache__
+│   ├── action_handler.py
+│   ├── classifier.py
+│   ├── email_processor.py
+│   ├── inference_classifier.py
+│   ├── modules
+│   ├── patches
+│   ├── policy_engine.py
+│   ├── run_action_handler.py
+│   ├── send_with_attachment.py
+│   ├── sma_types.py
+│   ├── smart_mail_agent
+│   ├── smart_mail_agent.egg-info
+│   ├── spam
+│   ├── trainers
+│   └── utils
+├── src_lowcov
+│   └── src
+├── tests
+│   ├── .keep
+│   ├── __pycache__
+│   ├── conftest.py
+│   ├── contracts
+│   ├── e2e
+│   ├── integration
+│   ├── internal_smoke
+│   ├── policy
+│   ├── portfolio
+│   ├── spam
+│   ├── test_action_handler.py
+│   ├── test_apply_diff.py
+│   ├── test_classifier.py
+│   ├── test_cli_spamcheck.py
+│   ├── test_init_db.py
+│   ├── test_init_emails_log_db.py
+│   ├── test_init_processed_mails_db.py
+│   ├── test_init_tickets_db.py
+│   ├── test_mailer.py
+│   ├── test_mailer_online.py
+│   ├── test_quotation.py
+│   ├── test_quote_logger.py
+│   ├── test_sales_notifier.py
+│   ├── test_send_with_attachment.py
+│   ├── test_spam_filter.py
+│   ├── test_stats_collector.py
+│   └── unit
+├── tools
+└── tox.ini
+
+47 directories, 88 files
