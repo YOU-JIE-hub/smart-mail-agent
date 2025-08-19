@@ -1,6 +1,8 @@
 name: tests
 
 on: [push, pull_request]
+permissions:
+  contents: write  # 允許提交 coverage.svg
 
 jobs:
   unit-and-coverage:
@@ -15,7 +17,7 @@ jobs:
         run: |
           python -m venv .venv
           . .venv/bin/activate
-          pip install -U pip coverage pytest python-dotenv PyYAML Jinja2 reportlab pydantic
+          pip install -U pip coverage pytest python-dotenv PyYAML Jinja2 reportlab pydantic 'genbadge[coverage]'
 
       - name: Run unit + contracts (no coverage)
         env:
@@ -38,3 +40,15 @@ jobs:
           coverage erase
           coverage run --branch scripts/cov_focus_modules.py
           coverage report -m --include="*/modules/quotation.py" --skip-covered --fail-under=60
+          coverage xml -o coverage.xml
+          mkdir -p badges
+          genbadge coverage -i coverage.xml -o badges/coverage.svg
+
+      - name: Commit badge to main
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add badges/coverage.svg
+          git commit -m "chore(ci): update coverage badge [skip ci]" || echo "no changes"
+          git push
