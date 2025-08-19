@@ -48,3 +48,4 @@ repo-inventory-*.txt
 # reports / site （只保留 .gitkeep）
 # local junk / backups
 .review_cursor
+!.coveragerc
