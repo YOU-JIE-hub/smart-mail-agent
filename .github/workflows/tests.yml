@@ -15,7 +15,7 @@ jobs:
         run: |
           python -m venv .venv
           . .venv/bin/activate
-          pip install -U pip coverage pytest python-dotenv PyYAML Jinja2 reportlab
+          pip install -U pip coverage pytest python-dotenv PyYAML Jinja2 reportlab pydantic
 
       - name: Run unit + contracts (no coverage)
         env:
