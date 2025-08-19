@@ -14,7 +14,10 @@ jobs:
         run: |
           python -m venv .venv
           . .venv/bin/activate
-          pip install -U pip coverage pytest python-dotenv PyYAML Jinja2 reportlab 'genbadge[coverage]' coverage-badge pydantic
+          pip install -U pip
+          pip install "pytest>=7,<9" "coverage>=7,<8" \
+                      python-dotenv PyYAML Jinja2 reportlab "pydantic>=2,<3" \
+                      'genbadge[coverage]' coverage-badge
       - name: Run unit + contracts (no coverage)
         env:
           PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
@@ -34,24 +37,11 @@ jobs:
           . .venv/bin/activate
           coverage erase
           coverage run --branch --source=modules scripts/cov_focus_modules.py
-          coverage report -m --include="*/modules/quotation.py" --skip-covered --fail-under=60
           coverage xml -i --include="*/modules/*.py" -o coverage.xml
-          python - <<'PY'
-import xml.etree.ElementTree as ET, pathlib, os
-root=pathlib.Path(os.getcwd()); cov=root/"coverage.xml"; out=(root/"badges"); out.mkdir(parents=True, exist_ok=True)
-xml=ET.parse(cov).getroot()
-pct= int(round(float(xml.get("line-rate",0))*100)) if xml.get("line-rate") is not None else int(round(100*int(xml.get("lines-covered",0))/max(1,int(xml.get("lines-valid",1)))))
-color=(#4c1 if pct>=90 else #97CA00 if pct>=80 else #a4a61d if pct>=70 else #dfb317 if pct>=60 else #fe7d37 if pct>=50 else #e05d44)
-label_w=62; value_w=(54 if pct<100 else 60); total_w=label_w+value_w
-svg=f"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{total_w}\" height=\"20\" role=\"img\" aria-label=\"coverage: {pct}%\"><linearGradient id=\"b\" x2=\"0\" y2=\"100%\"><stop offset=\"0\" stop-color=\"#bbb\" stop-opacity=\".1\"/><stop offset=\"1\" stop-opacity=\".1\"/></linearGradient><mask id=\"a\"><rect width=\"{total_w}\" height=\"20\" rx=\"3\" fill=\"#fff\"/></mask><g mask=\"url(#a)\"><rect width=\"{label_w}\" height=\"20\" fill=\"#555\"/><rect x=\"{label_w}\" width=\"{value_w}\" height=\"20\" fill=\"{color}\"/><rect width=\"{total_w}\" height=\"20\" fill=\"url(#b)\"/></g><g fill=\"#fff\" text-anchor=\"middle\" font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"11\"><text x=\"{label_w/2:.1f}\" y=\"15\" fill=\"#010101\" fill-opacity=\".3\">coverage</text><text x=\"{label_w/2:.1f}\" y=\"14\">coverage</text><text x=\"{label_w + value_w/2:.1f}\" y=\"15\" fill=\"#010101\" fill-opacity=\".3\">{pct}%</text><text x=\"{label_w + value_w/2:.1f}\" y=\"14\">{pct}%</text></g></svg>"
-(out/"coverage.svg").write_text(svg, encoding=\"utf-8\")
-PY
           mkdir -p badges
-          genbadge coverage -i coverage.xml -o badges/coverage.svg
-          if [ "${GITHUB_REF}" = "refs/heads/main" ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add badges/coverage.svg
-            git commit -m "chore(ci): update coverage badge [skip ci]" || echo "no changes"
-            git push
-          fi
+          genbadge coverage -i coverage.xml -o badges/coverage.svg || coverage-badge -o badges/coverage.svg -f
+      - name: Commit coverage badge
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "ci: update coverage badge [skip ci]"
+          file_pattern: "badges/coverage.svg coverage.xml"

@@ -5,8 +5,7 @@ def test_normalize_result_branches():
     raw = {
         "action_name": "reply_general",
         "subject": "您好",
-        # 不放 None，避免 pydantic 2.x 驗證錯（normalize 尚未過濾 None）
-        "attachments": ["a.txt", {"name": "b.pdf", "size": 123}],
+        "attachments": ["a.txt", {"name": "b.pdf", "size": 123}],  # 不放 None
     }
     res = normalize_result(raw)
     try:
