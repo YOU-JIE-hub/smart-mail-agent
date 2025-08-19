@@ -1,26 +1,10 @@
-# Ruff config (toml)
-line-length = 200
+[tool.ruff]
 target-version = "py310"
-
-extend-exclude = [
-  ".git",
-  ".venv",
-  ".pytest_cache",
-  ".vscode",
-  ".vscode-server",
-  "assets",
-  "data",
-  "site",
-  "SMA_REPORTS_*",
-]
-
-[lint]
-# 開最基本（E/F/I/UP），先讓 pre-commit 能跑過
-select = ["E","F","I","UP"]
-
-[lint.per-file-ignores]
-# 測試檔允許一些簡寫與 import 位置
-"tests/**" = ["E701", "E402"]
-# 工具腳本允許同行多 import
-"tools/**" = ["E401"]
+line-length = 100
+extend-select = ["E","F","I"]
 extend-ignore = ["E501"]
+exclude = [
+  "site",
+  "reports",
+  "data/output",
+]

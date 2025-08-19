@@ -1,69 +1,17 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=65", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "smart-mail-agent"
-version = "0.1.0"
-description = "Rule-based spam detection and offline orchestration for emails."
-readme = "README.md"
+name = "smart_mail_agent"
+version = "0.0.0"
 requires-python = ">=3.10"
-license = {text = "MIT"}
-authors = [{ name = "Your Name", email = "you@example.com" }]
-keywords = ["email", "spam", "nlp", "rules", "orchestrator"]
-
 dependencies = [
-"PyYAML>=6.0"
+  "pydantic>=1.10,<3",
+  "python-dotenv>=1.0",
+  "jinja2>=3.1,<4",
+  "reportlab>=3.6,<4",
 ]
-
-[project.optional-dependencies]
-dev = [
-"pytest>=7.0",
-"pytest-cov",
-"black>=24.1.1",
-"ruff>=0.5.0",
-"isort>=5.12.0",
-"mypy>=1.7.0",
-"pre-commit>=3.5.0",
-"mkdocs>=1.5.0",
-"mkdocs-material>=9.5.0",
-"build",
-"twine"
-]
-
-[project.scripts]
-sma-spamcheck = "smart_mail_agent.cli_spamcheck:main"
-sma-orchestrate = "smart_mail_agent.spam.orchestrator_offline:_main"
-
-[tool.setuptools]
-package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "-q"
-
-[tool.black]
-line-length = 100
-target-version = ["py310"]
-
-[tool.isort]
-profile = "black"
-line_length = 100
-src_paths = ["src", "tests"]
-
-[tool.ruff]
-line-length = 100
-target-version = "py310"
-select = ["E","F","W","I","UP","B"]
-ignore = []
-
-[tool.mypy]
-python_version = "3.10"
-warn_unused_ignores = true
-warn_return_any = false
-warn_unused_configs = true
-strict_optional = true
-mypy_path = "src"
