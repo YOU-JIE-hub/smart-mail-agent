@@ -24,7 +24,6 @@ jobs:
       - name: Ruff fix
         run: ruff check --fix .
         run: ruff check .
-        continue-on-error: true
 
   test:
     runs-on: ubuntu-latest
