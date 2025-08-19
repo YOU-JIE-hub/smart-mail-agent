@@ -1,0 +1,40 @@
+name: tests
+
+on: [push, pull_request]
+
+jobs:
+  unit-and-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install deps (minimal)
+        run: |
+          python -m venv .venv
+          . .venv/bin/activate
+          pip install -U pip coverage pytest python-dotenv PyYAML Jinja2 reportlab
+
+      - name: Run unit + contracts (no coverage)
+        env:
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+          PYTHONPATH: ".:src"
+          OFFLINE: "1"
+          OMP_NUM_THREADS: "1"
+          MKL_NUM_THREADS: "1"
+          NUMEXPR_MAX_THREADS: "1"
+        run: |
+          . .venv/bin/activate
+          pytest -q tests/unit tests/contracts
+
+      - name: Coverage focus for modules.quotation (>=60%)
+        env:
+          PYTHONPATH: ".:src"
+          OFFLINE: "1"
+        run: |
+          . .venv/bin/activate
+          coverage erase
+          coverage run --branch scripts/cov_focus_modules.py
+          coverage report -m --include="*/modules/quotation.py" --skip-covered --fail-under=60
