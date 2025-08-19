@@ -49,3 +49,8 @@ repo-inventory-*.txt
 # local junk / backups
 .review_cursor
 !.coveragerc
+# local databases / binaries
+*.db
+*.sqlite
+data/*.db
+data/*.sqlite

@@ -1,0 +1,15 @@
+[run]
+branch = True
+source = smart_mail_agent
+
+[report]
+omit =
+    src/smart_mail_agent/features/spam/*
+    src/smart_mail_agent/spam/ml_spam_classifier.py
+    src/smart_mail_agent/spam/spam_llm_filter.py
+    src/smart_mail_agent/utils/imap_*.py
+    src/smart_mail_agent/utils/db_tools.py
+    src/smart_mail_agent/utils/rag_reply.py
+
+show_missing = True
+skip_covered = True
