@@ -1,4 +1,5 @@
-import importlib, pytest
+import importlib
+import pytest
 from jinja2 import Environment, StrictUndefined
 
 def test_templater_import_and_strict_undefined():
