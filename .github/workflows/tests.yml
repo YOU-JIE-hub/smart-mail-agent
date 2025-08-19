@@ -1,9 +1,7 @@
 name: tests
-
 on: [push, pull_request]
 permissions:
-  contents: write  # 允許提交 coverage.svg
-
+  contents: write
 jobs:
   unit-and-coverage:
     runs-on: ubuntu-latest
@@ -12,13 +10,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
-
       - name: Install deps (minimal)
         run: |
           python -m venv .venv
           . .venv/bin/activate
-          pip install -U pip coverage pytest python-dotenv PyYAML Jinja2 reportlab pydantic 'genbadge[coverage]'
-
+          pip install -U pip coverage pytest python-dotenv PyYAML Jinja2 reportlab 'genbadge[coverage]' pydantic
       - name: Run unit + contracts (no coverage)
         env:
           PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
@@ -30,25 +26,22 @@ jobs:
         run: |
           . .venv/bin/activate
           pytest -q tests/unit tests/contracts
-
-      - name: Coverage focus for modules.quotation (>=60%)
+      - name: Coverage focus for modules/* and publish badge
         env:
           PYTHONPATH: ".:src"
           OFFLINE: "1"
         run: |
           . .venv/bin/activate
           coverage erase
-          coverage run --branch scripts/cov_focus_modules.py
+          coverage run --branch --source=modules scripts/cov_focus_modules.py
           coverage report -m --include="*/modules/quotation.py" --skip-covered --fail-under=60
-          coverage xml -o coverage.xml
+          coverage xml -i --include="*/modules/*.py" -o coverage.xml
           mkdir -p badges
           genbadge coverage -i coverage.xml -o badges/coverage.svg
-
-      - name: Commit badge to main
-        if: github.ref == 'refs/heads/main'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add badges/coverage.svg
-          git commit -m "chore(ci): update coverage badge [skip ci]" || echo "no changes"
-          git push
+          if [ "${GITHUB_REF}" = "refs/heads/main" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add badges/coverage.svg
+            git commit -m "chore(ci): update coverage badge [skip ci]" || echo "no changes"
+            git push
+          fi
