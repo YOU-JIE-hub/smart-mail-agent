@@ -1,13 +1,15 @@
 ---
-name: Feature request
-about: 功能需求
+name: 🚀 Feature Request
+about: 建議新增或改進功能
 labels: enhancement
 ---
 
-**需求背景**
+**動機 / 背景**
+為什麼需要這個功能？
 
-**預期行為 / 接受標準**
+**方案草稿**
+你希望怎麼實現？
 
-**替代方案**
-
-**附加資訊**
+**驗收標準**
+- [ ] 1
+- [ ] 2

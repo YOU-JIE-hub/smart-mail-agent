@@ -1,37 +1,28 @@
-.PHONY: init fmt lint test type cov docs serve build release
+.PHONY: venv install lint fmt test typecheck ci all
 
-init:
-\tpython -m pip install -U pip
-\tpip install -e .[dev]
-\tpre-commit install
+venv:
+	python3 -m venv .venv
 
-fmt:
-\tblack .
-\tisort .
+install:
+	. .venv/bin/activate; \
+	pip install -U pip; \
+	if [ -f requirements.txt ]; then pip install -r requirements.txt; fi; \
+	pip install ruff mypy pytest pytest-cov pytest-timeout pre-commit
 
 lint:
-\truff check .
-\tblack --check .
-\tisort --check-only .
+	. .venv/bin/activate; ruff check .
 
-type:
-\tmypy src || true
+fmt:
+	. .venv/bin/activate; ruff format .
+
+typecheck:
+	. .venv/bin/activate; mypy .
 
 test:
-\tOFFLINE=1 PYTHONPATH=".:src" pytest -q
+	. .venv/bin/activate; \
+	PYTHONNOUSERSITE=1 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 OFFLINE=1 PYTHONPATH=".:src" \
+	pytest -q -p pytest_timeout -p pytest_cov --cov --cov-branch --cov-report=term-missing:skip-covered
 
-cov:
-\tOFFLINE=1 PYTHONPATH=".:src" pytest --cov=smart_mail_agent --cov-report=term-missing
+ci: lint typecheck test
 
-docs:
-\tmkdocs build
-
-serve:
-\tmkdocs serve -a 127.0.0.1:8000
-
-build:
-\tpython -m build
-
-release:
-\tgit tag $$(python -c "import tomllib,sys;print('v'+tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
-\tgit push --tags
+all: install fmt lint typecheck test
