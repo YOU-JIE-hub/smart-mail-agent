@@ -15,3 +15,5 @@
 **離線展示：**
 ```bash
 scripts/demo_offline.sh
+
+![coverage](https://raw.githubusercontent.com/YOU-JIE-hub/smart-mail-agent/main/badges/coverage.svg?t=1755654111)
