@@ -97,7 +97,6 @@ def generate_pdf_quote(*args: Any, **kwargs: Any) -> str:
     return write_pdf_or_txt(lines, out_dir, "quote")
 
 # === BEGIN AI PATCH: choose_package normalizer ===
-from __future__ import annotations
 import re as _re
 
 # 將舊方案名正規化為測試期望名
