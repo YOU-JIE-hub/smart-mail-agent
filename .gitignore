@@ -59,3 +59,5 @@ data/*.sqlite
 .local-logs/
 .venv/
 
+/coverage.xml
+/quote_pdf.pdf
