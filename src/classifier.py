@@ -1,6 +1,52 @@
 from __future__ import annotations
 from typing import Any, Callable, Optional
 
+def _normalize_result(res: Any) -> dict:
+    """把 pipeline/底層輸出正規化成 {predicted_label, score}。"""
+    try:
+        # 1) 已是 dict
+        if isinstance(res, dict):
+            if 'predicted_label' in res:
+                return res
+            label = res.get('label') or res.get('intent') or res.get('category')
+            score = res.get('score') or res.get('confidence') or res.get('prob') or res.get('probability')
+            if label is not None:
+                try:
+                    score = float(score) if score is not None else 1.0
+                except Exception:
+                    score = 1.0
+                return {'predicted_label': str(label), 'score': score}
+            return {'predicted_label': 'unknown', 'score': 0.0}
+        # 2) list/tuple
+        if isinstance(res, (list, tuple)):
+            if not res:
+                return {'predicted_label': 'unknown', 'score': 0.0}
+            first = res[0]
+            # [(label, score)], 或 [label, score]
+            if isinstance(first, (list, tuple)) and first:
+                label = first[0]
+                sc = 1.0
+                if len(first) > 1:
+                    try:
+                        sc = float(first[1])
+                    except Exception:
+                        sc = 1.0
+                return {'predicted_label': str(label), 'score': sc}
+            # [{'label': ..., 'score': ...}]
+            if isinstance(first, dict):
+                return _normalize_result(first)
+            # ['label']
+            if isinstance(first, str):
+                return {'predicted_label': first, 'score': 1.0}
+            return {'predicted_label': 'unknown', 'score': 0.0}
+        # 3) 直接是字串
+        if isinstance(res, str):
+            return {'predicted_label': res, 'score': 1.0}
+    except Exception:
+        pass
+    return {'predicted_label': 'unknown', 'score': 0.0}
+
+
 # 嘗試載入正式實作；有些版本只有函式沒有類別
 try:
     from smart_mail_agent.inference_classifier import IntentClassifier as _RealIC  # type: ignore
@@ -42,9 +88,9 @@ if _RealIC is None:
             override = merged.get("pipeline_override")
             if callable(override):
                 try:
-                    return override(subject, content, sender)
+                    return _normalize_result(override(subject, content, sender))
                 except TypeError:
-                    return override(subject, content)
+                    return _normalize_result(override(subject, content))
             return _safe_call_base(subject, content, sender)
 
         def predict(self, subject: str, content: str, sender: Optional[str] = None, **kwargs: Any) -> dict:
