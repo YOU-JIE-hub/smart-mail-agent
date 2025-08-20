@@ -16,4 +16,4 @@
 ```bash
 scripts/demo_offline.sh
 
-![coverage](https://raw.githubusercontent.com/YOU-JIE-hub/smart-mail-agent/main/badges/coverage.svg?t=1755656246)
+![coverage](https://raw.githubusercontent.com/YOU-JIE-hub/smart-mail-agent/main/?t=1755656275)
