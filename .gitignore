@@ -62,3 +62,19 @@ data/*.sqlite
 /coverage.xml
 /quote_pdf.pdf
 =
+# build / cache
+.pytest_cache/
+.mypy_cache/
+ruff_cache/
+dist/
+build/
+.eggs/
+*.egg-info/
+# venv
+.venv/
+# OS
+.DS_Store
+Thumbs.db
+# local
+.local-logs/
+share/
