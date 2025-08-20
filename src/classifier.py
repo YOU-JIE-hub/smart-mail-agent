@@ -1,5 +1,26 @@
 from __future__ import annotations
 from typing import Any, Callable, Optional
+import os
+
+FALLBACK_CONF = float(os.getenv('SMA_INTENT_LOWCONF', '0.5'))
+
+def _is_generic(subject: str, content: str) -> bool:
+    txt = f"{subject or ''} {content or ''}".strip()
+    if len(txt) < 8:
+        return True
+    # 全 ASCII 且詞數很少 -> 視為泛用
+    if all(ord(c) < 128 for c in txt) and len(txt.split()) <= 3:
+        return True
+    return False
+
+def _apply_fallback(res: dict, subject: str, content: str) -> dict:
+    # 若低信心或訊息太泛用，一律回退到『其他』
+    conf = float(res.get('confidence', res.get('score', 0.0)) or 0.0)
+    if conf < FALLBACK_CONF or _is_generic(subject, content):
+        res = dict(res)
+        res['predicted_label'] = '其他'
+    return res
+
 
 # 嘗試載入正式實作；有些版本只有函式沒有類別
 try:
@@ -103,9 +124,9 @@ if _RealIC is None:
             override = merged.get("pipeline_override")
             if callable(override):
                 try:
-                    return _normalize_result(override(subject, content, sender))
+                    return _apply_fallback(_normalize_result(override(subject, content, sender)), subject, content)
                 except TypeError:
-                    return _normalize_result(override(subject, content))
+                    return _apply_fallback(_normalize_result(override(subject, content)), subject, content)
             return _safe_call_base(subject, content, sender)
 
         # 兼容別名
