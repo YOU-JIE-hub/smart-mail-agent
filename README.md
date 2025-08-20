@@ -19,4 +19,5 @@ scripts/demo_offline.sh
 ![coverage](https://raw.githubusercontent.com/YOU-JIE-hub/smart-mail-agent/main/?t=1755656275)
 ![coverage](https://raw.githubusercontent.com/YOU-JIE-hub/smart-mail-agent/main/?t=1755658092)
 
-![coverage](https://raw.githubusercontent.com/YOU-JIE-hub/smart-mail-agent/main/badges/coverage.svg?t=1755660511)
+
+![coverage](badges/coverage.svg)
