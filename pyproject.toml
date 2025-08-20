@@ -15,3 +15,20 @@ dependencies = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+exclude = ["dist", "build", ".venv", "tests/fixtures", "share", ".local-logs"]
+
+[tool.ruff.lint]
+select = ["E","F","I","B","UP"]
+ignore = ["E402"]  # allow top-level imports in scripts
+
+[tool.mypy]
+python_version = "3.10"
+warn_unused_configs = true
+ignore_missing_imports = true
+disallow_untyped_defs = false
+no_site_packages = true
+exclude = "(^dist/|^build/|^\.venv/|^share/|^tests/fixtures)"
+
