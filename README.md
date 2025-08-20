@@ -1,4 +1,3 @@
-![coverage](https://raw.githubusercontent.com/YOU-JIE-hub/smart-mail-agent/main/badges/coverage.svg?t=1755659701)
     0 * * * * cd $HOME/projects/smart-mail-agent && . .venv/bin/activate && OFFLINE=1 PYTHONPATH=src python -m src.run_action_handler --tasks classify >> logs/cron.log 2>&1
 
 # Smart Mail Agent
@@ -18,4 +17,6 @@
 scripts/demo_offline.sh
 
 ![coverage](https://raw.githubusercontent.com/YOU-JIE-hub/smart-mail-agent/main/?t=1755656275)
-\n![coverage](https://raw.githubusercontent.com/YOU-JIE-hub/smart-mail-agent/main/?t=1755658092)\n
+![coverage](https://raw.githubusercontent.com/YOU-JIE-hub/smart-mail-agent/main/?t=1755658092)
+
+![coverage](https://raw.githubusercontent.com/YOU-JIE-hub/smart-mail-agent/main/badges/coverage.svg?t=1755660511)
