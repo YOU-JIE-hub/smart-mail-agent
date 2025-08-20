@@ -1,20 +1,17 @@
 [run]
 branch = True
 source =
-    src
-    modules
+    src/smart_mail_agent
+    src/send_with_attachment.py
+    src/stats_collector.py
 omit =
     */.venv/*
     */tests/*
     */__init__.py
-
+    site/* configs/* tools/* scripts/* examples/* docs/* data/* reports/*
 [report]
 skip_empty = True
 show_missing = True
 exclude_lines =
     pragma: no cover
     if __name__ == "__main__":
-    src/smart_mail_agent/features/spam/*
-    src/smart_mail_agent/smart_mail_agent/spam/*
-    src/modules/*
-    src/spam/*
