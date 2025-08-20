@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Any, Callable, Optional
 import os
+import re
 
 FALLBACK_CONF = float(os.getenv('SMA_INTENT_LOWCONF', '0.5'))
 
@@ -124,9 +125,9 @@ if _RealIC is None:
             override = merged.get("pipeline_override")
             if callable(override):
                 try:
-                    return _apply_fallback(_normalize_result(override(subject, content, sender)), subject, content)
+                    return _apply_rules(_apply_fallback(_normalize_result(override(subject, content, sender)), subject, content), subject, content)
                 except TypeError:
-                    return _apply_fallback(_normalize_result(override(subject, content)), subject, content)
+                    return _apply_rules(_apply_fallback(_normalize_result(override(subject, content)), subject, content), subject, content)
             return _safe_call_base(subject, content, sender)
 
         # 兼容別名
@@ -138,3 +139,13 @@ if _RealIC is None:
 else:
     # 直接使用正式類別
     IntentClassifier = _RealIC  # type: ignore
+
+
+RE_QUOTE = re.compile(r'(報價|合作|採購|方案|價格|詢價|比價|quotation|quote|pricing|price)', re.I)
+def _apply_rules(res: dict, subject: str, content: str) -> dict:
+    txt = f"{subject or ''} {content or ''}"
+    if RE_QUOTE.search(txt):
+        out = dict(res)
+        out['predicted_label'] = '業務接洽或報價'
+        return out
+    return res
