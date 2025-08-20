@@ -14,3 +14,7 @@ show_missing = True
 exclude_lines =
     pragma: no cover
     if __name__ == "__main__":
+    src/smart_mail_agent/features/spam/*
+    src/smart_mail_agent/smart_mail_agent/spam/*
+    src/modules/*
+    src/spam/*
