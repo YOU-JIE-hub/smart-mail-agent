@@ -1,10 +1,5 @@
+#!/usr/bin/env python3
+# 檔案位置：src/smart_mail_agent/features/spam/rules.py
+# 模組用途：相容 shim，轉接至 smart_mail_agent.spam.rules
 from __future__ import annotations
-
-# Auto-generated compat proxy: src/spam/rules.py
-from importlib import import_module as _imp
-
-_mod = _imp("smart_mail_agent.spam.rules")
-# re-export public names
-for _k in dir(_mod):
-    if not _k.startswith("_"):
-        globals()[_k] = getattr(_mod, _k)
+from ...spam.rules import *  # noqa: F401,F403

@@ -1,14 +1,6 @@
 #!/usr/bin/env bash
-set -euo pipefail
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PYBIN="$ROOT/.venv/bin/python"; [[ -x "$PYBIN" ]] || PYBIN="${PYTHON:-python}"
-if [[ $# -eq 0 ]]; then
-  cat <<'USAGE'
-smart-mail-agent runner (offline)
-Usage:
-  smarun --input <in.json> --output <out.json> [--dry-run] [--simulate-failure pdf]
-USAGE
-  exit 0
-fi
-export PYTHONPATH="${PYTHONPATH:-}:$ROOT:$ROOT/src"
-exec "$PYBIN" -m src.run_action_handler "$@"
+set -Eeuo pipefail
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$DIR"
+if [ -x ".venv/bin/python" ]; then PY=".venv/bin/python"; else PY="python3"; fi
+exec "$PY" -m src.run_action_handler "$@"
