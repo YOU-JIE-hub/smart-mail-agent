@@ -157,3 +157,67 @@ def choose_package(*, subject: str, content: str) -> dict:
 
     return {"package": _normalize_package(pkg), "needs_manual": needs_manual}
 # === END AI PATCH: choose_package normalizer ===
+
+# --- HOTFIX: big-attachment threshold is strict >= 5MB (keep keyword triggers)
+try:
+    _BIG_KW_RE
+except NameError:
+    import re as _re
+    _BIG_KW_RE = _re.compile(r"(附件\s*(很|超|過)?大|檔案\s*(太|過|很)大|大附件|附件過大|檔案過大)", _re.I)
+    _MB_RE = _re.compile(r'(\d+(?:\.\d+)?)\s*mb', _re.I)
+
+def _mentions_big_attachment(_text: str) -> bool:  # type: ignore[override]
+    text = (_text or "")
+    # 關鍵字：一律視為需要人工
+    if _BIG_KW_RE.search(text):
+        return True
+    # 數字 + MB：嚴格 >= 5.0
+    m = _MB_RE.search(text)
+    if not m:
+        return False
+    try:
+        size = float(m.group(1))
+    except ValueError:
+        return False
+    return size >= 5.0
+
+# --- HOTFIX: force final routing in choose_package (normalization + big-attachment precedence)
+try:
+    _re
+except NameError:
+    import re as _re
+
+# 關鍵字：企業整合 / 進階自動化
+_ENTERPRISE_RE = _re.compile(r'\b(erp|sso)\b|整合|單點登入|企業(整合)?', _re.I)
+_AUTOMATION_RE = _re.compile(r'workflow|自動化|流程|審批|表單', _re.I)
+
+def _base_package_from_text(_text: str) -> str:
+    t = (_text or "")
+    # 英文關鍵字用 \b，中文直接匹配
+    if _ENTERPRISE_RE.search(t):
+        return "企業整合"
+    if _AUTOMATION_RE.search(t):
+        return "進階自動化"
+    return "標準"
+
+# 保留原實作參考（僅備用）
+try:
+    _orig_choose_package = choose_package  # type: ignore[name-defined]
+except Exception:
+    _orig_choose_package = None
+
+def choose_package(*, subject: str, content: str) -> dict:  # type: ignore[override]
+    subj = subject or ""
+    cont = content or ""
+    text = f"{subj}\n{cont}"
+
+    # 1) 大附件優先：>=5MB 或「附件過大」等關鍵字 → 標準 + 需要人工
+    if _mentions_big_attachment(text):
+        return {"package": "標準", "needs_manual": True}
+
+    # 2) 規則推論
+    pkg = _base_package_from_text(text)
+
+    # 3) 標準化舊稱
+    pkg = _normalize_package(pkg)
+    return {"package": pkg, "needs_manual": False}
