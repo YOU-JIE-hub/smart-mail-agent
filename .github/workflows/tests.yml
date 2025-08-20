@@ -38,17 +38,12 @@ jobs:
           coverage xml -i --include="*/modules/quotation.py" -o coverage.xml
           mkdir -p badges
           (genbadge coverage -i coverage.xml -o badges/coverage.svg || coverage-badge -i coverage.xml -o badges/coverage.svg -f)
-          echo "CI badge:" $(grep -oE '[0-9]+(\\.[0-9]+)?%' badges/coverage.svg | head -1)
           if [ "${GITHUB_REF}" = "refs/heads/main" ]; then
             git config user.name  "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             TS=$(date +%s)
-            if grep -q 'badges/coverage.svg' README.md; then
-              perl -0777 -pe "s|(badges/coverage\\.svg)(\\?[^)]*)?|\\$1?t=${TS}|g" -i README.md
             else
-              printf '\\n![coverage](https://raw.githubusercontent.com/%s/%s/main/badges/coverage.svg?t=%s)\\n' "${GITHUB_REPOSITORY%/*}" "${GITHUB_REPOSITORY##*/}" "${TS}" >> README.md
             fi
-            git add badges/coverage.svg coverage.xml README.md
             git commit -m "chore(ci): update coverage badge (quotation-only) [skip ci]" || echo "no changes"
             git push
           fi
