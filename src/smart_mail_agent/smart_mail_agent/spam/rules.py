@@ -1,3 +1,5 @@
-from importlib import import_module as _import_module
-_mod = _import_module("smart_mail_agent.spam.rules")
-globals().update({k: getattr(_mod, k) for k in dir(_mod) if not k.startswith("_")})
+#!/usr/bin/env python3
+# 檔案位置：src/smart_mail_agent/smart_mail_agent/spam/rules.py
+# 模組用途：相容 shim，轉接至 smart_mail_agent.spam.rules
+from __future__ import annotations
+from ...spam.rules import *  # noqa: F401,F403
