@@ -7,7 +7,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
       - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
@@ -16,7 +15,7 @@ jobs:
           python -m venv .venv
           . .venv/bin/activate
           pip install -U pip coverage pytest python-dotenv PyYAML Jinja2 reportlab pydantic 'genbadge[coverage]' coverage-badge
-      - name: Run unit + contracts (offline)
+      - name: Run unit + contracts
         env:
           PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
           PYTHONPATH: ".:src"
@@ -27,7 +26,7 @@ jobs:
         run: |
           . .venv/bin/activate
           pytest -q tests/unit tests/contracts
-      - name: Focused coverage (modules/quotation.py) & publish badge
+      - name: Coverage focus + badge (quotation only)
         env:
           PYTHONPATH: ".:src"
           OFFLINE: "1"
@@ -38,12 +37,13 @@ jobs:
           coverage xml -i --include="*/modules/quotation.py" -o coverage.xml
           mkdir -p badges
           (genbadge coverage -i coverage.xml -o badges/coverage.svg || coverage-badge -i coverage.xml -o badges/coverage.svg -f)
-          if [ "${GITHUB_REF}" = "refs/heads/main" ]; then
-            git config user.name  "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            TS=$(date +%s)
-            else
-            fi
-            git commit -m "chore(ci): update coverage badge (quotation-only) [skip ci]" || echo "no changes"
-            git push
-          fi
+          echo "CI badge percent: $(grep -oE '[0-9]+(\\.[0-9]+)?%' badges/coverage.svg | head -1)"
+      - name: Commit badge back to main
+        if: github.ref == 'refs/heads/main'
+        run: |
+          . .venv/bin/activate
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add badges/coverage.svg coverage.xml
+          git diff --cached --quiet || git commit -m "chore(ci): update coverage badge [skip ci]"
+          git push
