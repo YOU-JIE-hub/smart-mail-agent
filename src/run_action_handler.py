@@ -4,6 +4,7 @@ import sys, json, argparse, importlib, os
 from typing import List, Dict, Any
 
 DANGEROUS_EXTS = (".exe",".bat",".cmd",".scr",".js",".vbs",".msi",".com",".jar",".ps1")
+SUPPORT_CC = os.getenv("SMA_SUPPORT_CC", "support@company.example")
 
 def _parse_args(argv: list[str]):
     ap = argparse.ArgumentParser(add_help=False)
@@ -20,29 +21,32 @@ def _analyze_risks(payload: Dict[str, Any]) -> List[str]:
         name = str(a.get("filename") or "")
         mime = str(a.get("mime") or "")
         lname = name.lower()
-        # 1) 雙副檔名且以可執行結尾
         if lname.count(".") >= 2 and lname.endswith(DANGEROUS_EXTS):
             risks.append("attach:double_ext")
-        # 2) 檔名過長
         if len(name) >= 120:
             risks.append("attach:long_name")
-        # 3) PDF 副檔名但 MIME 非 application/pdf
         if lname.endswith(".pdf") and not mime.startswith("application/pdf"):
             risks.append("attach:mime_mismatch")
     return risks
 
 def _fallback(ns, argv: list[str]) -> int:
-    # 最小處理：讀 input 寫 output，並補 meta/risks/require_review
     with open(ns.input, "r", encoding="utf-8") as f:
         payload = json.load(f)
     out = dict(payload)
     meta = dict(out.get("meta") or {})
     risks = _analyze_risks(payload)
+
     meta.setdefault("request_id", os.urandom(6).hex())
     meta.setdefault("duration_ms", 0)
     meta["dry_run"] = bool(ns.dry_run)
-    meta["risks"] = sorted(set((meta.get("risks") or []) + risks))
+    meta["risks"] = sorted(set(list(meta.get("risks") or []) + risks))
     meta["require_review"] = bool(meta["risks"])
+
+    cc = list(meta.get("cc") or [])
+    if meta["require_review"] and SUPPORT_CC not in cc:
+        cc.append(SUPPORT_CC)
+    meta["cc"] = cc
+
     out["meta"] = meta
     with open(ns.output, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False)
@@ -51,7 +55,6 @@ def _fallback(ns, argv: list[str]) -> int:
 def main(argv: list[str] | None = None) -> int:
     argv = argv or sys.argv
     ns = _parse_args(argv)
-    # 先嘗試委派到底層套件入口
     try:
         ra = importlib.import_module("smart_mail_agent.routing.run_action_handler")
         called = False
@@ -68,7 +71,7 @@ def main(argv: list[str] | None = None) -> int:
         if not called:
             return _fallback(ns, argv)
 
-        # 補齊 meta 欄位與風險代碼（即便底層已輸出，也做 union）
+        # 讀回輸出做補強（union risks、設定 require_review、附帶 cc）
         try:
             with open(ns.input, "r", encoding="utf-8") as f:
                 payload_in = json.load(f)
@@ -86,12 +89,17 @@ def main(argv: list[str] | None = None) -> int:
         meta["risks"] = sorted(set(existing + add))
         meta.setdefault("dry_run", bool(ns.dry_run))
         meta["require_review"] = bool(meta["risks"])
+
+        cc = list(meta.get("cc") or [])
+        if meta["require_review"] and SUPPORT_CC not in cc:
+            cc.append(SUPPORT_CC)
+        meta["cc"] = cc
+
         out["meta"] = meta
         with open(ns.output, "w", encoding="utf-8") as f:
             json.dump(out, f, ensure_ascii=False)
         return int(ret or 0)
     except Exception:
-        # 委派失敗則走保底
         return _fallback(ns, argv)
 
 if __name__ == "__main__":
