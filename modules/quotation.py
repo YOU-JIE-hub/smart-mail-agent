@@ -111,9 +111,9 @@ _CANON_MAP = {
 def _normalize_package(_name: str) -> str:
     return _CANON_MAP.get(_name, _name)
 
-# (1) 解析「數字 + MB」
+# (1) 數字 + MB（例如 5MB / 6 mb）
 _MB_RE = _re.compile(r'(\d+(?:\.\d+)?)\s*mb', _re.I)
-# (2) 也吃「附件很大／檔案過大／大附件」等關鍵字
+# (2) 關鍵字：附件很大／檔案過大／大附件…等
 _BIG_KW_RE = _re.compile(r"(附件\s*(很|超|過)?大|檔案\s*(太|過|很)大|大附件|附件過大|檔案過大)", _re.I)
 
 def _mentions_big_attachment(_text: str) -> bool:
@@ -139,9 +139,9 @@ except Exception:
 
 def choose_package(*, subject: str, content: str) -> dict:
     """
-    最終輸出：{'package': '企業整合|進階自動化|標準', 'needs_manual': bool}
-    - 兼容舊邏輯，但把方案名正規化到測試期望
-    - 若主旨/內文出現「大附件」關鍵字或 >=5MB，強制標準 + 需要人工
+    統一出口：
+      - 大附件（關鍵字或 >=5MB） → package='標準', needs_manual=True
+      - 其它走舊邏輯；最後將 package 正規化成：企業整合 / 進階自動化 / 標準
     """
     text = f"{subject or ''}\n{content or ''}"
     if _choose_package_original:
