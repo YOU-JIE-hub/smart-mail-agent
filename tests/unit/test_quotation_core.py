@@ -9,7 +9,7 @@ def test_generate_pdf_quote_new_old_and_default(tmp_path):
     p1 = Path(generate_pdf_quote("ACME* 公司", [("Basic",1,100.0),("加值",2,0.5)], outdir=tmp_path))
     assert p1.exists() and p1.suffix in {".pdf", ".txt"}
 
-    # 舊簽名（兩參數）：觸發 except TypeError 分支；不強制副檔名
+    # 舊簽名（兩參數）：觸發 except TypeError 分支；不硬性要求 .txt
     def _oldsig(content, out_path):
         outp = Path(out_path); outp.parent.mkdir(parents=True, exist_ok=True)
         text = "\n".join(content) if isinstance(content,(list,tuple)) else str(content)
