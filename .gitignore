@@ -54,3 +54,8 @@ repo-inventory-*.txt
 *.sqlite
 data/*.db
 data/*.sqlite
+
+# local dev
+.local-logs/
+.venv/
+
