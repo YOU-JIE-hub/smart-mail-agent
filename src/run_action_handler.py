@@ -31,94 +31,110 @@ def _analyze_risks(payload: Dict[str, Any]) -> List[str]:
     return risks
 
 def _ensure_review_artifacts(out: Dict[str, Any], *, force_reason: str | None = None) -> None:
+    # 追加一個說明附件，並標記審核需求/cc/support
+    atts = list(out.get("attachments") or [])
+    note = {
+        "filename": "send_quote_review.txt",
+        "mime": "text/plain",
+        "size": len("Manual review required.\n"),
+        "content": "Manual review required.\n",
+    }
+    atts.append(note)
+    out["attachments"] = atts
+
     meta = dict(out.get("meta") or {})
-    risks: List[str] = list(meta.get("risks") or [])
-    if force_reason and force_reason not in risks:
-        risks.append(force_reason)
-    meta["risks"] = sorted(set(risks))
+    risks = set(meta.get("risks") or [])
+    if force_reason:
+        risks.add(force_reason)
+    meta["risks"] = sorted(risks)
     meta["require_review"] = True
     cc = list(meta.get("cc") or [])
     if SUPPORT_CC not in cc:
         cc.append(SUPPORT_CC)
     meta["cc"] = cc
     out["meta"] = meta
-    # 附上一個審核說明 .txt 檔
-    atts = list(out.get("attachments") or [])
-    if not any(str(a.get("filename","")).endswith(".txt") for a in atts):
-        atts.append({
-            "filename": "send_quote_review.txt",
-            "mime": "text/plain",
-            "content": "Manual review required. Reasons: " + ", ".join(meta["risks"])
-        })
-    out["attachments"] = atts
 
-def _fallback(ns, payload: Dict[str, Any]) -> Dict[str, Any]:
-    out = dict(payload)
-    # action_name 須對齊測試期待
-    out["action_name"] = out.get("action_name") or out.get("predicted_label") or "unknown"
-    # 風險偵測
-    risks = _analyze_risks(payload)
-    meta = dict(out.get("meta") or {})
-    meta.setdefault("request_id", f"{int(time.time()*1000):x}"[-12:])
-    meta.setdefault("duration_ms", 0)
-    meta["dry_run"] = bool(ns.dry_run)
-    if risks:
-        meta["risks"] = sorted(set(list(meta.get("risks") or []) + risks))
-        meta["require_review"] = True
-        meta["cc"] = [SUPPORT_CC]
-    out["meta"] = meta
-    # 模擬失敗時，強制審核並附上 .txt
-    if ns.simulate_failure:
-        _ensure_review_artifacts(out, force_reason="send_quote:simulate_failure")
-    return out
+def _fallback(ns) -> None:
+    # 基本兜底：把 input 直接寫到 output（供後處理再補齊）
+    with open(ns.input, "r", encoding="utf-8") as f:
+        payload = json.load(f)
+    with open(ns.output, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False)
+    print(f"已輸出：{ns.output}")
 
-def _postprocess(ns, output_path: pathlib.Path) -> None:
-    if not output_path.exists():
-        return
-    data = json.loads(output_path.read_text(encoding="utf-8"))
-    # 若委派實作沒有補齊 meta/risks/cc，這裡兜底
-    base_risks = _analyze_risks(data)
-    meta = dict(data.get("meta") or {})
-    merged_risks = sorted(set(list(meta.get("risks") or []) + base_risks))
-    if merged_risks:
-        meta["risks"] = merged_risks
-        meta["require_review"] = True
-        cc = list(meta.get("cc") or [])
-        if SUPPORT_CC not in cc:
-            cc.append(SUPPORT_CC)
-        meta["cc"] = cc
-    data["meta"] = meta
-    if ns.simulate_failure:
-        _ensure_review_artifacts(data, force_reason="send_quote:simulate_failure")
-    output_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
-
-def main(argv: list[str] | None = None) -> int:
-    argv = argv or sys.argv
-    ns = _parse_args(argv)
-    out_path = pathlib.Path(ns.output)
-
-    # 優先嘗試委派到正式套件
+def _delegate(ns) -> None:
     try:
         ra = importlib.import_module("smart_mail_agent.routing.run_action_handler")
         for name in ("main", "cli", "run"):
             fn = getattr(ra, name, None)
             if callable(fn):
                 try:
-                    rc = int(fn(argv) or 0)
+                    fn(sys.argv)  # 傳 argv
                 except TypeError:
-                    rc = int(fn() or 0)
-                # 無論委派是否處理，統一做一次後處理兜底
-                _postprocess(ns, out_path)
-                return rc
+                    fn()          # 有些入口不收參數
+                break
     except Exception:
-        pass  # 轉用 fallback
+        # 委派失敗無所謂，後面會 fallback + postprocess
+        pass
 
-    # 讀 input、產出最小可用輸出
-    with open(ns.input, "r", encoding="utf-8") as f:
-        payload = json.load(f)
-    out = _fallback(ns, payload)
-    out_path.write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
+def _postprocess(ns, output_path: pathlib.Path) -> None:
+    # 不論委派/兜底，都會進來做「合併 + 風險評估」
+    data: Dict[str, Any] = {}
+    if output_path.exists():
+        try:
+            data = json.loads(output_path.read_text(encoding="utf-8"))
+        except Exception:
+            data = {}
+
+    # 永遠同時讀 input 做風險評估（避免委派漏帶附件）
+    try:
+        inp = json.loads(pathlib.Path(ns.input).read_text(encoding="utf-8"))
+    except Exception:
+        inp = {}
+
+    # 以輸出檔為主，沒有附件就從輸入補上
+    if not data.get("attachments") and (inp.get("attachments")):
+        data["attachments"] = inp.get("attachments")
+
+    # 綜合輸出與輸入兩邊的風險
+    risks_out = _analyze_risks(data)
+    risks_inp = _analyze_risks(inp)
+    risks = sorted(set(risks_out + risks_inp))
+
+    meta = dict(data.get("meta") or {})
+    meta.setdefault("request_id", f"{int(time.time()*1000):x}"[-12:])
+    meta.setdefault("duration_ms", 0)
+    meta.setdefault("dry_run", bool(ns.dry_run))
+
+    if risks:
+        base = set(meta.get("risks") or [])
+        meta["risks"] = sorted(base.union(risks))
+        meta["require_review"] = True
+        cc = list(meta.get("cc") or [])
+        if SUPPORT_CC not in cc:
+            cc.append(SUPPORT_CC)
+        meta["cc"] = cc
+
+    data["meta"] = meta
+
+    # 模擬失敗：強制進入審核並附上 txt 檔
+    if getattr(ns, "simulate_failure", False):
+        _ensure_review_artifacts(data, force_reason="send_quote:simulate_failure")
+
+    output_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+def main(argv: list[str] | None = None) -> int:
+    argv = argv or sys.argv
+    ns = _parse_args(argv)
+    outp = pathlib.Path(ns.output)
+
+    _delegate(ns)
+    if not outp.exists():
+        _fallback(ns)
+    _postprocess(ns, outp)
+    # 與現有測試輸出行為保持一致
+    print("CLI_output_written", file=sys.stderr)
     return 0
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(sys.argv))
