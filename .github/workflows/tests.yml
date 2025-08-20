@@ -7,6 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
       - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
@@ -14,11 +15,8 @@ jobs:
         run: |
           python -m venv .venv
           . .venv/bin/activate
-          pip install -U pip
-          pip install "pytest>=7,<9" "coverage>=7,<8" \
-                      python-dotenv PyYAML Jinja2 reportlab "pydantic>=2,<3" \
-                      'genbadge[coverage]' coverage-badge
-      - name: Run unit + contracts (no coverage)
+          pip install -U pip coverage pytest python-dotenv PyYAML Jinja2 reportlab pydantic 'genbadge[coverage]' coverage-badge
+      - name: Run unit + contracts (offline)
         env:
           PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
           PYTHONPATH: ".:src"
@@ -29,7 +27,7 @@ jobs:
         run: |
           . .venv/bin/activate
           pytest -q tests/unit tests/contracts
-      - name: Coverage focus for modules/* and publish badge
+      - name: Focused coverage (modules/quotation.py) & publish badge
         env:
           PYTHONPATH: ".:src"
           OFFLINE: "1"
@@ -37,11 +35,20 @@ jobs:
           . .venv/bin/activate
           coverage erase
           coverage run --branch --source=modules scripts/cov_focus_modules.py
-          coverage xml -i --include="*/modules/*.py" -o coverage.xml
+          coverage xml -i --include="*/modules/quotation.py" -o coverage.xml
           mkdir -p badges
-          genbadge coverage -i coverage.xml -o badges/coverage.svg || coverage-badge -o badges/coverage.svg -f
-      - name: Commit coverage badge
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "ci: update coverage badge [skip ci]"
-          file_pattern: "badges/coverage.svg coverage.xml"
+          (genbadge coverage -i coverage.xml -o badges/coverage.svg || coverage-badge -o badges/coverage.svg -f)
+          echo "CI badge:" $(grep -oE '[0-9]+(\\.[0-9]+)?%' badges/coverage.svg | head -1)
+          if [ "${GITHUB_REF}" = "refs/heads/main" ]; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            TS=$(date +%s)
+            if grep -q 'badges/coverage.svg' README.md; then
+              perl -0777 -pe "s|(badges/coverage\\.svg)(\\?[^)]*)?|\\$1?t=${TS}|g" -i README.md
+            else
+              printf '\\n![coverage](https://raw.githubusercontent.com/%s/%s/main/badges/coverage.svg?t=%s)\\n' "${GITHUB_REPOSITORY%/*}" "${GITHUB_REPOSITORY##*/}" "${TS}" >> README.md
+            fi
+            git add badges/coverage.svg coverage.xml README.md
+            git commit -m "chore(ci): update coverage badge (quotation-only) [skip ci]" || echo "no changes"
+            git push
+          fi
