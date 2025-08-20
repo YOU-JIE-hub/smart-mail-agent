@@ -5,13 +5,9 @@ source =
     src/send_with_attachment.py
     src/stats_collector.py
 omit =
-    */.venv/*
-    */tests/*
-    */__init__.py
-    site/* configs/* tools/* scripts/* examples/* docs/* data/* reports/*
+    */.venv/* */tests/* */__init__.py
+    src/modules/* src/spam/* examples/* tools/* scripts/* docs/* site/* data/* reports/* configs/*
 [report]
 skip_empty = True
 show_missing = True
-exclude_lines =
-    pragma: no cover
-    if __name__ == "__main__":
+exclude_lines = pragma: no cover
