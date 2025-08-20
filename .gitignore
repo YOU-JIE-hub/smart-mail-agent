@@ -61,3 +61,4 @@ data/*.sqlite
 
 /coverage.xml
 /quote_pdf.pdf
+=
