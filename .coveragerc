@@ -1,16 +1,7 @@
 [run]
 branch = True
 source = src
-parallel = False
-omit =
-    */__main__.py
-    .venv/*
-    tests/*
 
 [report]
 skip_empty = True
 show_missing = True
-exclude_lines =
-    pragma: no cover
-    if TYPE_CHECKING:
-    ^\s*raise NotImplementedError
