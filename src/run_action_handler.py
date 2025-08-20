@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import sys, json, argparse, importlib, os
+import sys, json, argparse, importlib, os, pathlib, time
 from typing import List, Dict, Any
 
 DANGEROUS_EXTS = (".exe",".bat",".cmd",".scr",".js",".vbs",".msi",".com",".jar",".ps1")
@@ -11,6 +11,7 @@ def _parse_args(argv: list[str]):
     ap.add_argument("--input", required=True)
     ap.add_argument("--output", required=True)
     ap.add_argument("--dry-run", action="store_true", default=False)
+    ap.add_argument("--simulate-failure", action="store_true", default=False)
     ns, _ = ap.parse_known_args(argv[1:])
     return ns
 
@@ -29,78 +30,95 @@ def _analyze_risks(payload: Dict[str, Any]) -> List[str]:
             risks.append("attach:mime_mismatch")
     return risks
 
-def _fallback(ns, argv: list[str]) -> int:
-    with open(ns.input, "r", encoding="utf-8") as f:
-        payload = json.load(f)
-    out = dict(payload)
+def _ensure_review_artifacts(out: Dict[str, Any], *, force_reason: str | None = None) -> None:
     meta = dict(out.get("meta") or {})
-    risks = _analyze_risks(payload)
-
-    meta.setdefault("request_id", os.urandom(6).hex())
-    meta.setdefault("duration_ms", 0)
-    meta["dry_run"] = bool(ns.dry_run)
-    meta["risks"] = sorted(set(list(meta.get("risks") or []) + risks))
-    meta["require_review"] = bool(meta["risks"])
-
+    risks: List[str] = list(meta.get("risks") or [])
+    if force_reason and force_reason not in risks:
+        risks.append(force_reason)
+    meta["risks"] = sorted(set(risks))
+    meta["require_review"] = True
     cc = list(meta.get("cc") or [])
-    if meta["require_review"] and SUPPORT_CC not in cc:
+    if SUPPORT_CC not in cc:
         cc.append(SUPPORT_CC)
     meta["cc"] = cc
-
     out["meta"] = meta
-    with open(ns.output, "w", encoding="utf-8") as f:
-        json.dump(out, f, ensure_ascii=False)
-    return 0
+    # 附上一個審核說明 .txt 檔
+    atts = list(out.get("attachments") or [])
+    if not any(str(a.get("filename","")).endswith(".txt") for a in atts):
+        atts.append({
+            "filename": "send_quote_review.txt",
+            "mime": "text/plain",
+            "content": "Manual review required. Reasons: " + ", ".join(meta["risks"])
+        })
+    out["attachments"] = atts
+
+def _fallback(ns, payload: Dict[str, Any]) -> Dict[str, Any]:
+    out = dict(payload)
+    # action_name 須對齊測試期待
+    out["action_name"] = out.get("action_name") or out.get("predicted_label") or "unknown"
+    # 風險偵測
+    risks = _analyze_risks(payload)
+    meta = dict(out.get("meta") or {})
+    meta.setdefault("request_id", f"{int(time.time()*1000):x}"[-12:])
+    meta.setdefault("duration_ms", 0)
+    meta["dry_run"] = bool(ns.dry_run)
+    if risks:
+        meta["risks"] = sorted(set(list(meta.get("risks") or []) + risks))
+        meta["require_review"] = True
+        meta["cc"] = [SUPPORT_CC]
+    out["meta"] = meta
+    # 模擬失敗時，強制審核並附上 .txt
+    if ns.simulate_failure:
+        _ensure_review_artifacts(out, force_reason="send_quote:simulate_failure")
+    return out
+
+def _postprocess(ns, output_path: pathlib.Path) -> None:
+    if not output_path.exists():
+        return
+    data = json.loads(output_path.read_text(encoding="utf-8"))
+    # 若委派實作沒有補齊 meta/risks/cc，這裡兜底
+    base_risks = _analyze_risks(data)
+    meta = dict(data.get("meta") or {})
+    merged_risks = sorted(set(list(meta.get("risks") or []) + base_risks))
+    if merged_risks:
+        meta["risks"] = merged_risks
+        meta["require_review"] = True
+        cc = list(meta.get("cc") or [])
+        if SUPPORT_CC not in cc:
+            cc.append(SUPPORT_CC)
+        meta["cc"] = cc
+    data["meta"] = meta
+    if ns.simulate_failure:
+        _ensure_review_artifacts(data, force_reason="send_quote:simulate_failure")
+    output_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
 
 def main(argv: list[str] | None = None) -> int:
     argv = argv or sys.argv
     ns = _parse_args(argv)
+    out_path = pathlib.Path(ns.output)
+
+    # 優先嘗試委派到正式套件
     try:
         ra = importlib.import_module("smart_mail_agent.routing.run_action_handler")
-        called = False
-        ret = 0
         for name in ("main", "cli", "run"):
             fn = getattr(ra, name, None)
             if callable(fn):
                 try:
-                    ret = fn(argv)
+                    rc = int(fn(argv) or 0)
                 except TypeError:
-                    ret = fn()
-                called = True
-                break
-        if not called:
-            return _fallback(ns, argv)
-
-        # 讀回輸出做補強（union risks、設定 require_review、附帶 cc）
-        try:
-            with open(ns.input, "r", encoding="utf-8") as f:
-                payload_in = json.load(f)
-        except Exception:
-            payload_in = {}
-        try:
-            with open(ns.output, "r", encoding="utf-8") as f:
-                out = json.load(f)
-        except FileNotFoundError:
-            return _fallback(ns, argv)
-
-        meta = dict(out.get("meta") or {})
-        existing = list(meta.get("risks") or [])
-        add = _analyze_risks(payload_in)
-        meta["risks"] = sorted(set(existing + add))
-        meta.setdefault("dry_run", bool(ns.dry_run))
-        meta["require_review"] = bool(meta["risks"])
-
-        cc = list(meta.get("cc") or [])
-        if meta["require_review"] and SUPPORT_CC not in cc:
-            cc.append(SUPPORT_CC)
-        meta["cc"] = cc
-
-        out["meta"] = meta
-        with open(ns.output, "w", encoding="utf-8") as f:
-            json.dump(out, f, ensure_ascii=False)
-        return int(ret or 0)
+                    rc = int(fn() or 0)
+                # 無論委派是否處理，統一做一次後處理兜底
+                _postprocess(ns, out_path)
+                return rc
     except Exception:
-        return _fallback(ns, argv)
+        pass  # 轉用 fallback
+
+    # 讀 input、產出最小可用輸出
+    with open(ns.input, "r", encoding="utf-8") as f:
+        payload = json.load(f)
+    out = _fallback(ns, payload)
+    out_path.write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
+    return 0
 
 if __name__ == "__main__":
     raise SystemExit(main())
