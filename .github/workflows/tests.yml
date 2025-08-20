@@ -37,7 +37,7 @@ jobs:
           coverage run --branch --source=modules scripts/cov_focus_modules.py
           coverage xml -i --include="*/modules/quotation.py" -o coverage.xml
           mkdir -p badges
-          (genbadge coverage -i coverage.xml -o badges/coverage.svg || coverage-badge -o badges/coverage.svg -f)
+          (genbadge coverage -i coverage.xml -o badges/coverage.svg || coverage-badge -i coverage.xml -o badges/coverage.svg -f)
           echo "CI badge:" $(grep -oE '[0-9]+(\\.[0-9]+)?%' badges/coverage.svg | head -1)
           if [ "${GITHUB_REF}" = "refs/heads/main" ]; then
             git config user.name  "github-actions[bot]"
