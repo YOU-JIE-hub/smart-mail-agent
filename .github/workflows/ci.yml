@@ -27,7 +27,7 @@ jobs:
           PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
           PYTHONPATH: ".:src"
         run: |
-          pytest -q -p pytest_timeout -p pytest_cov --cov-config=.coveragerc \
+          pytest -q --cov-config="${GITHUB_WORKSPACE}/.coveragerc" -p pytest_timeout -p pytest_cov --cov-config=.coveragerc \
             -m 'not online' \
             --cov --cov-branch \
             --cov-report=term-missing:skip-covered \
