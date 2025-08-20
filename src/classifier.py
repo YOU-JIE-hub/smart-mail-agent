@@ -124,10 +124,25 @@ if _RealIC is None:
             merged = {**self.kwargs, **kwargs}
             override = merged.get("pipeline_override")
             if callable(override):
-                try:
-                    return _apply_rules(_apply_fallback(_normalize_result(override(subject, content, sender)), subject, content), subject, content)
-                except TypeError:
-                    return _apply_rules(_apply_fallback(_normalize_result(override(subject, content)), subject, content), subject, content)
+                    # 相容多種簽名：(s,c,sen)->(s,c)->(s)->kwargs 版本
+                    _raw = None
+                    for _caller in (
+                        lambda: override(subject, content, sender),
+                        lambda: override(subject, content),
+                        lambda: override(subject),
+                        lambda: override(subject=subject, content=content, sender=sender),
+                        lambda: override(subject=subject, content=content),
+                        lambda: override(subject=subject),
+                    ):
+                        try:
+                            _raw = _caller()
+                            break
+                        except TypeError:
+                            continue
+                    if _raw is None:
+                        _raw = {}
+                    res = _apply_rules(_apply_fallback(_normalize_result(_raw), subject, content), subject, content)
+                    return res
             return _safe_call_base(subject, content, sender)
 
         # 兼容別名
