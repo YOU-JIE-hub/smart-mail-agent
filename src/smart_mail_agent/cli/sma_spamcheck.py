@@ -5,6 +5,7 @@ from typing import List, Tuple
 
 # 基本啟發式
 _SPAM_WORDS = re.compile(r"\b(free|viagra|bonus|limited\s*offer)\b", re.I)
+_ZH_SPAM_WORDS = re.compile(r"(限時|優惠|免費|加碼)", re.I)
 _SHORTLINK  = re.compile(r"(bit\.ly|t\.co|tinyurl\.com|goo\.gl|is\.gd|ow\.ly|t\.ly|cut\.ly)", re.I)
 _MONEY      = re.compile(r"(\$|\d+\s?(usd|美元|台幣|twd))", re.I)
 
@@ -20,6 +21,9 @@ def _score(subject: str, content: str, sender: str) -> Tuple[float, List[str]]:
     if _SPAM_WORDS.search(text):
         score += 0.6
         explain.append("spam_words")
+    if _ZH_SPAM_WORDS.search(text):
+        score += 0.6
+        explain.append("zh_keywords")
     if _SHORTLINK.search(text):
         score += 0.4
         explain.append("shortlink")
