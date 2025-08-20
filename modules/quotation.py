@@ -95,3 +95,58 @@ def generate_pdf_quote(*args: Any, **kwargs: Any) -> str:
     if package:
         lines.append(f"Package: {package}")
     return write_pdf_or_txt(lines, out_dir, "quote")
+
+# === BEGIN AI PATCH: choose_package normalizer ===
+from __future__ import annotations
+import re as _re
+
+# 將舊方案名正規化為測試期望名
+_CANON_MAP = {
+    "企業": "企業整合",
+    "企業整合": "企業整合",
+    "專業": "進階自動化",
+    "進階自動化": "進階自動化",
+    "基礎": "標準",
+    "標準": "標準",
+}
+def _normalize_package(_name: str) -> str:
+    return _CANON_MAP.get(_name, _name)
+
+# 抓「數字 + MB」表示的大附件（>=5MB）
+_MB_RE = _re.compile(r'(\d+(?:\.\d+)?)\s*mb', _re.I)
+def _mentions_big_attachment(_text: str) -> bool:
+    m = _MB_RE.search(_text or "")
+    if not m:
+        return False
+    try:
+        size = float(m.group(1))
+    except Exception:
+        return False
+    return size >= 5.0
+
+# 保存舊的 choose_package，再包一層正規化輸出
+try:
+    _choose_package_original = choose_package  # type: ignore[name-defined]
+except Exception:
+    _choose_package_original = None  # type: ignore[assignment]
+
+def choose_package(*, subject: str, content: str) -> dict:
+    """
+    最終輸出：{'package': '企業整合|進階自動化|標準', 'needs_manual': bool}
+    - 兼容舊邏輯，但把方案名正規化到測試期望
+    - 若內文/主旨包含 >=5MB，強制標準 + 需要人工
+    """
+    text = f"{subject or ''}\n{content or ''}"
+    if _choose_package_original:
+        out = _choose_package_original(subject=subject, content=content)  # type: ignore[misc]
+        pkg = out.get("package", "標準")
+        needs_manual = bool(out.get("needs_manual", False))
+    else:
+        pkg, needs_manual = "標準", False
+
+    if _mentions_big_attachment(text):
+        pkg = "標準"
+        needs_manual = True
+
+    return {"package": _normalize_package(pkg), "needs_manual": needs_manual}
+# === END AI PATCH: choose_package normalizer ===
