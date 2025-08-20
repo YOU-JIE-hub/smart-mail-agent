@@ -1,2 +1,4 @@
-# Legacy shim for tests importing `email_processor`
-from smart_mail_agent.ingestion.email_processor import *  # noqa: F401,F403
+from __future__ import annotations
+import sys as _sys, importlib as _im
+_mod = _im.import_module("smart_mail_agent.ingestion.email_processor")
+_sys.modules[__name__] = _mod
