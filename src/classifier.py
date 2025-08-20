@@ -19,7 +19,7 @@ except Exception:
 
 
 def _normalize_result(res: Any) -> dict:
-    """把各式輸出統一為 {predicted_label, confidence, score}。"""
+    """把各式輸出統一為 {predicted_label, label, confidence, score}。"""
     # dict 形狀
     if isinstance(res, dict):
         out = dict(res)
@@ -42,6 +42,7 @@ def _normalize_result(res: Any) -> dict:
         if label is None:
             label = "unknown"
         out["predicted_label"] = str(label)
+        out["label"] = out["predicted_label"]
         out["confidence"] = conf
         out.setdefault("score", conf)
         return out
@@ -49,7 +50,7 @@ def _normalize_result(res: Any) -> dict:
     # list/tuple: [(label, score)]、[label, score]、[{"label":..,"score":..}, ...]
     if isinstance(res, (list, tuple)):
         if not res:
-            return {"predicted_label": "unknown", "confidence": 0.0, "score": 0.0}
+            return {"predicted_label": "unknown", "label": "unknown", "confidence": 0.0, "score": 0.0}
         first = res[0]
         if isinstance(first, dict):
             return _normalize_result(first)
@@ -63,14 +64,15 @@ def _normalize_result(res: Any) -> dict:
             conf = float(score)
         except Exception:
             conf = 1.0
-        return {"predicted_label": str(label), "confidence": conf, "score": conf}
+        lab = str(label)
+        return {"predicted_label": lab, "label": lab, "confidence": conf, "score": conf}
 
     # 純字串 → 當作 label，信心 1.0
     if isinstance(res, str):
-        return {"predicted_label": res, "confidence": 1.0, "score": 1.0}
+        return {"predicted_label": res, "label": res, "confidence": 1.0, "score": 1.0}
 
     # 其他 → unknown
-    return {"predicted_label": "unknown", "confidence": 0.0, "score": 0.0}
+    return {"predicted_label": "unknown", "label": "unknown", "confidence": 0.0, "score": 0.0}
 
 
 def _is_generic(subject: str, content: str) -> bool:
@@ -84,7 +86,7 @@ def _is_generic(subject: str, content: str) -> bool:
 
 
 def _apply_fallback(res: dict, subject: str, content: str) -> dict:
-    """低信心/泛用文字時只改 label→『其他』，保留原 confidence/score。"""
+    """低信心且泛用文字時才回退 label→『其他』，並保留原 confidence/score。"""
     out = dict(res)
     try:
         conf = float(out.get("confidence", out.get("score", 0.0)) or 0.0)
@@ -92,8 +94,12 @@ def _apply_fallback(res: dict, subject: str, content: str) -> dict:
         conf = 0.0
     out["confidence"] = conf
     out.setdefault("score", conf)
-    if conf < FALLBACK_CONF or _is_generic(subject, content):
+    if conf < FALLBACK_CONF and _is_generic(subject, content):
         out["predicted_label"] = "其他"
+        out["label"] = "其他"
+    else:
+        # 確保 alias 存在
+        out.setdefault("label", out.get("predicted_label", "unknown"))
     return out
 
 
@@ -107,7 +113,12 @@ def _apply_rules(res: dict, subject: str, content: str) -> dict:
     if RE_QUOTE.search(txt):
         out = dict(res)
         out["predicted_label"] = "業務接洽或報價"
+        out["label"] = "業務接洽或報價"
         return out
+    # 仍確保 alias 存在
+    if "label" not in res and "predicted_label" in res:
+        res = dict(res)
+        res["label"] = res["predicted_label"]
     return res
 
 
