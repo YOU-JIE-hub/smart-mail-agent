@@ -1,9 +1,6 @@
 target-version = "py310"
 line-length = 100
 force-exclude = true
-[lint]
-select = ["E","F"]
-ignore = ["E501"]
 extend-exclude = [
   "examples/**",
   "modules/**",
@@ -14,5 +11,11 @@ extend-exclude = [
   "site/**",
   "data/**",
   "out/**",
+  "sitecustomize.py",
   "init_db.py",
 ]
+
+[lint]
+# 先專注語法/錯誤類；長行暫忽略，減少無謂紅燈
+select = ["E", "F"]
+ignore = ["E501"]
