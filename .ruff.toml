@@ -21,7 +21,7 @@ extend-exclude = [
 # 僅檢查 E/F（語法/錯誤類），不做 import-sorting（避免 I001）
 select = ["E", "F"]
 # 容忍幾個我們在專案中刻意允許的 pattern（多行短寫、星號匯入 shim 等）
-extend-ignore = [
+extend-ignore = ["E501", 
     "E401",  # multiple imports on one line
     "E402",  # module level import not at top of file
     "E701",  # multiple statements on one line (colon)
