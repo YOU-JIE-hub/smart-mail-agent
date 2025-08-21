@@ -1,3 +1,4 @@
+import re as _re
 from __future__ import annotations
 from pathlib import Path
 from typing import Iterable, Tuple, Any
@@ -97,7 +98,6 @@ def generate_pdf_quote(*args: Any, **kwargs: Any) -> str:
     return write_pdf_or_txt(lines, out_dir, "quote")
 
 # === BEGIN AI PATCH: choose_package normalizer ===
-import re as _re
 
 # 將舊方案名正規化為測試期望名
 _CANON_MAP = {
@@ -162,7 +162,6 @@ def choose_package(*, subject: str, content: str) -> dict:
 try:
     _BIG_KW_RE
 except NameError:
-    import re as _re
     _BIG_KW_RE = _re.compile(r"(附件\s*(很|超|過)?大|檔案\s*(太|過|很)大|大附件|附件過大|檔案過大)", _re.I)
     _MB_RE = _re.compile(r'(\d+(?:\.\d+)?)\s*mb', _re.I)
 
@@ -185,7 +184,6 @@ def _mentions_big_attachment(_text: str) -> bool:  # type: ignore[override]
 try:
     _re
 except NameError:
-    import re as _re
 
 # 關鍵字：企業整合 / 進階自動化
 _ENTERPRISE_RE = _re.compile(r'\b(erp|sso)\b|整合|單點登入|企業(整合)?', _re.I)
@@ -225,7 +223,6 @@ def choose_package(*, subject: str, content: str) -> dict:  # type: ignore[overr
 try:
     _re
 except NameError:
-    import re as _re
 
 # 正規化 ↔ 舊名對照
 _CANON_TO_LEGACY = {"標準": "基礎", "進階自動化": "專業", "企業整合": "企業"}
@@ -273,7 +270,6 @@ def choose_package(*args, **kwargs):  # overrides previous wrapper
 try:
     _re
 except NameError:
-    import re as _re
 
 # 報價/價格 關鍵字
 _PRICING_RE = _re.compile(r"(報價|詢價|價格|價錢|報價單|price|pricing)", _re.I)
