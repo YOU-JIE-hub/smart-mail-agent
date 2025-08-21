@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "smart-mail-agent"
 version = "0.3.1"
-description = "Smart Mail Agent: AI + RPA email automation (clean src-layout)"
+description = "Smart Mail Agent: AI + RPA email automation (clean, src-layout)"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -26,9 +26,22 @@ send-with-attachment = "send_with_attachment:main"
 package-dir = {"" = "src"}
 packages = ["smart_mail_agent"]
 
+# ---- Ruff（為相容性同時提供舊/新節點）----
+# 舊版配置節點
 [tool.ruff]
 target-version = "py310"
+select = ["E","F","I","B","UP"]
+ignore = []
+extend-exclude = []
+# 測試、腳本、範例與過渡模組的 per-file-ignores（舊節點）
+per-file-ignores = {
+  "tests/**/*.py" = ["E401","E402","E701","E702","F811"],
+  "examples/**/*.py" = ["E402","F401","F403"],
+  "scripts/**/*.py" = ["E401","E402","E701","E702"],
+  "modules/**/*.py" = ["E401","E402","E701","E702","F401","F403"]
+}
 
+# 新版配置節點（>=0.6 起）
 [tool.ruff.lint]
 select = ["E","F","I","B","UP"]
 extend-ignore = []
@@ -37,6 +50,7 @@ extend-ignore = []
 "tests/**/*.py" = ["E401","E402","E701","E702","F811"]
 "examples/**/*.py" = ["E402","F401","F403"]
 "scripts/**/*.py" = ["E401","E402","E701","E702"]
+"modules/**/*.py" = ["E401","E402","E701","E702","F401","F403"]
 
 [tool.ruff.format]
 quote-style = "preserve"
