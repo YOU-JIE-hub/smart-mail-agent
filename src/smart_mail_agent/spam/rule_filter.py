@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import re
 
-from utils.logger import logger
+from smart_mail_agent.utils.logger import logger
 
 # 檔案位置：src/spam/rule_filter.py
 # 模組用途：使用靜態規則（關鍵字、黑名單、樣式）偵測垃圾郵件內容

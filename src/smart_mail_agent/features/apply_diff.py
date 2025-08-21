@@ -6,7 +6,7 @@ import sqlite3
 from datetime import datetime
 from typing import Any
 
-from utils.logger import logger
+from smart_mail_agent.utils.logger import logger
 
 # 檔案位置：src/modules/apply_diff.py
 # 模組用途：解析使用者信件內容，從 users.db 中比對異動欄位並更新資料與記錄差異。

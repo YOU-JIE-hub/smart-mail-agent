@@ -9,7 +9,7 @@ from typing import Any
 
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
 
-from utils.logger import logger  # 統一日誌
+from smart_mail_agent.utils.logger import logger  # 統一日誌
 
 # !/usr/bin/env python3
 # 檔案位置：src/classifier.py

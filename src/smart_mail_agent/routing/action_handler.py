@@ -19,7 +19,7 @@ logger = logging.getLogger(LOGGER_NAME)
 
 # 嘗試載入 mailer；存在新版/舊版簽名差異，_send() 會相容呼叫
 try:
-    from utils.mailer import send_email_with_attachment  # type: ignore
+    from smart_mail_agent.utils.mailer import send_email_with_attachment  # type: ignore
 except Exception:
     # 完全沒有 mailer 模組時的離線占位
 

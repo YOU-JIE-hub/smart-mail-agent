@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import sqlite3
 
-from utils.logger import logger
+from smart_mail_agent.utils.logger import logger
 
 # 檔案位置：src/utils/db_tools.py
 # 模組用途：用於查詢 SQLite 使用者資料表（get by email / get all）
