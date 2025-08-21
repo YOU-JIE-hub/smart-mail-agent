@@ -156,7 +156,7 @@ def link_ratio(html_or_text: str) -> float:
     # 取出 <a href=...> 內文字長度（去 tag、去空白）
     link_len = 0
     for m in _RE_A_HREF.finditer(s):
-        href = (m.group(1) or m.group(2) or m.group(3) or "").strip()
+        _href = (m.group(1) or m.group(2) or m.group(3) or "").strip()  # extracted but unused
         text = m.group(4) or ""
         # 有 href 即算（'#' 也算；符合測試對大量 <a> 的期待）
         link_len += len(_strip_ws(_RE_TAG.sub("", text)))

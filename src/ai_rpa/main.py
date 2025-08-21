@@ -33,8 +33,10 @@ def main() -> int:
 
     # 1) OCR
     if "ocr" in tasks:
-        ocr_in = f"{args.input-path if hasattr(args,'input_path') else args.input_path}/sample.jpg"
-        # 僅示範：若找不到檔案則回傳空文字
+        inp_dir = getattr(args, "input_path", getattr(args, "input", "."))
+
+        ocr_in = f"{inp_dir}/sample.jpg"
+# 僅示範：若找不到檔案則回傳空文字
         try:
             res = run_ocr(ocr_in)
             out["steps"].append({"ocr": res})
