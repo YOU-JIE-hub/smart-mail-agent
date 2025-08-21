@@ -1,3 +1,5 @@
+![type](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/typecheck.yml/badge.svg)
+![lint](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/lint.yml/badge.svg)
 <p align="left">
   <a href="https://github.com/YOU-JIE-hub/smart-mail-agent/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/YOU-JIE-hub/smart-mail-agent/ci.yml?branch=main&label=CI"></a>
   <a href="https://github.com/YOU-JIE-hub/smart-mail-agent/actions"><img alt="Lint" src="https://img.shields.io/github/actions/workflow/status/YOU-JIE-hub/smart-mail-agent/lint.yml?branch=main&label=lint"></a>
