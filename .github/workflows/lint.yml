@@ -10,14 +10,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 嚴格檢查 src
       - name: Ruff (src)
         uses: astral-sh/ruff-action@v3
         with:
           version: latest
           args: check src
 
-      # 對 tests 友善檢查，不擋 PR
       - name: Ruff (tests, non-blocking)
         uses: astral-sh/ruff-action@v3
         with:
