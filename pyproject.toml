@@ -22,7 +22,7 @@ sma-spamcheck = "smart_mail_agent.cli.sma_spamcheck:main"
 run-action-handler = "run_action_handler:main"
 send-with-attachment = "send_with_attachment:main"
 
-[tool.setuptools]
+
 package-dir = {"" = "src"}
 packages = ["smart_mail_agent"]
 
@@ -40,6 +40,22 @@ extend-exclude = ["tests/**", "scripts/**", "examples/**", "examples/legacy_lowc
 select = ["E","F","I","B","UP"]
 extend-ignore = []
 extend-exclude = ["tests/**", "scripts/**", "examples/**", "examples/legacy_lowcov/**"]
+
+[tool.ruff.format]
+quote-style = "preserve"
+sma-run = "smart_mail_agent.cli.sma_run:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["tests*", "examples*", "examples/legacy_lowcov*", "scripts*"]
+
+[tool.ruff]
+target-version = "py310"
+select = ["E","F","I","B","UP"]
+extend-exclude = ["tests/**","scripts/**","examples/**","examples/legacy_lowcov/**"]
 
 [tool.ruff.format]
 quote-style = "preserve"

@@ -34,3 +34,9 @@ def _ensure_pkg_namespace(name: str, paths: list[pathlib.Path]) -> None:
 
 # 僅在需要時建立 modules 的 namespace（指向 ./modules 與 ./src/modules）
 _ensure_pkg_namespace("modules", [ROOT / "modules", SRC / "modules"])
+
+# ensure src/ on sys.path for local runs
+import os, sys
+src = os.path.join(os.path.dirname(__file__), 'src')
+if os.path.isdir(src) and src not in sys.path:
+    sys.path.insert(0, src)
