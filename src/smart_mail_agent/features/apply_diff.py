@@ -37,9 +37,7 @@ def extract_fields(content: str) -> dict[str, Any]:
     return fields
 
 
-def update_user_info(
-    email: str, content: str, db_path: str = DB_PATH
-) -> dict[str, Any]:
+def update_user_info(email: str, content: str, db_path: str = DB_PATH) -> dict[str, Any]:
     """
     依據信件內容比對與更新使用者資料，若有異動則寫入 diff_log
 
@@ -71,9 +69,7 @@ def update_user_info(
         for key, new_val in new_fields.items():
             if key in old_data and new_val != old_data[key]:
                 changed[key] = {"old": old_data[key], "new": new_val}
-                cursor.execute(
-                    f"UPDATE users SET {key} = ? WHERE email = ?", (new_val, email)
-                )
+                cursor.execute(f"UPDATE users SET {key} = ? WHERE email = ?", (new_val, email))
                 cursor.execute(
                     """
                     INSERT INTO diff_log (email, 欄位, 原值, 新值, created_at)

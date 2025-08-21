@@ -1,5 +1,6 @@
-import re as _re
 from __future__ import annotations
+
+import re as _re
 from pathlib import Path
 from typing import Iterable, Tuple, Any
 import re
@@ -97,6 +98,7 @@ def generate_pdf_quote(*args: Any, **kwargs: Any) -> str:
         lines.append(f"Package: {package}")
     return write_pdf_or_txt(lines, out_dir, "quote")
 
+
 # === BEGIN AI PATCH: choose_package normalizer ===
 
 # 將舊方案名正規化為測試期望名
@@ -108,13 +110,19 @@ _CANON_MAP = {
     "基礎": "標準",
     "標準": "標準",
 }
+
+
 def _normalize_package(_name: str) -> str:
     return _CANON_MAP.get(_name, _name)
 
+
 # (1) 數字 + MB（例如 5MB / 6 mb）
-_MB_RE = _re.compile(r'(\d+(?:\.\d+)?)\s*mb', _re.I)
+_MB_RE = _re.compile(r"(\d+(?:\.\d+)?)\s*mb", _re.I)
 # (2) 關鍵字：附件很大／檔案過大／大附件…等
-_BIG_KW_RE = _re.compile(r"(附件\s*(很|超|過)?大|檔案\s*(太|過|很)大|大附件|附件過大|檔案過大)", _re.I)
+_BIG_KW_RE = _re.compile(
+    r"(附件\s*(很|超|過)?大|檔案\s*(太|過|很)大|大附件|附件過大|檔案過大)", _re.I
+)
+
 
 def _mentions_big_attachment(_text: str) -> bool:
     t = (_text or "").strip()
@@ -131,11 +139,13 @@ def _mentions_big_attachment(_text: str) -> bool:
         return False
     return size >= 5.0
 
+
 # 保存舊的 choose_package，再包一層正規化輸出
 try:
     _choose_package_original = choose_package  # type: ignore[name-defined]
 except Exception:
     _choose_package_original = None  # type: ignore[assignment]
+
 
 def choose_package(*, subject: str, content: str) -> dict:
     """
@@ -156,17 +166,22 @@ def choose_package(*, subject: str, content: str) -> dict:
         needs_manual = True
 
     return {"package": _normalize_package(pkg), "needs_manual": needs_manual}
+
+
 # === END AI PATCH: choose_package normalizer ===
 
 # --- HOTFIX: big-attachment threshold is strict >= 5MB (keep keyword triggers)
 try:
     _BIG_KW_RE
 except NameError:
-    _BIG_KW_RE = _re.compile(r"(附件\s*(很|超|過)?大|檔案\s*(太|過|很)大|大附件|附件過大|檔案過大)", _re.I)
-    _MB_RE = _re.compile(r'(\d+(?:\.\d+)?)\s*mb', _re.I)
+    _BIG_KW_RE = _re.compile(
+        r"(附件\s*(很|超|過)?大|檔案\s*(太|過|很)大|大附件|附件過大|檔案過大)", _re.I
+    )
+    _MB_RE = _re.compile(r"(\d+(?:\.\d+)?)\s*mb", _re.I)
+
 
 def _mentions_big_attachment(_text: str) -> bool:  # type: ignore[override]
-    text = (_text or "")
+    text = _text or ""
     # 關鍵字：一律視為需要人工
     if _BIG_KW_RE.search(text):
         return True
@@ -180,6 +195,7 @@ def _mentions_big_attachment(_text: str) -> bool:  # type: ignore[override]
         return False
     return size >= 5.0
 
+
 # --- HOTFIX: force final routing in choose_package (normalization + big-attachment precedence)
 try:
     _re
@@ -187,11 +203,12 @@ except NameError:
     pass
 
 # 關鍵字：企業整合 / 進階自動化
-_ENTERPRISE_RE = _re.compile(r'\b(erp|sso)\b|整合|單點登入|企業(整合)?', _re.I)
-_AUTOMATION_RE = _re.compile(r'workflow|自動化|流程|審批|表單', _re.I)
+_ENTERPRISE_RE = _re.compile(r"\b(erp|sso)\b|整合|單點登入|企業(整合)?", _re.I)
+_AUTOMATION_RE = _re.compile(r"workflow|自動化|流程|審批|表單", _re.I)
+
 
 def _base_package_from_text(_text: str) -> str:
-    t = (_text or "")
+    t = _text or ""
     # 英文關鍵字用 \b，中文直接匹配
     if _ENTERPRISE_RE.search(t):
         return "企業整合"
@@ -199,11 +216,13 @@ def _base_package_from_text(_text: str) -> str:
         return "進階自動化"
     return "標準"
 
+
 # 保留原實作參考（僅備用）
 try:
     _orig_choose_package = choose_package  # type: ignore[name-defined]
 except Exception:
     _orig_choose_package = None  # pragma: no cover
+
 
 def choose_package(*, subject: str, content: str) -> dict:  # type: ignore[override]
     subj = subject or ""
@@ -220,6 +239,8 @@ def choose_package(*, subject: str, content: str) -> dict:  # type: ignore[overr
     # 3) 標準化舊稱
     pkg = _normalize_package(pkg)
     return {"package": pkg, "needs_manual": False}
+
+
 # --- HOTFIX: backward-compatible choose_package (positional/keyword) + dual naming
 try:
     _re
@@ -229,8 +250,9 @@ except NameError:
 # 正規化 ↔ 舊名對照
 _CANON_TO_LEGACY = {"標準": "基礎", "進階自動化": "專業", "企業整合": "企業"}
 
+
 def _canon_from_text(_text: str) -> str:
-    t = (_text or "")
+    t = _text or ""
     # 大附件優先（>=5MB 或關鍵字）
     if _mentions_big_attachment(t):
         return "標準"
@@ -241,12 +263,13 @@ def _canon_from_text(_text: str) -> str:
         return "進階自動化"
     return "標準"
 
+
 def choose_package(*args, **kwargs):  # overrides previous wrapper
     # 支援：choose_package(subject, content) 與 choose_package(subject=..., content=...)
     legacy_mode = False
     if len(args) >= 2 and not kwargs:
         subject, content = args[0], args[1]
-        legacy_mode = True          # 老測試：回傳舊名稱
+        legacy_mode = True  # 老測試：回傳舊名稱
     else:
         subject = kwargs.get("subject")
         content = kwargs.get("content")
@@ -258,7 +281,7 @@ def choose_package(*args, **kwargs):  # overrides previous wrapper
     canon = _canon_from_text(text)
     needs_manual = bool(_mentions_big_attachment(text))
     if needs_manual:
-        canon = "標準"               # 大附件一律標準 + 需要人工
+        canon = "標準"  # 大附件一律標準 + 需要人工
 
     if legacy_mode:
         # 老預設：沒有任何關鍵字時給「企業」(符合 tests/test_quotation.py)
@@ -268,6 +291,8 @@ def choose_package(*args, **kwargs):  # overrides previous wrapper
         return {"package": pkg, "needs_manual": needs_manual}
     else:
         return {"package": canon, "needs_manual": needs_manual}
+
+
 # --- HOTFIX: pricing keywords route to 基礎/標準, keep legacy default only for truly generic asks
 try:
     _re
@@ -277,8 +302,10 @@ except NameError:
 # 報價/價格 關鍵字
 _PRICING_RE = _re.compile(r"(報價|詢價|價格|價錢|報價單|price|pricing)", _re.I)
 
+
 def _has_pricing(_text: str) -> bool:
     return bool(_PRICING_RE.search(_text or ""))
+
 
 def choose_package(*args, **kwargs):  # final override
     # 支援位置參數和關鍵字參數

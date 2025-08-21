@@ -13,9 +13,7 @@ def get_imap():
     pwd = os.getenv("IMAP_PASS", "").strip()
 
     if not user or not pwd:
-        raise RuntimeError(
-            f"IMAP_USER/IMAP_PASS 缺失（user={bool(user)}, pass_len={len(pwd)})"
-        )
+        raise RuntimeError(f"IMAP_USER/IMAP_PASS 缺失（user={bool(user)}, pass_len={len(pwd)})")
 
     # 開啟 debug 方便看到 LOGIN 是否為兩個參數
     imaplib.Debug = int(os.getenv("IMAP_DEBUG", "0"))

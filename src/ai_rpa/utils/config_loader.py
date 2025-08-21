@@ -13,6 +13,7 @@ DEFAULT_CONFIG = {
     "nlp": {"model": "offline-keyword"},  # 預設離線關鍵詞路徑，避免需下載模型
 }
 
+
 def load_config(path: str | None) -> Dict[str, Any]:
     """
     載入設定檔（YAML），若缺失則回退預設。

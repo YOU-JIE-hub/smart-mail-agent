@@ -9,6 +9,7 @@ try:
 except Exception:
     _impl = None
 
+
 def send_email_with_attachment(*args, **kwargs):
     """
     Shim 層：提供給測試 mock 的同名函式。
@@ -17,6 +18,7 @@ def send_email_with_attachment(*args, **kwargs):
     if _impl and hasattr(_impl, "send_email_with_attachment"):
         return _impl.send_email_with_attachment(*args, **kwargs)
     return True
+
 
 def main(argv: list[str] | None = None) -> int:
     """
@@ -34,6 +36,7 @@ def main(argv: list[str] | None = None) -> int:
     # 關鍵：呼叫「本模組」函式（可被 mock）
     send_email_with_attachment(ns.to, ns.subject, ns.body, ns.file)
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

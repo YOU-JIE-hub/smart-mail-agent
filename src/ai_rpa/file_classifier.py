@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, List
 from ai_rpa.utils.logger import get_logger
+
 log = get_logger("FILECLS")
 
 RULES = {
@@ -12,6 +13,7 @@ RULES = {
     "pdf": {".pdf"},
     "text": {".txt", ".md"},
 }
+
 
 def classify_dir(dir_path: str) -> Dict[str, List[str]]:
     """

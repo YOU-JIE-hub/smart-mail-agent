@@ -43,9 +43,7 @@ def write_classification_result(data: dict, path: str) -> None:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="處理單一信件 JSON，進行 spam 過濾與意圖分類"
-    )
+    parser = argparse.ArgumentParser(description="處理單一信件 JSON，進行 spam 過濾與意圖分類")
     parser.add_argument("--input", required=True, help="輸入 JSON 信件檔案路徑")
     args = parser.parse_args()
     input_path = args.input
@@ -125,9 +123,7 @@ def main():
                 },
             )
             logger.info(f"[Action] 任務執行完成：{label}")
-            write_log(
-                subject, body, sender, label, "success", confidence=confidence_val
-            )
+            write_log(subject, body, sender, label, "success", confidence=confidence_val)
         except Exception as action_err:
             logger.error(f"[Action] 任務執行失敗：{action_err}")
             write_log(
@@ -141,9 +137,7 @@ def main():
 
     except Exception as e:
         logger.error(f"[Pipeline] 處理流程發生例外錯誤：{e}")
-        write_log(
-            subject, body, sender, "Error", f"exception: {str(e)}", confidence=0.0
-        )
+        write_log(subject, body, sender, "Error", f"exception: {str(e)}", confidence=0.0)
 
 
 if __name__ == "__main__":

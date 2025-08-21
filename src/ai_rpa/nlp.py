@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Dict, Any, List
 
 from ai_rpa.utils.logger import get_logger
+
 log = get_logger("NLP")
 
 KEYWORDS = {
@@ -12,6 +13,7 @@ KEYWORDS = {
     "complaint": ["抱怨", "投訴", "不滿"],
     "sales": ["報價", "合作", "詢價"],
 }
+
 
 def analyze_text(texts: List[str], model: str = "offline-keyword") -> Dict[str, Any]:
     """

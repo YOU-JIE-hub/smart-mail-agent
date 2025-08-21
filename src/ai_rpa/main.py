@@ -14,6 +14,7 @@ from ai_rpa.actions import write_json
 
 log = get_logger("CLI")
 
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="AI+RPA pipeline")
     p.add_argument("--config", default="configs/ai_rpa_config.yaml")
@@ -24,6 +25,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--log-level", default="INFO")
     p.add_argument("--dry-run", action="store_true")
     return p.parse_args()
+
 
 def main() -> int:
     args = parse_args()
@@ -36,7 +38,7 @@ def main() -> int:
         inp_dir = getattr(args, "input_path", getattr(args, "input", "."))
 
         ocr_in = f"{inp_dir}/sample.jpg"
-# 僅示範：若找不到檔案則回傳空文字
+        # 僅示範：若找不到檔案則回傳空文字
         try:
             res = run_ocr(ocr_in)
             out["steps"].append({"ocr": res})
@@ -66,7 +68,9 @@ def main() -> int:
             if "scrape" in step:
                 texts.extend([x["text"] for x in step["scrape"]])
         try:
-            out["steps"].append({"nlp": analyze_text(texts, cfg.get("nlp", {}).get("model", "offline-keyword"))})
+            out["steps"].append(
+                {"nlp": analyze_text(texts, cfg.get("nlp", {}).get("model", "offline-keyword"))}
+            )
         except Exception as e:
             out["errors"].append({"nlp": str(e)})
 
@@ -74,6 +78,7 @@ def main() -> int:
     if "actions" in tasks and not args.dry_run:
         write_json(out, cfg["output_path"])
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -8,6 +8,7 @@ from smart_mail_agent.ingestion.init_db import (
     init_processed_mails_db,
     main as _impl_main,
 )
+
 __all__ = [
     "ensure_dir",
     "init_users_db",
@@ -16,7 +17,11 @@ __all__ = [
     "init_processed_mails_db",
     "main",
 ]
+
+
 def main() -> None:
     _impl_main()
+
+
 if __name__ == "__main__":
     main()

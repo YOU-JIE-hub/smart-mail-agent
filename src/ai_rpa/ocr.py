@@ -5,13 +5,16 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, Any
 from PIL import Image
+
 try:
     import pytesseract  # type: ignore
 except Exception:  # pragma: no cover
     pytesseract = None  # type: ignore
 
 from ai_rpa.utils.logger import get_logger
+
 log = get_logger("OCR")
+
 
 def run_ocr(image_path: str) -> Dict[str, Any]:
     """

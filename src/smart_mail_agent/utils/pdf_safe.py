@@ -65,9 +65,7 @@ def _write_minimal_pdf(lines: Iterable[str], out_path: str | Path) -> Path:
     pdf.append(f"4 0 obj<</Length {length}>>stream\n".encode("ascii"))
     pdf.append(stream)
     pdf.append(b"\nendstream\nendobj\n")
-    pdf.append(
-        b"5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica/Name/F1>>endobj\n"
-    )
+    pdf.append(b"5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica/Name/F1>>endobj\n")
     # 減到最小；測試只會驗 header/存在性，不解析 xref
     pdf.append(b"xref\n0 0\ntrailer<</Size 6/Root 1 0 R>>\nstartxref\n0\n%%EOF\n")
 

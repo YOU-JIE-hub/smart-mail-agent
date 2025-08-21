@@ -51,8 +51,10 @@ def _normalize_model_out(x: Any) -> Tuple[Optional[float], Optional[str]]:
     if isinstance(x, dict):
         lab = x.get("label")
         sc = x.get("score")
-        return (float(sc) if isinstance(sc, (int, float)) else None,
-                lab.lower() if isinstance(lab, str) else None)
+        return (
+            float(sc) if isinstance(sc, (int, float)) else None,
+            lab.lower() if isinstance(lab, str) else None,
+        )
     if isinstance(x, list) and x:
         # 重要修正：對 list[dict]，若元素含 label 與 score，要**保留標籤**。
         best_score: Optional[float] = None
@@ -79,7 +81,9 @@ def _normalize_model_out(x: Any) -> Tuple[Optional[float], Optional[str]]:
     return None, None
 
 
-def _invoke_model_variants(model: Callable[..., Any], subject: str, content: str) -> List[Tuple[Optional[float], Optional[str]]]:
+def _invoke_model_variants(
+    model: Callable[..., Any], subject: str, content: str
+) -> List[Tuple[Optional[float], Optional[str]]]:
     """
     兼容 2 參數與 1 參數模型；先試 (subject, content) 再試 (subject)。
     """
@@ -102,7 +106,9 @@ class SpamFilterOrchestratorOffline:
     def __init__(self, thresholds: Optional[Thresholds] = None) -> None:
         self.thresholds = thresholds or Thresholds()
 
-    def decide(self, subject: str, html_or_text: str, *, model: str | None = None) -> Dict[str, Any]:
+    def decide(
+        self, subject: str, html_or_text: str, *, model: str | None = None
+    ) -> Dict[str, Any]:
         text_all = f"{subject or ''}\n{html_or_text or ''}"
 
         reasons: list[str] = []
@@ -195,8 +201,11 @@ def orchestrate(
                 ham_items = [v for v in variants if v[1] == "ham"]
                 if ham_items:
                     return OrchestrationResult(
-                        is_spam=False, score=ham_items[0][0], source="model",
-                        action="route_to_inbox", is_borderline=False
+                        is_spam=False,
+                        score=ham_items[0][0],
+                        source="model",
+                        action="route_to_inbox",
+                        is_borderline=False,
                     )
                 # 再看 spam（有標籤才走這條）
                 spam_items = [v for v in variants if v[1] == "spam"]
@@ -204,19 +213,27 @@ def orchestrate(
                     sc = spam_items[0][0]
                     if sc is None:
                         return OrchestrationResult(
-                            is_spam=True, score=None, source="model",
-                            action="drop", is_borderline=False
+                            is_spam=True,
+                            score=None,
+                            source="model",
+                            action="drop",
+                            is_borderline=False,
                         )
                     if sc < model_threshold - eps:
                         return OrchestrationResult(
-                            is_spam=False, score=sc, source="model",
-                            action="route_to_inbox", is_borderline=False
+                            is_spam=False,
+                            score=sc,
+                            source="model",
+                            action="route_to_inbox",
+                            is_borderline=False,
                         )
                     is_borderline = abs(sc - model_threshold) < eps
                     return OrchestrationResult(
-                        is_spam=True, score=sc, source="model",
+                        is_spam=True,
+                        score=sc,
+                        source="model",
                         action=("review" if is_borderline else "drop"),
-                        is_borderline=is_borderline
+                        is_borderline=is_borderline,
                     )
                 # 僅分數
                 scores = [v[0] for v in variants if v[0] is not None]
@@ -225,27 +242,41 @@ def orchestrate(
                     is_borderline = abs(sc - model_threshold) < eps
                     is_spam = sc >= model_threshold
                     return OrchestrationResult(
-                        is_spam=is_spam, score=sc, source="model",
-                        action=("review" if (is_spam and is_borderline)
-                               else ("drop" if is_spam else "route_to_inbox")),
-                        is_borderline=is_borderline
+                        is_spam=is_spam,
+                        score=sc,
+                        source="model",
+                        action=(
+                            "review"
+                            if (is_spam and is_borderline)
+                            else ("drop" if is_spam else "route_to_inbox")
+                        ),
+                        is_borderline=is_borderline,
                     )
                 # 全不可判 -> ham
                 return OrchestrationResult(
-                    is_spam=False, score=None, source="model",
-                    action="route_to_inbox", is_borderline=False
+                    is_spam=False,
+                    score=None,
+                    source="model",
+                    action="route_to_inbox",
+                    is_borderline=False,
                 )
             # 模型完全呼叫不上
             return OrchestrationResult(
-                is_spam=False, score=None, source="fallback",
-                action="route_to_inbox", is_borderline=False,
-                extra={"model_error": "model could not be invoked"}
+                is_spam=False,
+                score=None,
+                source="fallback",
+                action="route_to_inbox",
+                is_borderline=False,
+                extra={"model_error": "model could not be invoked"},
             )
         except Exception as e:
             return OrchestrationResult(
-                is_spam=False, score=None, source="fallback",
-                action="route_to_inbox", is_borderline=False,
-                extra={"model_error": str(e)}
+                is_spam=False,
+                score=None,
+                source="fallback",
+                action="route_to_inbox",
+                is_borderline=False,
+                extra={"model_error": str(e)},
             )
 
     return OrchestrationResult(
@@ -255,6 +286,7 @@ def orchestrate(
 
 def _main() -> int:
     import argparse
+
     p = argparse.ArgumentParser()
     p.add_argument("--subject", required=True)
     p.add_argument("--content", default="")

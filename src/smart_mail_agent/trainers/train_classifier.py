@@ -69,9 +69,7 @@ args = TrainingArguments(
 )
 
 # Trainer
-trainer = Trainer(
-    model=model, args=args, train_dataset=encoded_dataset, tokenizer=tokenizer
-)
+trainer = Trainer(model=model, args=args, train_dataset=encoded_dataset, tokenizer=tokenizer)
 
 # 開始訓練
 trainer.train()  # type: ignore[attr-defined]

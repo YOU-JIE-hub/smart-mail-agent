@@ -61,9 +61,7 @@ startxref
 """
 
 
-def generate_pdf_quote(
-    package: str, client_name: str, out_dir: str = "data/output"
-) -> str:
+def generate_pdf_quote(package: str, client_name: str, out_dir: str = "data/output") -> str:
     """
     產生報價 PDF；若沒有任何 PDF 引擎，寫入最小 PDF 後援，副檔名固定為 .pdf。
     """
