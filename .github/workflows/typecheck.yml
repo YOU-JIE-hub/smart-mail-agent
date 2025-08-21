@@ -3,7 +3,6 @@ on:
   push:
     branches: ['**']
   pull_request:
-
 jobs:
   mypy:
     runs-on: ubuntu-latest
@@ -12,14 +11,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-
-      - name: Install mypy & deps
+      - name: Install mypy + stubs
         run: |
           python -m pip install --upgrade pip
-          pip install mypy
-          pip install -r requirements.txt || true
-
-      - name: Run mypy (src & tests)
-        run: |
-          mypy --version
-          mypy src tests --config-file mypy.ini --install-types --non-interactive
+          pip install mypy types-PyYAML types-requests types-Pillow
+      - name: Run mypy
+        run: mypy --config-file mypy.ini
