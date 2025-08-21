@@ -1,10 +1,6 @@
 target-version = "py310"
 line-length = 100
 force-exclude = true
-extend-exclude = [
-    "examples/**","tests/**","modules/**","scripts/**","tools/**","bin/**",
-    "assets/**","site/**","data/**","out/**","sitecustomize.py","init_db.py",
-]
 [lint]
 select = ["E","F"]
-extend-ignore = ["E501","E401","E402","E701","E702","F403","F401"]
+ignore = ["E501"]
