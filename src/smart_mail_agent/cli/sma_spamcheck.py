@@ -1,50 +1,49 @@
 #!/usr/bin/env python3
+# 檔案位置: src/smart_mail_agent/cli/sma_spamcheck.py
+# 模組用途: 輕量關鍵詞式 Spam Score CLI（維持舊介面：_score, build_parser, main）
 from __future__ import annotations
+
 import argparse
-import json
-import os
 import re
 from typing import List, Tuple
 
-_SPAM_WORDS = re.compile(r"\b(free|viagra|bonus|limited\s*offer)\b", re.I)
-_ZH_SPAM_WORDS = re.compile(r"(限時|優惠|免費|加碼)", re.I)
-_SHORTLINK  = re.compile(r"(bit\.ly|t\.co|tinyurl\.com|goo\.gl|is\.gd|ow\.ly|t\.ly|cut\.ly)", re.I)
-_MONEY      = re.compile(r"(\$|\d+\s?(usd|美元|台幣|twd))", re.I)
+_SPAM_WORDS = re.compile(r"(free money|lottery|prize|winner|claim now|bitcoin|usdt)", re.I)
+_ZH_SPAM_WORDS = re.compile(r"(免費|中獎|贏家|點此|限時|比特幣|USDT|投資|博弈)")
+_SHORTLINK = re.compile(r"(bit\.ly|goo\.gl|t\.co|tinyurl\.com)", re.I)
+_MONEY = re.compile(r"(\$|USD|NT\$|NTD|\d{1,3}(,\d{3})+)")
 
-def _score(subject: str, content: str, sender: str) -> Tuple[float, List[str]]:
-    text = f"{subject or ''} {content or ''}".strip()
-    if not text:
-        return 0.0, ["empty"]
-    score = 0.0
+def _score(text: str) -> Tuple[float, List[str]]:
     explain: List[str] = []
+    score = 0.0
     if _SPAM_WORDS.search(text):
-        score += 0.6; explain.append("spam_words")
+        score += 0.6
+        explain.append("spam_words")
     if _ZH_SPAM_WORDS.search(text):
-        score += 0.6; explain.append("zh_keywords")
+        score += 0.6
+        explain.append("zh_keywords")
     if _SHORTLINK.search(text):
-        score += 0.4; explain.append("shortlink")
+        score += 0.4
+        explain.append("shortlink")
     if _MONEY.search(text):
-        score += 0.4; explain.append("money")
-    if score > 0.98:  # cap to make --threshold 0.99 work
+        score += 0.4
+        explain.append("money")
+    if score > 0.98:
         score = 0.98
     return score, explain
 
-def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--subject", required=True)
-    ap.add_argument("--content", required=True)
-    ap.add_argument("--sender", default="")
-    ap.add_argument("--threshold", type=float, default=float(os.getenv("SMA_SPAM_THRESHOLD", "0.8")))
-    ap.add_argument("--explain", action="store_true")
-    args = ap.parse_args()
+def build_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(description="Lightweight spam score checker")
+    p.add_argument("--subject", required=True)
+    p.add_argument("--content", required=True)
+    p.add_argument("--threshold", type=float, default=0.8)
+    return p
 
-    sc, reasons = _score(args.subject, args.content, args.sender)
-    is_spam = sc >= args.threshold
-    out = {"is_spam": bool(is_spam), "score": round(sc, 2)}
-    if args.explain:
-        out["explain"] = reasons
-    print(json.dumps(out, ensure_ascii=False))
-    return 0
+def main() -> int:
+    args = build_parser().parse_args()
+    text = f"{args.subject}\n{args.content}"
+    score, explain = _score(text)
+    print(f"score={score:.2f} tags={','.join(explain)}")
+    return 0 if score < args.threshold else 1
 
 if __name__ == "__main__":
     raise SystemExit(main())
