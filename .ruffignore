@@ -1,1 +1,4 @@
+tests/**
+scripts/**
+examples/**
 examples/legacy_lowcov/**
