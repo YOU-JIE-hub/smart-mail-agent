@@ -1,10 +1,36 @@
-
+# Ruff config (focused on core code)
 target-version = "py310"
 line-length = 100
-extend-select = ["E","F","I"]
-extend-ignore = ["E501"]
-exclude = [
-  "site",
-  "reports",
-  "data/output",
+force-exclude = true
+extend-exclude = [
+    "examples/**",
+    "tests/**",
+    "modules/**",
+    "scripts/**",
+    "tools/**",
+    "bin/**",
+    "assets/**",
+    "site/**",
+    "data/**",
+    "out/**",
+    "sitecustomize.py",
+    "init_db.py",
 ]
+
+[lint]
+# 僅檢查 E/F（語法/錯誤類），不做 import-sorting（避免 I001）
+select = ["E", "F"]
+# 容忍幾個我們在專案中刻意允許的 pattern（多行短寫、星號匯入 shim 等）
+extend-ignore = [
+    "E401",  # multiple imports on one line
+    "E402",  # module level import not at top of file
+    "E701",  # multiple statements on one line (colon)
+    "E702",  # multiple statements on one line (semicolon)
+    "F401",  # imported but unused（在 shim/重導檔常見）
+    "F403",  # import *（shim 會用）
+    "F821",  # undefined name（部分範例程式不跑）
+    "F841",  # assigned but never used（規則檔中的暫存變數）
+]
+
+[format]
+quote-style = "preserve"
