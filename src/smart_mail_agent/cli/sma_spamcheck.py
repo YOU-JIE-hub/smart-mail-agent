@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # 檔案位置: src/smart_mail_agent/cli/sma_spamcheck.py
-# 模組用途: 輕量關鍵詞式 Spam Score CLI（維持舊介面：_score, build_parser, main）
 from __future__ import annotations
 
 import argparse

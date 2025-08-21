@@ -184,6 +184,7 @@ def _mentions_big_attachment(_text: str) -> bool:  # type: ignore[override]
 try:
     _re
 except NameError:
+    pass
 
 # 關鍵字：企業整合 / 進階自動化
 _ENTERPRISE_RE = _re.compile(r'\b(erp|sso)\b|整合|單點登入|企業(整合)?', _re.I)
@@ -223,6 +224,7 @@ def choose_package(*, subject: str, content: str) -> dict:  # type: ignore[overr
 try:
     _re
 except NameError:
+    pass
 
 # 正規化 ↔ 舊名對照
 _CANON_TO_LEGACY = {"標準": "基礎", "進階自動化": "專業", "企業整合": "企業"}
@@ -270,6 +272,7 @@ def choose_package(*args, **kwargs):  # overrides previous wrapper
 try:
     _re
 except NameError:
+    pass
 
 # 報價/價格 關鍵字
 _PRICING_RE = _re.compile(r"(報價|詢價|價格|價錢|報價單|price|pricing)", _re.I)
