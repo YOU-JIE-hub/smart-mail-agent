@@ -1,6 +1,10 @@
 from __future__ import annotations
 from pathlib import Path
-import tempfile, runpy, sys, pathlib, importlib
+import tempfile
+import runpy
+import sys
+import pathlib
+import importlib
 import smart_mail_agent.utils.pdf_safe as pdf_safe
 
 tmpdir = Path(tempfile.mkdtemp())

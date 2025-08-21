@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, json, os, re
+import argparse
+import json
+import os
+import re
 from typing import List, Tuple
 
 _SPAM_WORDS = re.compile(r"\b(free|viagra|bonus|limited\s*offer)\b", re.I)

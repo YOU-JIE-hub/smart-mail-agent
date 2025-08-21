@@ -1,5 +1,4 @@
 import importlib
-import itertools
 
 qmod = importlib.import_module("modules.quotation")
 choose_package = qmod.choose_package

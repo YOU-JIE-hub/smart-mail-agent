@@ -1,6 +1,7 @@
 from __future__ import annotations
 from pathlib import Path
-import runpy, sys
+import runpy
+import sys
 import smart_mail_agent.utils.pdf_safe as pdf_safe
 
 def test_cli_main_runs(tmp_path):

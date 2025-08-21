@@ -1,11 +1,14 @@
 [build-system]
-requires = ["setuptools>=65", "wheel"]
+requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "smart_mail_agent"
-version = "0.0.0"
+name = "smart-mail-agent"
+version = "0.3.1"
+description = "Smart Mail Agent: AI + RPA email automation (clean src-layout)"
+readme = "README.md"
 requires-python = ">=3.10"
+license = { text = "MIT" }
 dependencies = [
   "pydantic>=1.10,<3",
   "python-dotenv>=1.0",
@@ -13,22 +16,27 @@ dependencies = [
   "reportlab>=3.6,<4",
 ]
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[project.scripts]
+sma = "smart_mail_agent.cli.sma:main"
+sma-spamcheck = "smart_mail_agent.cli.sma_spamcheck:main"
+run-action-handler = "run_action_handler:main"
+send-with-attachment = "send_with_attachment:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["smart_mail_agent"]
+
 [tool.ruff]
 target-version = "py310"
-line-length = 100
-exclude = ["dist", "build", ".venv", "tests/fixtures", "share", ".local-logs"]
 
 [tool.ruff.lint]
 select = ["E","F","I","B","UP"]
-ignore = ["E402"]  # allow top-level imports in scripts
+extend-ignore = []
 
-[tool.mypy]
-python_version = "3.10"
-warn_unused_configs = true
-ignore_missing_imports = true
-disallow_untyped_defs = false
-no_site_packages = true
-exclude = '(^dist/|^build/|^\\\.venv/|^share/|^tests/fixtures)'
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["E401","E402","E701","E702","F811"]
+"examples/**/*.py" = ["E402","F401","F403"]
+"scripts/**/*.py" = ["E401","E402","E701","E702"]
 
+[tool.ruff.format]
+quote-style = "preserve"

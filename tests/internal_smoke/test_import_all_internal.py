@@ -31,7 +31,8 @@ for finder in pkgutil.walk_packages([str(BASE)], prefix=f"{PKG}."):
 def test_import_module(mod: str) -> None:
     importlib.import_module(mod)
 
-import os, pytest
+import os
+import pytest
 @pytest.mark.parametrize("mod", [m for m in mods if not (os.getenv("OFFLINE") == "1" and m=="skip_mod")])
 def test_import_module(mod: str) -> None:
     import importlib; importlib.import_module(mod)
@@ -44,7 +45,8 @@ mods = [
     "smart_mail_agent.routing.action_handler",
 ]
 
-import os, pytest
+import os
+import pytest
 @pytest.mark.parametrize("mod", [m for m in mods if not (os.getenv("OFFLINE") == "1" and m=="skip_mod")])
 def test_import_module(mod: str) -> None:
     import importlib; importlib.import_module(mod)

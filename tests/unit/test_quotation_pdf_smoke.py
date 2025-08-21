@@ -1,4 +1,5 @@
-import importlib, inspect
+import importlib
+import inspect
 from pathlib import Path
 
 def _fill_for(sig, out_path):

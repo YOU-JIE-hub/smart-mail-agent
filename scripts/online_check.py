@@ -1,5 +1,6 @@
 from __future__ import annotations
-import os, smtplib
+import os
+import smtplib
 from email.message import EmailMessage
 
 __all__ = ["main", "smtplib"]
