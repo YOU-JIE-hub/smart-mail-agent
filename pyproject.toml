@@ -36,15 +36,17 @@ ignore = []
 extend-exclude = ["tests/**", "scripts/**", "examples/**", "examples/legacy_lowcov/**"]
 
 # 新版節點
-[tool.ruff.lint]
-select = ["E","F","I","B","UP"]
-extend-ignore = []
-extend-exclude = ["tests/**", "scripts/**", "examples/**", "examples/legacy_lowcov/**"]
-
-[tool.ruff.format]
-quote-style = "preserve"
-sma-run = "smart_mail_agent.cli.sma_run:main"
-
+# --- commented duplicate [tool.ruff] block ---
+#[tool.ruff.lint]
+#select = ["E","F","I","B","UP"]
+#extend-ignore = []
+#extend-exclude = ["tests/**", "scripts/**", "examples/**", "examples/legacy_lowcov/**"]
+#
+# --- commented duplicate [tool.ruff] block ---
+#[tool.ruff.format]
+#quote-style = "preserve"
+#sma-run = "smart_mail_agent.cli.sma_run:main"
+#
 [tool.setuptools]
 package-dir = {"" = "src"}
 
@@ -52,10 +54,12 @@ package-dir = {"" = "src"}
 where = ["src"]
 exclude = ["tests*", "examples*", "examples/legacy_lowcov*", "scripts*"]
 
-[tool.ruff]
-target-version = "py310"
-select = ["E","F","I","B","UP"]
-extend-exclude = ["tests/**","scripts/**","examples/**","examples/legacy_lowcov/**"]
-
-[tool.ruff.format]
-quote-style = "preserve"
+# --- commented duplicate [tool.ruff] block ---
+#[tool.ruff]
+#target-version = "py310"
+#select = ["E","F","I","B","UP"]
+#extend-exclude = ["tests/**","scripts/**","examples/**","examples/legacy_lowcov/**"]
+#
+# --- commented duplicate [tool.ruff] block ---
+#[tool.ruff.format]
+#quote-style = "preserve"
