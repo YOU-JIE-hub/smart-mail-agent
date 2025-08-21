@@ -1,4 +1,6 @@
 ![type](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/typecheck.yml/badge.svg)
+![tag](https://img.shields.io/github/v/tag/YOU-JIE-hub/smart-mail-agent?sort=semver)
+![release](https://img.shields.io/github/v/release/YOU-JIE-hub/smart-mail-agent?include_prereleases)
 ![lint](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/lint.yml/badge.svg)
 <p align="left">
   <a href="https://github.com/YOU-JIE-hub/smart-mail-agent/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/YOU-JIE-hub/smart-mail-agent/ci.yml?branch=main&label=CI"></a>
