@@ -18,7 +18,7 @@ jobs:
 
       - name: Ruff (tests, non-blocking)
         uses: astral-sh/ruff-action@v3
+        continue-on-error: true
         with:
           version: latest
           args: check tests
-        continue-on-error: true
