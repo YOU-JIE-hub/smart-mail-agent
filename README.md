@@ -1,7 +1,7 @@
 <p align="left">
-  <a href="https://github.com/YOU-JIE-hub/smart-mail-agent/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/YOU-JIE-hub/smart-mail-agent/tests.yml?branch=hardening/pro-release-20250821-060514&label=CI"></a>
-  <a href="https://github.com/YOU-JIE-hub/smart-mail-agent/actions"><img alt="Lint" src="https://img.shields.io/github/actions/workflow/status/YOU-JIE-hub/smart-mail-agent/lint.yml?branch=hardening/pro-release-20250821-060514&label=lint"></a>
-  <a href="https://github.com/YOU-JIE-hub/smart-mail-agent/actions"><img alt="Type Check" src="https://img.shields.io/github/actions/workflow/status/YOU-JIE-hub/smart-mail-agent/typecheck.yml?branch=hardening/pro-release-20250821-060514&label=type"></a>
+  <a href="https://github.com/YOU-JIE-hub/smart-mail-agent/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/YOU-JIE-hub/smart-mail-agent/tests.yml?branch=chore/final-canonicalize-and-shims-20250822T030252&label=CI"></a>
+  <a href="https://github.com/YOU-JIE-hub/smart-mail-agent/actions"><img alt="Lint" src="https://img.shields.io/github/actions/workflow/status/YOU-JIE-hub/smart-mail-agent/lint.yml?branch=chore/final-canonicalize-and-shims-20250822T030252&label=lint"></a>
+  <a href="https://github.com/YOU-JIE-hub/smart-mail-agent/actions"><img alt="Type Check" src="https://img.shields.io/github/actions/workflow/status/YOU-JIE-hub/smart-mail-agent/typecheck.yml?branch=chore/final-canonicalize-and-shims-20250822T030252&label=type"></a>
   <a href="badges/coverage.svg"><img alt="Coverage" src="badges/coverage.svg"></a>
   <a href="https://github.com/YOU-JIE-hub/smart-mail-agent/releases"><img alt="Release" src="https://img.shields.io/github/v/tag/YOU-JIE-hub/smart-mail-agent"></a>
 </p>
