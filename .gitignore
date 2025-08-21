@@ -103,3 +103,6 @@ share/
 /quote.pdf
 /quote_pdf.pdf
 /.local-logs/*
+# local ops helpers (ignored)
+scripts/housekeeping.sh
+bin/sma-housekeeping
