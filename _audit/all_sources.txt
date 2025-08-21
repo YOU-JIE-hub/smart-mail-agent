@@ -398,6 +398,10 @@ from smart_mail_agent.features.modules_legacy import *  # noqa: F401,F403
 from smart_mail_agent.patches import *  # noqa: F401,F403
 
 
+===== FILE: src/patches/handle_safe_patch.py =====
+from smart_mail_agent.patches.handle_safe_patch import *  # noqa: F401,F403
+
+
 ===== FILE: src/run_action_handler.py =====
 from __future__ import annotations
 import importlib as _im
@@ -5415,6 +5419,10 @@ def check_attachments(names: Iterable[str]) -> tuple[bool, str]:
 from smart_mail_agent.spam import *  # noqa: F401,F403
 
 
+===== FILE: src/spam/spam_filter_orchestrator.py =====
+from smart_mail_agent.spam.spam_filter_orchestrator import *  # noqa: F401,F403
+
+
 ===== FILE: src/stats_collector.py =====
 from __future__ import annotations
 import importlib as _im
@@ -5429,3 +5437,19 @@ del _im, _mod
 
 ===== FILE: src/utils/__init__.py =====
 from smart_mail_agent.utils import *  # noqa: F401,F403
+
+
+===== FILE: src/utils/log_writer.py =====
+from smart_mail_agent.observability.log_writer import *  # noqa: F401,F403
+
+
+===== FILE: src/utils/logger.py =====
+from smart_mail_agent.utils.logger import *  # noqa: F401,F403
+
+
+===== FILE: src/utils/mailer.py =====
+from smart_mail_agent.utils.mailer import *  # noqa: F401,F403
+
+
+===== FILE: src/utils/pdf_safe.py =====
+from smart_mail_agent.utils.pdf_safe import *  # noqa: F401,F403
