@@ -89,9 +89,7 @@ def _addr_book() -> dict[str, str]:
     return {
         "from": os.getenv("SMTP_FROM", "noreply@example.com"),
         "reply_to": os.getenv("REPLY_TO", "service@example.com"),
-        "sales": os.getenv(
-            "SALES_EMAIL", os.getenv("SMTP_FROM", "noreply@example.com")
-        ),
+        "sales": os.getenv("SALES_EMAIL", os.getenv("SMTP_FROM", "noreply@example.com")),
     }
 
 
@@ -99,9 +97,7 @@ def _offline() -> bool:
     return os.getenv("OFFLINE", "1") == "1"
 
 
-def _send(
-    to_addr: str, subject: str, body: str, attachments: list[str] | None = None
-) -> Any:
+def _send(to_addr: str, subject: str, body: str, attachments: list[str] | None = None) -> Any:
     """相容新版與舊版 mailer 簽名；OFFLINE 直接回成功。"""
     if _offline():
         return {
@@ -114,7 +110,9 @@ def _send(
     # 優先嘗試新版（recipient/body_html/attachment_path）
     try:
         first_path = (attachments or [None])[0]
-        return send_email_with_attachment(recipient=to_addr, subject=subject, body_html=body, attachment_path=first_path)  # type: ignore
+        return send_email_with_attachment(
+            recipient=to_addr, subject=subject, body_html=body, attachment_path=first_path
+        )  # type: ignore
     except TypeError:
         # 回退到舊版（to_addr/body/attachments）
         return send_email_with_attachment(to_addr, subject, body, attachments=attachments or [])  # type: ignore
@@ -262,9 +260,7 @@ def route_action(label: str, payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Action Handler：依分類結果執行後續動作"
-    )
+    parser = argparse.ArgumentParser(description="Action Handler：依分類結果執行後續動作")
     parser.add_argument("--input", type=str, default="data/output/classify_result.json")
     parser.add_argument("--output", type=str, default="data/output/action_result.json")
     args = parser.parse_args()
@@ -285,9 +281,7 @@ def main() -> None:
 
     out_path = Path(args.output)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(
-        json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    out_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     logger.info("處理完成：%s", out_path)
 
 

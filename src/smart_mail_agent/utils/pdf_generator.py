@@ -19,9 +19,7 @@ from utils.logger import logger
 load_dotenv()
 
 # 讀取字型路徑
-FONT_PATH = os.getenv(
-    "QUOTE_FONT_PATH", "/usr/share/fonts/truetype/noto/NotoSansTC-Regular.otf"
-)
+FONT_PATH = os.getenv("QUOTE_FONT_PATH", "/usr/share/fonts/truetype/noto/NotoSansTC-Regular.otf")
 
 try:
     if not os.path.exists(FONT_PATH):
@@ -74,18 +72,14 @@ def generate_info_change_pdf(info_dict: dict, save_path: str):
 
         # 系統資訊
         c.setFont(FONT_NAME, 11)
-        c.drawString(
-            margin, y, f"異動提交時間：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        )
+        c.drawString(margin, y, f"異動提交時間：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         y -= line_height
         c.drawString(margin, y, "系統產出：Smart-Mail-Agent")
         y -= line_height * 2
 
         # 備註
         c.setFont(FONT_NAME, 10)
-        c.drawString(
-            margin, y, "※ 此紀錄由系統自動產生，若資訊有誤請回覆本信通知更正。"
-        )
+        c.drawString(margin, y, "※ 此紀錄由系統自動產生，若資訊有誤請回覆本信通知更正。")
 
         c.save()
         logger.info("[PDFGenerator] PDF 已產出：%s", save_path)

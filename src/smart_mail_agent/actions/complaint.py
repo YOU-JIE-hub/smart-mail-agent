@@ -48,9 +48,7 @@ def _sla_priority(severity: str) -> tuple[str, str]:
     return ("3d", "P3")
 
 
-def execute(
-    request: dict[str, Any], context: dict[str, Any] | None = None
-) -> dict[str, Any]:
+def execute(request: dict[str, Any], context: dict[str, Any] | None = None) -> dict[str, Any]:
     subject = str(request.get("subject") or "")
     body = str(request.get("body") or "")
     sev = _severity(subject + "\n" + body)

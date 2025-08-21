@@ -18,9 +18,18 @@ _CACHE: Dict[str, Any] = {"mtime": None, "rules": None}
 DEFAULT_RULES: Dict[str, Any] = {
     "keywords": {
         # 英文
-        "FREE": 2, "bonus": 2, "viagra": 3, "get rich quick": 3, "limited offer": 2,
+        "FREE": 2,
+        "bonus": 2,
+        "viagra": 3,
+        "get rich quick": 3,
+        "limited offer": 2,
         # 中文（常見垃圾詞）
-        "免費": 3, "限時優惠": 3, "中獎": 3, "立即下單": 2, "折扣": 2, "點此連結": 2,
+        "免費": 3,
+        "限時優惠": 3,
+        "中獎": 3,
+        "立即下單": 2,
+        "折扣": 2,
+        "點此連結": 2,
     },
     "suspicious_domains": ["bit.ly", "tinyurl.com", "t.co", "goo.gl"],
     "suspicious_tlds": ["tk", "top", "xyz"],
@@ -40,6 +49,7 @@ DEFAULT_RULES: Dict[str, Any] = {
     "link_ratio_thresholds": {"review": 0.30, "drop": 0.50},
 }
 
+
 def _read_yaml(path: Union[str, Path]) -> Dict[str, Any]:
     if not yaml:
         return {}
@@ -50,6 +60,7 @@ def _read_yaml(path: Union[str, Path]) -> Dict[str, Any]:
         return yaml.safe_load(p.read_text(encoding="utf-8")) or {}
     except Exception:
         return {}
+
 
 def _deep_merge_rules(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
     out = dict(base)
@@ -62,6 +73,7 @@ def _deep_merge_rules(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[st
             out[k] = v
     return out
 
+
 def _load_rules() -> Dict[str, Any]:
     path = Path(CONF_PATH)
     mtime = path.stat().st_mtime if path.exists() else None
@@ -73,12 +85,15 @@ def _load_rules() -> Dict[str, Any]:
     _CACHE["rules"] = rules
     return rules
 
+
 # ================= 基礎工具 =================
 def _nfkc(s: str) -> str:
     return unicodedata.normalize("NFKC", s or "")
 
+
 def _is_ascii_word(w: str) -> bool:
     return bool(re.fullmatch(r"[A-Za-z0-9_]+", w))
+
 
 def contains_keywords(
     text: str,
@@ -112,11 +127,14 @@ def contains_keywords(
                 return True
     return False
 
+
 # 抽 URL（簡易）
 _RE_URL = re.compile(r"(https?://|www\.)[^\s<>\)\"']{1,256}", re.IGNORECASE)
 
+
 def extract_urls(text: str) -> List[str]:
     return [m.group(0) for m in _RE_URL.finditer(text or "")]
+
 
 # ================= link ratio =================
 _RE_TAG = re.compile(r"<[^>]+>")
@@ -132,8 +150,10 @@ _RE_A_HREF = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 
+
 def _strip_ws(s: str) -> str:
     return _RE_WS.sub("", s or "")
+
 
 def _remove_hidden(s: str) -> str:
     prev = None
@@ -143,6 +163,7 @@ def _remove_hidden(s: str) -> str:
         prev = cur
         cur = _RE_HIDDEN_BLOCK.sub("", cur)
     return cur
+
 
 def link_ratio(html_or_text: str) -> float:
     """
@@ -176,15 +197,18 @@ def link_ratio(html_or_text: str) -> float:
     r = max(0.0, min(1.0 - 1e-6, r))
     return float(r)
 
+
 # ================= 附件風險 =================
 def _is_danger_ext(name: str, bad_exts: Sequence[str]) -> bool:
     n = (name or "").lower()
     return any(n.endswith(ext.lower()) for ext in bad_exts)
 
+
 def _has_double_ext(name: str) -> bool:
     n = (name or "").lower()
     parts = n.split(".")
     return len(parts) >= 3 and all(p for p in parts[-3:])
+
 
 # ================= 訊號收集/打分 =================
 @dataclass
@@ -196,17 +220,19 @@ class Features:
     link_ratio_val: float = 0.0
     url_count: int = 0
 
+
 def _domain_from_url(u: str) -> str:
     m = re.search(r"^(?:https?://)?([^/]+)", u, re.IGNORECASE)
     return (m.group(1) if m else u).lower()
+
 
 def _tld_of_domain(d: str) -> str:
     p = d.rsplit(".", 1)
     return p[-1].lower() if len(p) == 2 else ""
 
+
 def _collect_features(
-    sender: str, subject: str, content: str,
-    attachments: Sequence[Union[str, Dict[str, Any]]]
+    sender: str, subject: str, content: str, attachments: Sequence[Union[str, Dict[str, Any]]]
 ) -> Tuple[Features, List[str]]:
     cfg = _load_rules()
     feats = Features()
@@ -262,6 +288,7 @@ def _collect_features(
 
     return feats, reasons
 
+
 def _raw_points_and_label(feats: Features) -> Tuple[float, str]:
     """
     for label_email(sender, subject, content, attachments) 測試：
@@ -291,6 +318,7 @@ def _raw_points_and_label(feats: Features) -> Tuple[float, str]:
     else:
         label = "legit"
     return points, label
+
 
 def _normalized_score_and_label(feats: Features) -> Tuple[float, str, Dict[str, float]]:
     """
@@ -329,8 +357,10 @@ def _normalized_score_and_label(feats: Features) -> Tuple[float, str, Dict[str, 
     }
     return float(score), label, scores_detail
 
+
 # ================= 公開 API =================
 EmailDict = Dict[str, Any]
+
 
 def label_email(
     email_or_sender: Union[EmailDict, str],
@@ -370,6 +400,7 @@ def label_email(
     feats, reasons = _collect_features(sender, subj, cont, atts)
     raw_points, label = _raw_points_and_label(feats)
     return label, float(raw_points), reasons
+
 
 def get_link_ratio_thresholds() -> Dict[str, float]:
     cfg = _load_rules()

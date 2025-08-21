@@ -4,10 +4,12 @@ import argparse
 import subprocess
 import sys
 
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="sma", description="Smart Mail Agent CLI")
     p.add_argument("-V", "--version", action="store_true", help="show version and exit")
     return p
+
 
 def main(argv=None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
@@ -21,6 +23,7 @@ def main(argv=None) -> int:
         return 0
     # 其餘交給舊的 module runner
     return subprocess.call([sys.executable, "-m", "smart_mail_agent", *rest])
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from logging import Logger
 
+
 def get_logger(name: str) -> Logger:
     """
     取得模組專用 logger，統一格式與等級。

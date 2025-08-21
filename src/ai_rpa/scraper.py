@@ -6,7 +6,9 @@ from typing import List, Dict
 import requests
 from bs4 import BeautifulSoup
 from ai_rpa.utils.logger import get_logger
+
 log = get_logger("SCRAPER")
+
 
 def scrape(url: str, timeout: int = 10) -> List[Dict]:
     """

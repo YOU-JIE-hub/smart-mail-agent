@@ -30,10 +30,7 @@ def _normalize_result(res: Any) -> dict:
             or out.get("category")
         )
         conf = (
-            out.get("confidence")
-            or out.get("score")
-            or out.get("prob")
-            or out.get("probability")
+            out.get("confidence") or out.get("score") or out.get("prob") or out.get("probability")
         )
         try:
             conf = float(conf) if conf is not None else 1.0  # type: ignore[assignment]
@@ -50,7 +47,12 @@ def _normalize_result(res: Any) -> dict:
     # list/tuple: [(label, score)]、[label, score]、[{"label":..,"score":..}, ...]
     if isinstance(res, (list, tuple)):
         if not res:
-            return {"predicted_label": "unknown", "label": "unknown", "confidence": 0.0, "score": 0.0}
+            return {
+                "predicted_label": "unknown",
+                "label": "unknown",
+                "confidence": 0.0,
+                "score": 0.0,
+            }
         first = res[0]
         if isinstance(first, dict):
             return _normalize_result(first)
@@ -108,6 +110,8 @@ RE_QUOTE = re.compile(
     r"(報價|合作|採購|方案|價格|詢價|比價|quotation|quote|pricing|price)",
     re.I,
 )
+
+
 def _apply_rules(res: dict, subject: str, content: str) -> dict:
     txt = f"{subject or ''} {content or ''}"
     if RE_QUOTE.search(txt):
@@ -159,12 +163,14 @@ def classify_intent(subject: str, content: str, sender: Optional[str] = None, **
 
 
 if _RealIC is None:
+
     class IntentClassifier:
         """兼容用分類器：
         - 接受任意 kwargs（如 model_path, pipeline_override）
         - 若提供 pipeline_override（callable），優先使用它
         - 回傳一律正規化→回退→規則
         """
+
         def __init__(self, **kwargs):
             self.kwargs = dict(kwargs)
 

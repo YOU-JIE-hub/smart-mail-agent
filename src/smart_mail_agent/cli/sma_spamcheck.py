@@ -11,6 +11,7 @@ _ZH_SPAM_WORDS = re.compile(r"(免費|中獎|贏家|點此|限時|比特幣|USDT
 _SHORTLINK = re.compile(r"(bit\.ly|goo\.gl|t\.co|tinyurl\.com)", re.I)
 _MONEY = re.compile(r"(\$|USD|NT\$|NTD|\d{1,3}(,\d{3})+)")
 
+
 def _score(text: str) -> Tuple[float, List[str]]:
     explain: List[str] = []
     score = 0.0
@@ -30,6 +31,7 @@ def _score(text: str) -> Tuple[float, List[str]]:
         score = 0.98
     return score, explain
 
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Lightweight spam score checker")
     p.add_argument("--subject", required=True)
@@ -37,12 +39,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--threshold", type=float, default=0.8)
     return p
 
+
 def main() -> int:
     args = build_parser().parse_args()
     text = f"{args.subject}\n{args.content}"
     score, explain = _score(text)
     print(f"score={score:.2f} tags={','.join(explain)}")
     return 0 if score < args.threshold else 1
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

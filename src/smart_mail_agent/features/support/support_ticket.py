@@ -48,9 +48,7 @@ def init_db():
         conn.commit()
 
 
-def create_ticket(
-    subject, content, summary="", sender=None, category=None, confidence=None
-):
+def create_ticket(subject, content, summary="", sender=None, category=None, confidence=None):
     init_db()
     subject = subject or "(未填寫)"
     content = content or ""

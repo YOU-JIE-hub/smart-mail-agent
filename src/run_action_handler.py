@@ -9,8 +9,9 @@ import pathlib
 import time
 from typing import List, Dict, Any
 
-DANGEROUS_EXTS = (".exe",".bat",".cmd",".scr",".js",".vbs",".msi",".com",".jar",".ps1")
+DANGEROUS_EXTS = (".exe", ".bat", ".cmd", ".scr", ".js", ".vbs", ".msi", ".com", ".jar", ".ps1")
 SUPPORT_CC = os.getenv("SMA_SUPPORT_CC", "support@company.example")
+
 
 def _parse_args(argv: list[str]):
     ap = argparse.ArgumentParser(add_help=False)
@@ -20,6 +21,7 @@ def _parse_args(argv: list[str]):
     ap.add_argument("--simulate-failure", action="store_true", default=False)
     ns, _ = ap.parse_known_args(argv[1:])
     return ns
+
 
 def _analyze_risks(payload: Dict[str, Any]) -> List[str]:
     risks: List[str] = []
@@ -35,6 +37,7 @@ def _analyze_risks(payload: Dict[str, Any]) -> List[str]:
         if lname.endswith(".pdf") and not mime.startswith("application/pdf"):
             risks.append("attach:mime_mismatch")
     return risks
+
 
 def _ensure_review_artifacts(out: Dict[str, Any], *, force_reason: str | None = None) -> None:
     # 追加一個說明附件，並標記審核需求/cc/support
@@ -60,6 +63,7 @@ def _ensure_review_artifacts(out: Dict[str, Any], *, force_reason: str | None = 
     meta["cc"] = cc
     out["meta"] = meta
 
+
 def _fallback(ns) -> None:
     # 基本兜底：把 input 直接寫到 output（供後處理再補齊）
     with open(ns.input, "r", encoding="utf-8") as f:
@@ -67,6 +71,7 @@ def _fallback(ns) -> None:
     with open(ns.output, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False)
     print(f"已輸出：{ns.output}")
+
 
 def _delegate(ns) -> None:
     try:
@@ -77,11 +82,12 @@ def _delegate(ns) -> None:
                 try:
                     fn(sys.argv)  # 傳 argv
                 except TypeError:
-                    fn()          # 有些入口不收參數
+                    fn()  # 有些入口不收參數
                 break
     except Exception:
         # 委派失敗無所謂，後面會 fallback + postprocess
         pass
+
 
 def _postprocess(ns, output_path: pathlib.Path) -> None:
     # 不論委派/兜底，都會進來做「合併 + 風險評估」
@@ -108,7 +114,7 @@ def _postprocess(ns, output_path: pathlib.Path) -> None:
     risks = sorted(set(risks_out + risks_inp))
 
     meta = dict(data.get("meta") or {})
-    meta.setdefault("request_id", f"{int(time.time()*1000):x}"[-12:])
+    meta.setdefault("request_id", f"{int(time.time() * 1000):x}"[-12:])
     meta.setdefault("duration_ms", 0)
     meta.setdefault("dry_run", bool(ns.dry_run))
 
@@ -129,6 +135,7 @@ def _postprocess(ns, output_path: pathlib.Path) -> None:
 
     output_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
 
+
 def main(argv: list[str] | None = None) -> int:
     argv = argv or sys.argv
     ns = _parse_args(argv)
@@ -141,6 +148,7 @@ def main(argv: list[str] | None = None) -> int:
     # 與現有測試輸出行為保持一致
     print("CLI_output_written", file=sys.stderr)
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv))

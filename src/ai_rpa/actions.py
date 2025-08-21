@@ -7,7 +7,9 @@ from pathlib import Path
 from typing import Any, Dict
 
 from ai_rpa.utils.logger import get_logger
+
 log = get_logger("ACTIONS")
+
 
 def write_json(data: Dict[str, Any], outdir: str, basename: str = "report") -> str:
     """
