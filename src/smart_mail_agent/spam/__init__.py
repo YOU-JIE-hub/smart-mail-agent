@@ -1,1 +1,1 @@
-from __future__ import annotations
+# shim package for backward compatibility

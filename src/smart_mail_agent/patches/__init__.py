@@ -1,1 +1,1 @@
-from __future__ import annotations
+# legacy compatibility package for tests
