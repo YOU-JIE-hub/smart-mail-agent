@@ -1,9 +1,14 @@
-from __future__ import annotations
-import importlib as _im
+from importlib import import_module as _import_module
 
-_mod = _im.import_module("smart_mail_agent.routing.action_handler")
-# 只導出對方顯式 API，如未定義 __all__ 則不污染命名空間
-__all__ = getattr(_mod, "__all__", [])
-for _k in __all__:
-    globals()[_k] = getattr(_mod, _k)
-del _im, _mod
+# 來源：smart_mail_agent.routing.action_handler
+_mod = _import_module("smart_mail_agent.routing.action_handler")
+
+# 將所有非底線成員直接 re-export，確保舊用法 `from action_handler import route_action` 可用
+for _k in dir(_mod):
+    if not _k.startswith("_"):
+        globals()[_k] = getattr(_mod, _k)
+
+# 若上游有 __all__ 就用；否則導出所有非底線
+__all__ = getattr(_mod, "__all__", [k for k in globals() if not k.startswith("_")])
+
+del _import_module, _mod
