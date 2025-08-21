@@ -87,13 +87,22 @@ else
   warn ".gitattributes 已有設定，略過"
 fi
 
+# 確保 .gitkeep 存在且可被追蹤
 step "建立 out/ 與 reports/ 的 .gitkeep" "mkdir -p out reports && touch out/.gitkeep reports/.gitkeep && git add -f out/.gitkeep reports/.gitkeep"
 
+# 去重多餘 PR template
 [[ -f ".github/PULL_REQUEST_TEMPLATE.md" ]] && step "移除 .github/PULL_REQUEST_TEMPLATE.md" "git rm -f .github/PULL_REQUEST_TEMPLATE.md || true"
 [[ -f "PULL_REQUEST_TEMPLATE.md" ]] && step "移除根目錄 PULL_REQUEST_TEMPLATE.md" "git rm -f PULL_REQUEST_TEMPLATE.md || true"
 [[ -f ".github/pull_request_template.md" ]] && step "移除 .github/pull_request_template.md" "git rm -f .github/pull_request_template.md || true"
 
-[[ -f ".env.smtp-test" ]] && step "將 .env.smtp-test → .env.smtp.example" "git mv .env.smtp-test .env.smtp.example"
+# 友善處理 .env 樣板更名（有追蹤用 git mv；否則 fallback mv）
+if [[ -f ".env.smtp-test" ]]; then
+  if git ls-files --error-unmatch .env.smtp-test >/dev/null 2>&1; then
+    step "將 .env.smtp-test → .env.smtp.example (git mv)" "git mv .env.smtp-test .env.smtp.example"
+  else
+    step "將 .env.smtp-test → .env.smtp.example (mv)" "mv .env.smtp-test .env.smtp.example"
+  fi
+fi
 
 say "從 Git 索引移除生成物/暫存/備份（工作區保留）"
 step "移除常見生成物" "git rm -rf --cached --ignore-unmatch data/output/* out/quote*.pdf .coverage coverage.xml .local-logs/* share/*.txt assert"
@@ -128,7 +137,7 @@ fi
 
 if [[ "$DRY" == "0" ]]; then
   say "建立整理 commit（若有變更）"
-  git add .gitignore .gitattributes out/.gitkeep reports/.gitkeep || true
+  git add -f out/.gitkeep reports/.gitkeep .gitignore .gitattributes || true
   git add -A || true
   if ! git diff --cached --quiet --ignore-submodules --; then
     git commit -m "chore(repo): housekeeping — ignore generated artifacts, unify PR template, normalize env & attrs" || warn "commit 失敗或無變化"
