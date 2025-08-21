@@ -106,3 +106,5 @@ share/
 # local ops helpers (ignored)
 scripts/housekeeping.sh
 bin/sma-housekeeping
+.coverage
+coverage.xml
