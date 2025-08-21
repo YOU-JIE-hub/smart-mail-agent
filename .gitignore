@@ -78,3 +78,28 @@ Thumbs.db
 # local
 .local-logs/
 share/
+# --- repo housekeeping (auto) ---
+/.coverage
+/coverage.xml
+/reports/*
+!reports/.gitkeep
+
+/data/output/*
+/data/tmp/*
+/data/**/*.db
+/data/**/*.sqlite
+/data/**/*.csv
+
+/out/*
+!/out/.gitkeep
+
+/share/*.txt
+*.bak.*
+*.bak
+*.orig
+*.rej
+
+# generated artifacts
+/quote.pdf
+/quote_pdf.pdf
+/.local-logs/*
