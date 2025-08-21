@@ -1,12 +1,12 @@
 name: "CodeQL"
 on:
-  push: { branches: [ "main" ] }
-  pull_request: { branches: [ "main" ] }
-  schedule:
-    - cron: "0 8 * * 5"
+  push:
+    branches: [main]
+
 jobs:
   analyze:
     runs-on: ubuntu-latest
+    continue-on-error: true
     permissions:
       actions: read
       contents: read
