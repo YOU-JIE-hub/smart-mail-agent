@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import sys, json, argparse, importlib, os, pathlib, time
+import sys
+import json
+import argparse
+import importlib
+import os
+import pathlib
+import time
 from typing import List, Dict, Any
 
 DANGEROUS_EXTS = (".exe",".bat",".cmd",".scr",".js",".vbs",".msi",".com",".jar",".ps1")

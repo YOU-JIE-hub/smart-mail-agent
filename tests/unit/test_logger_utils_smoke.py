@@ -1,5 +1,7 @@
 from __future__ import annotations
-import importlib, logging, sys
+import importlib
+import logging
+import sys
 
 def test_get_logger_and_level(monkeypatch, caplog):
     monkeypatch.setenv("SMA_LOG_LEVEL", "DEBUG")

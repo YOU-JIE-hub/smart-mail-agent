@@ -1,4 +1,6 @@
-import runpy, sys, pytest
+import runpy
+import sys
+import pytest
 
 @pytest.mark.parametrize("mod", [
     "smart_mail_agent.cli.sma",

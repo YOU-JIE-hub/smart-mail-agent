@@ -1,8 +1,7 @@
 from __future__ import annotations
-# 直接 re-export orchestrator_offline 的實作，避免舊路徑 import 失敗
-from .orchestrator_offline import (
-    Thresholds,
-    SpamFilterOrchestratorOffline,
-    orchestrate,
-    _main,
-)
+from . import orchestrator_offline as _impl
+Thresholds = _impl.Thresholds
+SpamFilterOrchestratorOffline = _impl.SpamFilterOrchestratorOffline
+orchestrate = _impl.orchestrate
+_main = _impl._main
+__all__ = ["Thresholds", "SpamFilterOrchestratorOffline", "orchestrate", "_main"]

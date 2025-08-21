@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, subprocess, sys
+import argparse
+import subprocess
+import sys
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="sma", description="Smart Mail Agent CLI")

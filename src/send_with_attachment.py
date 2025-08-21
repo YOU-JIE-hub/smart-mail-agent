@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, sys
+import argparse
+import sys
 
 # 嘗試載入正式實作模組（若存在就委派用它）
 try:

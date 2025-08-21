@@ -1,4 +1,8 @@
-import io, runpy, sys, contextlib, pytest
+import io
+import runpy
+import sys
+import contextlib
+import pytest
 
 @pytest.mark.parametrize("mod", ["smart_mail_agent.cli.sma"])
 def test_cli_version_exits_cleanly(mod, monkeypatch):
