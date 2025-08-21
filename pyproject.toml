@@ -26,14 +26,12 @@ send-with-attachment = "send_with_attachment:main"
 package-dir = {"" = "src"}
 packages = ["smart_mail_agent"]
 
-# ---- Ruff（為相容性同時提供舊/新節點）----
-# 舊版配置節點
+# ---- Ruff (舊節點相容) ----
 [tool.ruff]
 target-version = "py310"
 select = ["E","F","I","B","UP"]
 ignore = []
 extend-exclude = []
-# 測試、腳本、範例與過渡模組的 per-file-ignores（舊節點）
 per-file-ignores = {
   "tests/**/*.py" = ["E401","E402","E701","E702","F811"],
   "examples/**/*.py" = ["E402","F401","F403"],
@@ -41,7 +39,7 @@ per-file-ignores = {
   "modules/**/*.py" = ["E401","E402","E701","E702","F401","F403"]
 }
 
-# 新版配置節點（>=0.6 起）
+# ---- Ruff (新版節點) ----
 [tool.ruff.lint]
 select = ["E","F","I","B","UP"]
 extend-ignore = []
