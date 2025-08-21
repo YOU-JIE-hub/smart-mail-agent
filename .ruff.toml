@@ -4,3 +4,15 @@ force-exclude = true
 [lint]
 select = ["E","F"]
 ignore = ["E501"]
+extend-exclude = [
+  "examples/**",
+  "modules/**",
+  "scripts/**",
+  "tools/**",
+  "bin/**",
+  "assets/**",
+  "site/**",
+  "data/**",
+  "out/**",
+  "init_db.py",
+]

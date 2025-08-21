@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from utils.logger import logger
+from smart_mail_agent.utils.logger import logger
 
 # 檔案位置：src/utils/priority_evaluator.py
 # 模組用途：根據主旨、內容、分類與信心分數，評估技術工單的優先等級

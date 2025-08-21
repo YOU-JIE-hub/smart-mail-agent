@@ -22,7 +22,7 @@ except Exception:
 
     _OPENAI_AVAILABLE = False
 
-from utils.logger import logger
+from smart_mail_agent.utils.logger import logger
 
 load_dotenv()
 

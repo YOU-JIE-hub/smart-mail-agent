@@ -7,7 +7,7 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI, OpenAIError
 
-from utils.logger import logger
+from smart_mail_agent.utils.logger import logger
 
 load_dotenv()
 

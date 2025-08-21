@@ -9,7 +9,7 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
-from utils.logger import logger
+from smart_mail_agent.utils.logger import logger
 
 # 預設資料庫與資料表名稱
 DEFAULT_DB_PATH = "data/quote_log.db"

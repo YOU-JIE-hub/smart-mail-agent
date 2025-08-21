@@ -21,9 +21,9 @@ except Exception:
     )
 
 try:
-    from utils.pdf_safe import write_pdf_or_txt
+    from smart_mail_agent.utils.pdf_safe import write_pdf_or_txt
 except Exception:
-    from utils.pdf_safe import write_pdf_or_txt  # type: ignore
+    from smart_mail_agent.utils.pdf_safe import write_pdf_or_txt  # type: ignore
 
 
 def _attachments_ok(att_list: list[str] | None) -> bool:

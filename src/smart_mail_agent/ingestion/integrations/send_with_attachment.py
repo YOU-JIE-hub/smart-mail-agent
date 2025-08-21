@@ -15,7 +15,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from reportlab.pdfgen import canvas
 
-from utils.logger import logger
+from smart_mail_agent.utils.logger import logger
 
 # 強制指定 .env 位置
 load_dotenv(dotenv_path=Path(__file__).resolve().parents[1] / ".env")
