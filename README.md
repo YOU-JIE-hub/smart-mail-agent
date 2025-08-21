@@ -1,3 +1,5 @@
+![coverage](badges/coverage.svg)
+![CI](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/tests.yml/badge.svg)
 ![type](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/typecheck.yml/badge.svg)
 ![tag](https://img.shields.io/github/v/tag/YOU-JIE-hub/smart-mail-agent?sort=semver)
 ![release](https://img.shields.io/github/v/release/YOU-JIE-hub/smart-mail-agent?include_prereleases)
