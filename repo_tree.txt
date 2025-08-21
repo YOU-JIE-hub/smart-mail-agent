@@ -46,6 +46,7 @@ src/
   scripts/__init__.py
   scripts/online_check.py
   spam/__init__.py
+  spam/spam_filter_orchestrator.py
   __init__.py
   smart_mail_agent/inference_classifier.py
   smart_mail_agent/spam/pipeline.py
@@ -126,7 +127,12 @@ src/
   ai_rpa/actions.py
   classifier.py
   utils/__init__.py
+  utils/log_writer.py
+  utils/mailer.py
+  utils/logger.py
+  utils/pdf_safe.py
   run_action_handler.py
   modules/__init__.py
   patches/__init__.py
+  patches/handle_safe_patch.py
   action_handler.py
