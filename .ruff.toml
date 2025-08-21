@@ -5,6 +5,7 @@ extend-exclude = [
   "examples/**",
   "modules/**",
   "scripts/**",
+  "src/scripts/**",
   "tools/**",
   "bin/**",
   "assets/**",
@@ -16,6 +17,5 @@ extend-exclude = [
 ]
 
 [lint]
-# 先專注語法/錯誤類；長行暫忽略，減少無謂紅燈
 select = ["E", "F"]
 ignore = ["E501"]
