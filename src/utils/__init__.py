@@ -1,1 +1,1 @@
-# legacy utils.* compatibility package
+# shim package for backward compatibility
