@@ -3,7 +3,7 @@
   <a href="https://github.com/YOU-JIE-hub/smart-mail-agent/actions"><img alt="Lint" src="https://img.shields.io/github/actions/workflow/status/YOU-JIE-hub/smart-mail-agent/lint.yml?branch=main&label=lint"></a>
   <a href="https://github.com/YOU-JIE-hub/smart-mail-agent/actions"><img alt="Type Check" src="https://img.shields.io/github/actions/workflow/status/YOU-JIE-hub/smart-mail-agent/typecheck.yml?branch=main&label=type"></a>
   <a href="https://github.com/YOU-JIE-hub/smart-mail-agent/blob/main/badges/coverage.svg"><img alt="Coverage" src="https://raw.githubusercontent.com/YOU-JIE-hub/smart-mail-agent/main/badges/coverage.svg"></a>
-  <a href="https://github.com/YOU-JIE-hub/smart-mail-agent/releases"><img alt="Release" src="https://img.shields.io/github/v/tag/YOU-JIE-hub/smart-mail-agent?sort=semver?display_name=tag"></a>
+  <a href="https://github.com/YOU-JIE-hub/smart-mail-agent/releases"><img alt="Release" src="https://img.shields.io/github/v/release/YOU-JIE-hub/smart-mail-agent
 </p>
 
 ## 使用說明（統一入口）
