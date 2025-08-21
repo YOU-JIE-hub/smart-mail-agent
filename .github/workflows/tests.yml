@@ -1,19 +1,16 @@
 name: unit-and-coverage
 on:
-  push:
-    branches: ['**']
+  push: { branches: ['**'] }
   pull_request:
 jobs:
   unit:
     runs-on: ubuntu-latest
-    continue-on-error: true  # 先保證流程不中斷
-    permissions:
-      contents: write
+    continue-on-error: true
+    permissions: { contents: write }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
+        with: { python-version: '3.10' }
       - name: Setup venv & install deps
         run: |
           python -m venv .venv
