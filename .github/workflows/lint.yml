@@ -10,15 +10,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Ruff (src)
+      - name: Ruff (src, strict)
         uses: astral-sh/ruff-action@v3
         with:
           version: latest
           args: check src
 
       - name: Ruff (tests, non-blocking)
-        uses: astral-sh/ruff-action@v3
+        if: ${{ always() }}
         continue-on-error: true
+        uses: astral-sh/ruff-action@v3
         with:
           version: latest
           args: check tests
