@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "smart-mail-agent"
+version = "0.3.1"
+description = "Smart Mail Agent: AI + RPA email automation (clean, src-layout)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+  "pydantic>=1.10,<3",
+  "python-dotenv>=1.0",
+  "jinja2>=3.1,<4",
+  "reportlab>=3.6,<4",
+]
+
+[project.scripts]
+sma = "smart_mail_agent.cli.sma:main"
+sma-spamcheck = "smart_mail_agent.cli.sma_spamcheck:main"
+run-action-handler = "run_action_handler:main"
+send-with-attachment = "send_with_attachment:main"
+
+
+package-dir = {"" = "src"}
+packages = ["smart_mail_agent"]
+
+# ---- Ruff（全面排除非核心目錄，避免歷史樣本與測試阻斷 CI）----
+# 舊版節點（0.12.* 仍讀取）
+[tool.ruff]
+target-version = "py310"
+select = ["E","F","I","B","UP"]
+ignore = []
+# 完全排除下列目錄
+extend-exclude = ["tests/**", "scripts/**", "examples/**", "examples/legacy_lowcov/**"]
+
+# 新版節點
+# --- commented duplicate [tool.ruff] block ---
+#[tool.ruff.lint]
+#select = ["E","F","I","B","UP"]
+#extend-ignore = []
+#extend-exclude = ["tests/**", "scripts/**", "examples/**", "examples/legacy_lowcov/**"]
+#
+# --- commented duplicate [tool.ruff] block ---
+#[tool.ruff.format]
+#quote-style = "preserve"
+#sma-run = "smart_mail_agent.cli.sma_run:main"
+#
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["tests*", "examples*", "examples/legacy_lowcov*", "scripts*"]
+
+# --- commented duplicate [tool.ruff] block ---
+#[tool.ruff]
+#target-version = "py310"
+#select = ["E","F","I","B","UP"]
+#extend-exclude = ["tests/**","scripts/**","examples/**","examples/legacy_lowcov/**"]
+#
+# --- commented duplicate [tool.ruff] block ---
+#[tool.ruff.format]
+#quote-style = "preserve"

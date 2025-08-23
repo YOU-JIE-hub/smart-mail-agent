@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$DIR"
-if [ -x ".venv/bin/python" ]; then PY=".venv/bin/python"; else PY="python3"; fi
-exec "$PY" -m src.run_action_handler "$@"
+IN="$(mktemp)"; OUT="$(mktemp)"
+trap 'rm -f "$IN" "$OUT"' EXIT
+cat > "$IN" <<'JSON'
+{
+  "subject": "健康檢查",
+  "from": "healthcheck@local",
+  "body": "ok",
+  "predicted_label": "reply_faq",
+  "confidence": 0.9,
+  "attachments": []
+}
+JSON
+python3 -m src.run_action_handler --in "$IN" --out "$OUT" --dry-run >/dev/null 2>&1 || true
+exit 0

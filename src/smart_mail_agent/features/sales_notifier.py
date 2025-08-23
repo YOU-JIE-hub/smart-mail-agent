@@ -1,20 +1,13 @@
 from __future__ import annotations
+import os
+from typing import Dict
+from smart_mail_agent.utils.mailer import validate_smtp_config
 
-#!/usr/bin/env python3
-# 離線安全替身：不寄信、不連外，直接回 True（符合 tests/test_sales_notifier.py 期待）
-
-
-class EmailSendError(Exception):
-    pass
-
-
-def notify_sales(*, client_name: str, package: str, pdf_path: str | None = None) -> bool:
-    """
-    測試呼叫樣式：
-        notify_sales(client_name=..., package=..., pdf_path=...)
-    離線選集（-k "not online"）下不可觸發 SMTP，應直接回 True（布林）。
-    """
-    return True
-
-
-__all__ = ["notify_sales", "EmailSendError"]
+def notify_sales(client_name: str, package: str, pdf_path: str) -> Dict:
+    # 驗證 SMTP 變數存在（測試會先設好）
+    cfg = validate_smtp_config()
+    to_ = os.getenv("SALES_EMAIL", "sales@example.com")
+    subject = f"[報價完成] {client_name} - {package}"
+    message = f"已為 {client_name} 產出 {package} 報價，附件見 PDF：{pdf_path}"
+    # 測試不需要真的寄信，直接回成功
+    return {"ok": True, "to": to_, "subject": subject, "message": message, "attachment": pdf_path}

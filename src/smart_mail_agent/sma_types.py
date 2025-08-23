@@ -92,7 +92,39 @@ def normalize_result(raw: dict[str, Any]) -> ActionResult:
     if isinstance(subj, str) and not subj.startswith("[自動回覆] "):
         data["subject"] = f"[自動回覆] {subj}"
     # 附件正規化
-    data["attachments"] = _coerce_attachments(data.get("attachments"))
+    data["attachments"] = _coerce_attachments_safe(data.get("attachments"))
     # 確保有 duration_ms 鍵
     data.setdefault("duration_ms", 0)
     return ActionResult(**data)
+
+# ---- 安全附件正規化（允許 None/str/dict 混合） ----
+def _coerce_attachments_safe(src):
+    # 將各種輸入形狀轉為統一 dict 列表，過濾 None/空字串：
+    #   - "a.txt" -> {"filename":"a.txt","mime":"application/octet-stream","size":0}
+    #   - {"name":"b.pdf","size":123} -> 轉為 {"filename":"b.pdf","size":123,"mime":...}
+    #   - 已是 dict 且有 filename/mime/size 保留並補預設；其餘型別忽略
+    out = []
+    for it in (src or []):
+        if not it:
+            continue
+        if isinstance(it, str):
+            name = it.strip()
+            if not name:
+                continue
+            out.append({"filename": name, "mime": "application/octet-stream", "size": 0})
+            continue
+        if isinstance(it, dict):
+            d = dict(it)
+            fname = d.get("filename") or d.get("name") or d.get("file") or d.get("path") or ""
+            fname = str(fname).strip()
+            if not fname:
+                continue
+            d["filename"] = fname
+            if "size" not in d:
+                d["size"] = d.get("length") or 0
+            if "mime" not in d:
+                d["mime"] = d.get("content_type") or "application/octet-stream"
+            out.append(d)
+            continue
+        # 其它型別（例如自訂物件）為避免驗證錯，直接忽略
+    return out

@@ -1,0 +1,6 @@
+# BUILDINFO
+name: smart-mail-agent
+tag:  smart-mail-agent-20250822T203552Z-d64e8c7c
+python: Python 3.10.12
+pip:    pip 25.2 from /home/youjie/projects/smart-mail-agent/.venv/lib/python3.10/site-packages/pip (python 3.10)
+os:     Linux DESKTOP-MP3QVS6 6.6.87.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux

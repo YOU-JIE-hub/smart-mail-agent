@@ -1,128 +1,65 @@
 from __future__ import annotations
-
-#!/usr/bin/env python3
-# 檔案位置：src/log_writer.py
-# 模組用途：統一寫入 emails_log.db 的工具（企業級欄位與穩定介面）
-import logging
-import sqlite3
-from datetime import datetime, timezone
 from pathlib import Path
+import sqlite3
+from typing import Any, Dict, Tuple
 
-# 統一日誌格式
-logger = logging.getLogger("log_writer")
-if not logger.handlers:
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] [log_writer] %(message)s",
-    )
+# 欄位順序與資料表欄位一致
+COLS = ("subject","content","summary","predicted_label","confidence","action","error")
 
-ROOT = Path(__file__).resolve().parents[1]
-DB_PATH = ROOT / "data" / "emails_log.db"
+# 預設值：若呼叫端未提供就自動補上
+_DEFAULTS: Dict[str, Any] = {
+    "subject": "",
+    "content": "",
+    "summary": "",
+    "predicted_label": "",
+    "confidence": None,   # REAL 欄位允許 NULL
+    "action": "",
+    "error": "",
+}
 
-
-def _ensure_schema(conn: sqlite3.Connection) -> None:
-    """建立 emails_log 資料表（若不存在）。"""
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS emails_log (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            subject TEXT,
-            content TEXT,
-            summary TEXT,
-            predicted_label TEXT,
-            confidence REAL,
-            action TEXT,
-            error TEXT,
-            created_at TEXT
-        )
-        """
-    )
-    conn.commit()
-
-
-def log_to_db(
-    subject: str,
-    content: str = "",
-    summary: str = "",
-    predicted_label: str | None = None,
-    confidence: float | None = None,
-    action: str = "",
-    error: str = "",
-    db_path: Path | None = None,
-) -> int:
-    """寫入一筆處理紀錄到 emails_log.db。
-
-    參數：
-        subject: 題目/主旨
-        content: 內文（可省略）
-        summary: 摘要（可省略）
-        predicted_label: 預測分類（可省略）
-        confidence: 信心值（可省略）
-        action: 採取動作（可省略）
-        error: 錯誤訊息（可省略）
-        db_path: 自訂 DB 路徑（測試用）
-
-    回傳：
-        新增記錄的 rowid（int）
+def _normalize_args(*args, **kwargs) -> Tuple[Dict[str, Any], Path]:
     """
-    path = Path(db_path) if db_path else DB_PATH
-    path.parent.mkdir(parents=True, exist_ok=True)
+    支援兩種呼叫方式：
+      1) 位置參數：log_to_db(subject, content, summary, predicted_label, confidence, action, error, db_path=...)
+         可傳 1~7 個位置參數；缺的會自動補預設值。
+      2) 具名參數：log_to_db(subject="S", db_path=tmpdb, ...)；缺的會自動補預設值。
+    必填：db_path（Path 或 str）
+    """
+    dbp = kwargs.get("db_path")
+    if not dbp:
+        raise TypeError("需要 db_path= Path/str")
+    if args:
+        # 允許只給前面幾個位置參數，其餘自動補
+        vals = list(args[:7]) + [None] * max(0, 7 - len(args))
+        data = {k: (vals[i] if vals[i] is not None else _DEFAULTS[k]) for i, k in enumerate(COLS)}
+    else:
+        data = {k: kwargs.get(k, _DEFAULTS[k]) for k in COLS}
+    return data, Path(dbp)
 
-    conn = sqlite3.connect(str(path))
-    try:
-        _ensure_schema(conn)
-        cur = conn.execute(
-            """
-            INSERT INTO emails_log (
-                subject, content, summary, predicted_label,
-                confidence, action, error, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                subject,
-                content,
-                summary,
-                predicted_label,
-                float(confidence) if confidence is not None else None,
-                action,
-                error,
-                datetime.now(timezone.utc).isoformat(),
-            ),
+def _ensure_schema(db: sqlite3.Connection) -> None:
+    db.execute("""CREATE TABLE IF NOT EXISTS emails_log(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        subject TEXT,
+        content TEXT,
+        summary TEXT,
+        predicted_label TEXT,
+        confidence REAL,
+        action TEXT,
+        error TEXT
+    )""")
+
+def log_to_db(*args, **kwargs) -> int:
+    """
+    回傳新寫入列的 id（int）。
+    參數見 _normalize_args；務必提供 db_path。
+    """
+    data, db_path = _normalize_args(*args, **kwargs)
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(db_path) as c:
+        _ensure_schema(c)
+        cur = c.execute(
+            "INSERT INTO emails_log(subject,content,summary,predicted_label,confidence,action,error) VALUES(?,?,?,?,?,?,?)",
+            [data[k] for k in COLS],
         )
-        conn.commit()
-        rowid = int(cur.lastrowid or 0)
-        logger.info(
-            "已記錄：%s / %s / 信心 %s",
-            predicted_label or "-",
-            action or "-",
-            f"{confidence:.4f}" if confidence is not None else "-",
-        )
-        return rowid
-    finally:
-        conn.close()
-
-
-if __name__ == "__main__":
-    # 提供簡易 CLI：python -m src.log_writer "主旨" --label "分類"
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("subject", help="主旨")
-    parser.add_argument("--content", default="", help="內文")
-    parser.add_argument("--summary", default="", help="摘要")
-    parser.add_argument("--label", dest="predicted_label", default=None, help="分類")
-    parser.add_argument("--confidence", type=float, default=None, help="信心值")
-    parser.add_argument("--action", default="", help="動作")
-    parser.add_argument("--error", default="", help="錯誤訊息")
-    args = parser.parse_args()
-
-    log_to_db(
-        subject=args.subject,
-        content=args.content,
-        summary=args.summary,
-        predicted_label=args.predicted_label,
-        confidence=args.confidence,
-        action=args.action,
-        error=args.error,
-    )
-    print("[OK] 已寫入 emails_log")
+        return int(cur.lastrowid)

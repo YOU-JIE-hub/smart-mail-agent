@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+black -q src tests || true
+isort -q src tests || true
+echo "Formatted with black + isort."

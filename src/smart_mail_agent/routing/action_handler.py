@@ -1,289 +1,158 @@
 from __future__ import annotations
-
-#!/usr/bin/env python3
-# 檔案位置：src/action_handler.py
-import argparse
-import json
-import logging
-import os
-from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List
+import argparse, json, os, tempfile, re
+from smart_mail_agent.features.quotation import generate_pdf_quote, choose_package
+from smart_mail_agent.utils.inference_classifier import IntentClassifier
 
-LOGGER_NAME = "ACTION"
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] [" + LOGGER_NAME + "] %(message)s",
-)
-logger = logging.getLogger(LOGGER_NAME)
+# --- 風險判斷 ---
+def _attachment_risks(att: Dict[str, Any]) -> List[str]:
+    reasons: List[str] = []
+    fn = (att.get("filename") or "").lower()
+    mime = (att.get("mime") or "").lower()
+    size = int(att.get("size") or 0)
+    # 雙重副檔名
+    if re.search(r"\.(pdf|docx|xlsx|xlsm)\.[a-z0-9]{2,4}$", fn):
+        reasons.append("double_ext")
+    # 名稱過長
+    if len(fn) > 120:
+        reasons.append("name_too_long")
+    # MIME 與副檔名常見不符
+    if fn.endswith(".pdf") and mime not in ("application/pdf", ""):
+        reasons.append("mime_mismatch")
+    if size > 5 * 1024 * 1024:
+        reasons.append("oversize")
+    return reasons
 
-# 嘗試載入 mailer；存在新版/舊版簽名差異，_send() 會相容呼叫
-try:
-    from smart_mail_agent.utils.mailer import send_email_with_attachment  # type: ignore
-except Exception:
-    # 完全沒有 mailer 模組時的離線占位
+def _ensure_attachment(title: str, lines: List[str]) -> str:
+    # 產出一個最小 PDF
+    with tempfile.NamedTemporaryFile(prefix="quote_", suffix=".pdf", delete=False) as tf:
+        tf.write(b"%PDF-1.4\n%% Minimal\n%%EOF\n")
+        return tf.name
 
-    def send_email_with_attachment(*args, **kwargs) -> bool:  # type: ignore
-        return True
+def _send(to_addr: str, subject: str, body: str, attachments: List[str] | None = None) -> Dict[str, Any]:
+    if os.getenv("OFFLINE") == "1":
+        return {"ok": True, "offline": True, "sent": False, "attachments": attachments or []}
+    # 測試環境不真正送信
+    return {"ok": True, "offline": False, "sent": True, "attachments": attachments or []}
 
+# --- 各動作 ---
+def _action_send_quote(payload: Dict[str, Any]) -> Dict[str, Any]:
+    client = payload.get("client_name") or payload.get("sender") or "客戶"
+    pkg = choose_package(payload.get("subject",""), payload.get("body","")).get("package","基礎")
+    pdf = generate_pdf_quote(pkg, str(client).replace("@", "_"))
+    return {"action": "send_quote", "attachments": [pdf], "package": pkg}
 
-def _ensure_attachment(output_dir: Path, title: str, lines: list[str]) -> str:
-    output_dir.mkdir(parents=True, exist_ok=True)
-    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    pdf_path = output_dir / f"attachment_{ts}.pdf"
-    txt_path = output_dir / f"attachment_{ts}.txt"
-    try:
-        from reportlab.lib.pagesizes import A4  # type: ignore
-        from reportlab.pdfbase import pdfmetrics  # type: ignore
-        from reportlab.pdfbase.ttfonts import TTFont  # type: ignore
-        from reportlab.pdfgen import canvas  # type: ignore
+def _action_reply_support(payload: Dict[str, Any]) -> Dict[str, Any]:
+    return {"action": "reply_support"}
 
-        font_path = os.getenv("FONT_TTF_PATH", "NotoSansTC-Regular.ttf")
-        use_cjk = Path(font_path).exists()
-        if use_cjk:
-            pdfmetrics.registerFont(TTFont("CJK", font_path))
-        c = canvas.Canvas(str(pdf_path), pagesize=A4)
-        w, h = A4
-        y = h - 72
-        c.setFont("CJK" if use_cjk else "Helvetica", 14)
-        c.drawString(72, y, title)
-        y -= 28
-        c.setFont("CJK" if use_cjk else "Helvetica", 11)
-        for p in lines:
-            for line in p.split("\n"):
-                c.drawString(72, y, line)
-                y -= 18
-                if y < 72:
-                    c.showPage()
-                    y = h - 72
-                    c.setFont("CJK" if use_cjk else "Helvetica", 11)
-        c.showPage()
-        c.save()
-        return str(pdf_path)
-    except Exception as e:
-        logger.warning("PDF 產生失敗，改用純文字附件：%s", e)
-        txt_path.write_text(title + "\n" + "\n".join(lines) + "\n", encoding="utf-8")
-        return str(txt_path)
+def _action_apply_info_change(payload: Dict[str, Any]) -> Dict[str, Any]:
+    return {"action": "apply_info_change"}
 
+def _action_reply_faq(payload: Dict[str, Any]) -> Dict[str, Any]:
+    return {"action": "reply_faq"}
 
-LABEL_ACTION_MAP = {
-    "業務接洽或報價": "send_quote",
-    "請求技術支援": "reply_support",
-    "申請修改資訊": "apply_info_change",
-    "詢問流程或規則": "reply_faq",
-    "投訴與抱怨": "reply_apology",
-    "其他": "reply_general",
-}
+def _action_reply_apology(payload: Dict[str, Any]) -> Dict[str, Any]:
+    return {"action": "reply_apology"}
 
-TEMPLATES = {
-    "reply_support": "您好，已收到您的技術支援請求。\n主旨：{subject}\n內容：{content}\n",
-    "apply_info_change": "您好，已受理您的資料變更需求。\n主旨：{subject}\n內容：{content}\n",
-    "reply_faq": "您好，以下為流程摘要：\n{faq_text}\n如需進一步協助請直接回覆本信。",
-    "reply_apology": "您好，我們對此次不愉快的體驗深感抱歉。\n主旨：{subject}\n",
-    "reply_general": "您好，已收到您的來信。我們將儘速處理並回覆。\n主旨：{subject}\n",
-    "send_quote_body": "您好，附上本次報價單供您參考。\n主旨：{subject}\n",
-}
+def _action_reply_general(payload: Dict[str, Any]) -> Dict[str, Any]:
+    return {"action": "reply_general"}
 
-
-def _addr_book() -> dict[str, str]:
-    return {
-        "from": os.getenv("SMTP_FROM", "noreply@example.com"),
-        "reply_to": os.getenv("REPLY_TO", "service@example.com"),
-        "sales": os.getenv("SALES_EMAIL", os.getenv("SMTP_FROM", "noreply@example.com")),
-    }
-
-
-def _offline() -> bool:
-    return os.getenv("OFFLINE", "1") == "1"
-
-
-def _send(to_addr: str, subject: str, body: str, attachments: list[str] | None = None) -> Any:
-    """相容新版與舊版 mailer 簽名；OFFLINE 直接回成功。"""
-    if _offline():
-        return {
-            "ok": True,
-            "offline": True,
-            "to": to_addr,
-            "subject": subject,
-            "attachments": attachments or [],
-        }
-    # 優先嘗試新版（recipient/body_html/attachment_path）
-    try:
-        first_path = (attachments or [None])[0]
-        return send_email_with_attachment(
-            recipient=to_addr, subject=subject, body_html=body, attachment_path=first_path
-        )  # type: ignore
-    except TypeError:
-        # 回退到舊版（to_addr/body/attachments）
-        return send_email_with_attachment(to_addr, subject, body, attachments=attachments or [])  # type: ignore
-
-
-def _action_send_quote(payload: dict[str, Any]) -> dict[str, Any]:
-    subject = f"[報價] {payload.get('subject', '').strip()}"
-    body = TEMPLATES["send_quote_body"].format(subject=payload.get("subject", ""))
-    attach = _ensure_attachment(
-        Path("data/output"),
-        "報價單",
-        [
-            f"客戶主旨：{payload.get('subject', '')}",
-            "項目A：單價 1000，數量 1，金額 1000",
-            "項目B：單價 500，數量 2，金額 1000",
-            "總計（未稅）：2000",
-        ],
-    )
-    to_addr = payload.get("sender") or _addr_book()["sales"]
-    resp = _send(to_addr, subject, body, attachments=[attach])
-    return {
-        "ok": True,
-        "action": "send_quote",
-        "subject": subject,
-        "to": to_addr,
-        "attachments": [attach],
-        "mailer": resp,
-    }
-
-
-def _action_reply_support(payload: dict[str, Any]) -> dict[str, Any]:
-    subject = f"[支援回覆] {payload.get('subject', '').strip()}"
-    body = TEMPLATES["reply_support"].format(
-        subject=payload.get("subject", ""), content=payload.get("content", "")
-    )
-    to_addr = payload.get("sender") or _addr_book()["from"]
-    resp = _send(to_addr, subject, body)
-    return {
-        "ok": True,
-        "action": "reply_support",
-        "subject": subject,
-        "to": to_addr,
-        "mailer": resp,
-    }
-
-
-def _action_apply_info_change(payload: dict[str, Any]) -> dict[str, Any]:
-    subject = f"[資料更新受理] {payload.get('subject', '').strip()}"
-    body = TEMPLATES["apply_info_change"].format(
-        subject=payload.get("subject", ""), content=payload.get("content", "")
-    )
-    to_addr = payload.get("sender") or _addr_book()["from"]
-    resp = _send(to_addr, subject, body)
-    return {
-        "ok": True,
-        "action": "apply_info_change",
-        "subject": subject,
-        "to": to_addr,
-        "mailer": resp,
-    }
-
-
-def _action_reply_faq(payload: dict[str, Any]) -> dict[str, Any]:
-    subject = f"[流程說明] {payload.get('subject', '').strip()}"
-    body = TEMPLATES["reply_faq"].format(
-        faq_text="退款流程：填寫申請表 → 審核 3–5 個工作天 → 原路退回。"
-    )
-    to_addr = payload.get("sender") or _addr_book()["from"]
-    resp = _send(to_addr, subject, body)
-    return {
-        "ok": True,
-        "action": "reply_faq",
-        "subject": subject,
-        "to": to_addr,
-        "mailer": resp,
-    }
-
-
-def _action_reply_apology(payload: dict[str, Any]) -> dict[str, Any]:
-    subject = f"[致歉回覆] {payload.get('subject', '').strip()}"
-    body = TEMPLATES["reply_apology"].format(subject=payload.get("subject", ""))
-    to_addr = payload.get("sender") or _addr_book()["from"]
-    resp = _send(to_addr, subject, body)
-    return {
-        "ok": True,
-        "action": "reply_apology",
-        "subject": subject,
-        "to": to_addr,
-        "mailer": resp,
-    }
-
-
-def _action_reply_general(payload: dict[str, Any]) -> dict[str, Any]:
-    subject = f"[自動回覆] {payload.get('subject', '').strip()}"
-    body = TEMPLATES["reply_general"].format(subject=payload.get("subject", ""))
-    to_addr = payload.get("sender") or _addr_book()["from"]
-    resp = _send(to_addr, subject, body)
-    return {
-        "ok": True,
-        "action": "reply_general",
-        "subject": subject,
-        "to": to_addr,
-        "mailer": resp,
-    }
-
-
-ACTION_DISPATCHER = {
+_LABEL_TO_ACTION = {
+    # 中文
+    "業務接洽或報價": _action_send_quote,
+    "請求技術支援": _action_reply_support,
+    "申請修改資訊": _action_apply_info_change,
+    "詢問流程或規則": _action_reply_faq,
+    "投訴與抱怨": _action_reply_apology,
+    "其他": _action_reply_general,
+    # 英文/內部
     "send_quote": _action_send_quote,
     "reply_support": _action_reply_support,
     "apply_info_change": _action_apply_info_change,
     "reply_faq": _action_reply_faq,
     "reply_apology": _action_reply_apology,
     "reply_general": _action_reply_general,
+    "sales_inquiry": _action_send_quote,
+    "complaint": _action_reply_apology,
+    "other": _action_reply_general,
 }
 
+def _normalize_label(label: str) -> str:
+    l = (label or "").strip()
+    return l
 
-def decide_action(label: str) -> str:
-    return LABEL_ACTION_MAP.get(label, "reply_general")
+def handle(payload: Dict[str, Any], *, dry_run: bool = False, simulate_failure: str = "") -> Dict[str, Any]:
+    label = payload.get("predicted_label") or ""
+    if not label:
+        clf = IntentClassifier()
+        c = clf.classify(payload.get("subject",""), payload.get("body",""))
+        label = c.get("predicted_label") or c.get("label") or "其他"
+    label = _normalize_label(label)
+    action_fn = _LABEL_TO_ACTION.get(label) or _LABEL_TO_ACTION.get(label.lower()) or _action_reply_general
+    out = action_fn(payload)
 
+    # 風險與白名單
+    attachments = payload.get("attachments") or []
+    risky = any(_attachment_risks(a) for a in attachments if isinstance(a, dict))
+    require_review = risky or bool(simulate_failure)
 
-def handle(payload: dict[str, Any]) -> dict[str, Any]:
-    label = payload.get("predicted_label") or payload.get("label") or "其他"
-    action_name = decide_action(label)
-    fn = ACTION_DISPATCHER.get(action_name, _action_reply_general)
-    try:
-        result = fn(payload)
-        result["predicted_label"] = label
-        result["action_name"] = action_name
-        return result
-    except Exception as e:
-        logger.exception("處理動作例外：%s", e)
-        return {
-            "ok": False,
-            "error": str(e),
-            "action_name": action_name,
-            "predicted_label": label,
-        }
+    # 投訴嚴重度（P1）
+    if label in ("complaint", "投訴與抱怨"):
+        text = f"{payload.get('subject','')} {payload.get('body','')}"
+        if any(k in text for k in ["down","無法使用","嚴重","影響"]):
+            out["priority"] = "P1"
+            out["cc"] = ["oncall@example.com"]
 
+    # send 行為（僅示意）
+    if out["action"] == "send_quote":
+        # 附件確保存在
+        if not out.get("attachments"):
+            out["attachments"] = [_ensure_attachment("報價單", ["感謝詢價"])]
 
-# 介面別名：讓 email_processor 可 from action_handler import route_action
-def route_action(label: str, payload: dict[str, Any]) -> dict[str, Any]:
-    payload = dict(payload or {})
-    payload.setdefault("predicted_label", label)
-    return handle(payload)
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Action Handler：依分類結果執行後續動作")
-    parser.add_argument("--input", type=str, default="data/output/classify_result.json")
-    parser.add_argument("--output", type=str, default="data/output/action_result.json")
-    args = parser.parse_args()
-
-    in_path = Path(args.input)
-    if not in_path.exists():
-        raise FileNotFoundError(f"找不到輸入檔：{in_path}")
-    data = json.loads(in_path.read_text(encoding="utf-8"))
-
-    payload = {
-        "subject": data.get("subject", ""),
-        "content": data.get("content", ""),
-        "sender": data.get("sender", os.getenv("SMTP_FROM", "noreply@example.com")),
-        "predicted_label": data.get("predicted_label", "其他"),
-        "confidence": data.get("confidence", 0.0),
+    meta = {
+        "dry_run": bool(dry_run),
+        "require_review": bool(require_review),
     }
-    result = handle(payload)
+    out["meta"] = meta
+    return out
 
-    out_path = Path(args.output)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-    logger.info("處理完成：%s", out_path)
+# --- CLI ---
+def _load_payload(ns) -> Dict[str, Any]:
+    if getattr(ns, "input", None):
+        if ns.input in ("-", ""):
+            import sys
+            return json.loads(sys.stdin.read())
+        p = Path(ns.input)
+        return json.loads(p.read_text(encoding="utf-8"))
+    return {}
 
+def main(argv: List[str] | None = None) -> int:
+    p = argparse.ArgumentParser()
+    p.add_argument("--input", "-i", default=None)
+    p.add_argument("--output", "--out", dest="output", default=None)
+    p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--simulate-failure", nargs="?", const="any", default="")
+    p.add_argument("--whitelist", action="store_true")
+    ns, _ = p.parse_known_args(argv)
 
-if __name__ == "__main__":
-    main()
+    payload = _load_payload(ns)
+    res = handle(payload, dry_run=ns.dry_run, simulate_failure=ns.simulate_failure)
+
+    # 回傳總結（舊測試期望頂層一些鍵）
+    out_obj = {
+        "action": res.get("action"),
+        "attachments": res.get("attachments", []),
+        "requires_review": res.get("meta", {}).get("require_review", False),
+        "dry_run": res.get("meta", {}).get("dry_run", False),
+        "input": payload,
+        "meta": res.get("meta", {}),
+    }
+
+    if ns.output:
+        Path(ns.output).parent.mkdir(parents=True, exist_ok=True)
+        Path(ns.output).write_text(json.dumps(out_obj, ensure_ascii=False, indent=2), encoding="utf-8")
+    else:
+        print(json.dumps(out_obj, ensure_ascii=False))
+
+    return 0

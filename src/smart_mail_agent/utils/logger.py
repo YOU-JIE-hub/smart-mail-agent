@@ -1,21 +1,32 @@
 from __future__ import annotations
+import logging, os, sys
+__all__ = ["get_logger"]
 
-import logging
-import os
+_LEVELS = {
+    "CRITICAL": logging.CRITICAL, "ERROR": logging.ERROR, "WARNING": logging.WARNING,
+    "INFO": logging.INFO, "DEBUG": logging.DEBUG, "NOTSET": logging.NOTSET,
+}
 
-# 最小安全配置；若上層已有 handlers 就不動
-def _ensure_basic_config(level: str | int | None = None) -> None:
-    if not logging.getLogger().handlers:
-        logging.basicConfig(level=level or os.getenv("SMA_LOG_LEVEL", "INFO"))
+def _level_from_env() -> int:
+    lv = os.getenv("SMA_LOG_LEVEL","INFO").upper()
+    return _LEVELS.get(lv, logging.INFO)
 
-def get_logger(name: str = "SMA", level: str | int | None = None) -> logging.Logger:
-    """
-    專案統一取 logger 的入口。保留簡單行為以避免外部相依。
-    """
-    _ensure_basic_config(level)
-    return logging.getLogger(name)
+_configured = False
+def _configure_root() -> logging.Logger:
+    global _configured
+    root = logging.getLogger("smart_mail_agent")
+    if not _configured:
+        root.setLevel(_level_from_env())
+        if not root.handlers:
+            h = logging.StreamHandler(sys.stderr)
+            h.setFormatter(logging.Formatter("[%(levelname)s] %(name)s:%(filename)s:%(lineno)d %(message)s"))
+            root.addHandler(h)
+        _configured = True
+    return root
 
-# 兼容舊用法：from smart_mail_agent.utils.logger import logger
-logger: logging.Logger = get_logger("SMA")
+def get_logger(name: str | None = None) -> logging.Logger:
+    root = _configure_root()
+    return root if not name else logging.getLogger(name)
 
-__all__ = ["get_logger", "logger"]
+# 保留舊用法：from smart_mail_agent.utils.logger import logger
+logger = get_logger("smart_mail_agent")

@@ -1,1 +1,1 @@
-# shim package for backward compatibility
+__all__ = []
