@@ -1,5 +1,7 @@
 from __future__ import annotations
-from typing import Any, Dict, Optional, Callable
+
+from typing import Any, Callable, Dict, Optional
+
 
 def smart_truncate(text: str, limit: int) -> str:
     if limit <= 0:
@@ -8,12 +10,14 @@ def smart_truncate(text: str, limit: int) -> str:
         return text
     return text[: max(0, limit - 3)] + "..."
 
+
 _zh_map = {
     "sales_inquiry": "業務接洽或報價",
     "faq": "詢問流程或規則",
     "complaint": "投訴與抱怨",
     "other": "其他",
 }
+
 
 class IntentClassifier:
     def __init__(self, model_path: Optional[str] = None, pipeline_override: Optional[Callable] = None):
@@ -68,7 +72,7 @@ class IntentClassifier:
                 return {
                     "predicted_label": predicted,
                     "raw_label": raw_label,
-                    "label": raw_label if raw_label in ("other","sales_inquiry","complaint","faq") else "other",
+                    "label": raw_label if raw_label in ("other", "sales_inquiry", "complaint", "faq") else "other",
                     "confidence": score,
                 }
             except Exception:
@@ -77,9 +81,11 @@ class IntentClassifier:
         # 無模型：走規則
         return self._keyword_rules(text)
 
+
 def load_model() -> object:
     # 測試會 monkeypatch 這個函式丟例外；預設回傳假物件
     return object()
+
 
 def classify_intent(subject: str, body: str) -> Dict[str, Any]:
     try:

@@ -14,5 +14,9 @@ def test_log_to_db_inserts_row(tmp_path: Path):
     try:
         (cnt,) = con.execute("SELECT COUNT(*) FROM emails_log").fetchone()
         assert cnt >= 2
+        row = con.execute(
+            "SELECT subject, predicted_label, action FROM emails_log ORDER BY id ASC LIMIT 1"
+        ).fetchone()
+        assert row[0] == "S1" and row[1] == "reply_faq" and row[2] == "auto_reply"
     finally:
         con.close()

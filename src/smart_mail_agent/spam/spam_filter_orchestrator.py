@@ -1,10 +1,12 @@
 from __future__ import annotations
+
 import re
 from typing import Dict
 
 _SHORTLINK_RE = re.compile(r"(?:\b(?:t\.co|tinyurl\.com|bit\.ly)/[A-Za-z0-9]+)", re.I)
 _EN_SPAM = re.compile(r"\b(free|viagra|lottery|winner)\b", re.I)
 _ZH_SPAM = re.compile(r"(免費|限時|優惠|中獎)")
+
 
 class SpamFilterOrchestrator:
     def is_legit(self, subject: str, content: str, sender: str) -> Dict[str, object]:

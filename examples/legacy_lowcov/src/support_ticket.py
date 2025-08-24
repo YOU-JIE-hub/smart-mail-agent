@@ -7,10 +7,10 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
-from utils.logger import logger
+from smart_mail_agent.utils.logger import logger
 
 try:
-    from utils.priority_evaluator import evaluate_priority
+    from smart_mail_agent.utils.priority_evaluator import evaluate_priority
 except ImportError:
 
     def evaluate_priority(*args, **kwargs):

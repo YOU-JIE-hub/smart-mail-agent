@@ -1,10 +1,11 @@
 from __future__ import annotations
-from pathlib import Path
+
 import sqlite3
+from pathlib import Path
 from typing import Any, Dict, Tuple
 
 # 欄位順序與資料表欄位一致
-COLS = ("subject","content","summary","predicted_label","confidence","action","error")
+COLS = ("subject", "content", "summary", "predicted_label", "confidence", "action", "error")
 
 # 預設值：若呼叫端未提供就自動補上
 _DEFAULTS: Dict[str, Any] = {
@@ -12,10 +13,11 @@ _DEFAULTS: Dict[str, Any] = {
     "content": "",
     "summary": "",
     "predicted_label": "",
-    "confidence": None,   # REAL 欄位允許 NULL
+    "confidence": None,  # REAL 欄位允許 NULL
     "action": "",
     "error": "",
 }
+
 
 def _normalize_args(*args, **kwargs) -> Tuple[Dict[str, Any], Path]:
     """
@@ -36,8 +38,10 @@ def _normalize_args(*args, **kwargs) -> Tuple[Dict[str, Any], Path]:
         data = {k: kwargs.get(k, _DEFAULTS[k]) for k in COLS}
     return data, Path(dbp)
 
+
 def _ensure_schema(db: sqlite3.Connection) -> None:
-    db.execute("""CREATE TABLE IF NOT EXISTS emails_log(
+    db.execute(
+        """CREATE TABLE IF NOT EXISTS emails_log(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         subject TEXT,
@@ -47,7 +51,9 @@ def _ensure_schema(db: sqlite3.Connection) -> None:
         confidence REAL,
         action TEXT,
         error TEXT
-    )""")
+    )"""
+    )
+
 
 def log_to_db(*args, **kwargs) -> int:
     """

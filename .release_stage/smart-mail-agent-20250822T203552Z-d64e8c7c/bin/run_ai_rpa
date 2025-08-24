@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-set -Eeuo pipefail
-# 啟動虛擬環境後，執行 AI+RPA 管線
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-[ -x "$ROOT/.venv/bin/activate" ] && . "$ROOT/.venv/bin/activate" || true
-export PYTHONPATH="$ROOT/src"
-python -m ai_rpa.main "$@"

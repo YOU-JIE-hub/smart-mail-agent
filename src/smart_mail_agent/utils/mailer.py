@@ -2,6 +2,7 @@ import os
 
 REQUIRED = ["SMTP_USER", "SMTP_PASS", "SMTP_HOST", "SMTP_PORT"]
 
+
 def validate_smtp_config() -> dict:
     missing = [k for k in REQUIRED if not os.getenv(k)]
     if missing:

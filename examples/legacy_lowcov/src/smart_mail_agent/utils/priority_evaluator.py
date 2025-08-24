@@ -4,7 +4,7 @@
 
 from typing import Literal
 
-from utils.logger import logger
+from smart_mail_agent.utils.logger import logger
 
 PriorityLevel = Literal["high", "medium", "low"]
 

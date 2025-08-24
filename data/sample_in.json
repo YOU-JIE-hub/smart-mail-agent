@@ -4,6 +4,6 @@
   "body": "需要 quotation，請回覆細節與檔案",
   "predicted_label": "send_quote",
   "confidence": 0.9,
-  "attachments": [],
-  "client_name": "Alice Co., Ltd."
+  "client_name": "Alice Co., Ltd.",
+  "attachments": []
 }

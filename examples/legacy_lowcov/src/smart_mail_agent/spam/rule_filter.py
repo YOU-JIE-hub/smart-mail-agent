@@ -4,7 +4,7 @@
 
 import re
 
-from utils.logger import logger
+from smart_mail_agent.utils.logger import logger
 
 
 class RuleBasedSpamFilter:

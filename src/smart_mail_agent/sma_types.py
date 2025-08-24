@@ -97,6 +97,7 @@ def normalize_result(raw: dict[str, Any]) -> ActionResult:
     data.setdefault("duration_ms", 0)
     return ActionResult(**data)
 
+
 # ---- 安全附件正規化（允許 None/str/dict 混合） ----
 def _coerce_attachments_safe(src):
     # 將各種輸入形狀轉為統一 dict 列表，過濾 None/空字串：
@@ -104,7 +105,7 @@ def _coerce_attachments_safe(src):
     #   - {"name":"b.pdf","size":123} -> 轉為 {"filename":"b.pdf","size":123,"mime":...}
     #   - 已是 dict 且有 filename/mime/size 保留並補預設；其餘型別忽略
     out = []
-    for it in (src or []):
+    for it in src or []:
         if not it:
             continue
         if isinstance(it, str):

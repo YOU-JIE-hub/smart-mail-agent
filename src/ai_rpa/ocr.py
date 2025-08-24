@@ -2,11 +2,14 @@
 # 檔案位置: src/ai_rpa/ocr.py
 # 模組用途: OCR（若無 pytesseract 則優雅退化）
 from __future__ import annotations
-from typing import Dict
-from ai_rpa.utils.logger import get_logger
+
 import os
+from typing import Dict
+
+from ai_rpa.utils.logger import get_logger
 
 log = get_logger("OCR")
+
 
 def run_ocr(image_path: str) -> Dict[str, str]:
     """

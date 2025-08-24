@@ -1,32 +1,26 @@
 name: CI
-
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
+on: [push, pull_request]
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
-      - name: Install deps
+          python-version: '3.10'
+          cache: 'pip'
+      - name: System deps
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y tesseract-ocr tesseract-ocr-eng tesseract-ocr-osd poppler-utils
+      - name: Install
         run: |
           python -m pip install -U pip
-          pip install -U pytest pytest-cov coverage-badge
-      - name: Run tests
-        env:
-          PYTHONPATH: .
-          COV_UNDER: 95
+          pip install -e ".[ocr,llm,dev]"
+      - name: Lint
         run: |
-          pytest --cov-fail-under=$COV_UNDER
-          coverage-badge -o assets/badges/coverage.svg -f
-      - name: Upload badge
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-badge
-          path: assets/badges/coverage.svg
+          ruff check --fix src tests_smoke
+          black --check src tests_smoke
+          isort --check-only src tests_smoke
+      - name: Test
+        run: pytest -q

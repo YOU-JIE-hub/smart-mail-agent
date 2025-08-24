@@ -2,11 +2,8 @@ from __future__ import annotations
 from smart_mail_agent.sma_types import normalize_result
 
 def test_normalize_result_branches():
-    raw = {
-        "action_name": "reply_general",
-        "subject": "您好",
-        "attachments": ["a.txt", {"name": "b.pdf", "size": 123}],  # 不放 None
-    }
+    raw = {"action_name":"reply_general","subject":"您好",
+           "attachments":["a.txt", None, {"name":"b.pdf","size":123}]}
     res = normalize_result(raw)
     try:
         data = res.model_dump()

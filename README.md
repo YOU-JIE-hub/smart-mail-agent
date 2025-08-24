@@ -1,42 +1,44 @@
-<p align="left">
-  <a href="https://github.com/YOU-JIE-hub/smart-mail-agent/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/YOU-JIE-hub/smart-mail-agent/tests.yml?branch=chore/final-canonicalize-and-shims-20250822T030252&label=CI"></a>
-  <a href="https://github.com/YOU-JIE-hub/smart-mail-agent/actions"><img alt="Lint" src="https://img.shields.io/github/actions/workflow/status/YOU-JIE-hub/smart-mail-agent/lint.yml?branch=chore/final-canonicalize-and-shims-20250822T030252&label=lint"></a>
-  <a href="https://github.com/YOU-JIE-hub/smart-mail-agent/actions"><img alt="Type Check" src="https://img.shields.io/github/actions/workflow/status/YOU-JIE-hub/smart-mail-agent/typecheck.yml?branch=chore/final-canonicalize-and-shims-20250822T030252&label=type"></a>
-  <a href="badges/coverage.svg"><img alt="Coverage" src="badges/coverage.svg"></a>
-  <a href="https://github.com/YOU-JIE-hub/smart-mail-agent/releases"><img alt="Release" src="https://img.shields.io/github/v/tag/YOU-JIE-hub/smart-mail-agent"></a>
-</p>
+Smart Mail Agent — AI + RPA 整合專案
 
-![coverage](badges/coverage.svg)
-![CI](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/tests.yml/badge.svg)
-![type](https://github.com/YOU-JIE-hub/smart-mail-agent/actions/workflows/typecheck.yml/badge.svg)
-![tag](https://img.shields.io/github/v/tag/YOU-JIE-hub/smart-mail-agent"left">
-  <a href="https://github.com/YOU-JIE-hub/smart-mail-agent/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/YOU-JIE-hub/smart-mail-agent/tests.yml?branch=hardening/pro-release-20250821-060514&label=CI"></a>
-  <a href="https://github.com/YOU-JIE-hub/smart-mail-agent/actions"><img alt="Lint" src="https://img.shields.io/github/actions/workflow/status/YOU-JIE-hub/smart-mail-agent/lint.yml?branch=hardening/pro-release-20250821-060514&label=lint"></a>
-  <a href="https://github.com/YOU-JIE-hub/smart-mail-agent/actions"><img alt="Type Check" src="https://img.shields.io/github/actions/workflow/status/YOU-JIE-hub/smart-mail-agent/typecheck.yml?branch=hardening/pro-release-20250821-060514&label=type"></a>
-  <a href="badges/coverage.svg"><img alt="Coverage" src="badges/coverage.svg"></a>
-  <a href="https://github.com/YOU-JIE-hub/smart-mail-agent/releases"><img alt="Release" src="https://img.shields.io/github/v/tag/YOU-JIE-hub/smart-mail-agent?sort=semver&display_name=tag"></a>
-</p>
+Ubuntu 22.04 · Python 3.10 · OCR + Scrape + NLP + LLM · 可執行 CLI · 可排程 · 專業 GitHub 展示
 
-## 使用說明（統一入口）
+[功能]
+  - OCR：Tesseract（eng/osd/chi-tra/chi-sim），支援圖片與 PDF
+  - Scrape：requests + bs4 -> 乾淨文字
+  - NLP：關鍵詞/規則分析
+  - LLM：OpenAI 1.x；未設 OPENAI_API_KEY 時自動退化為本地摘要
+  - Actions：輸出 JSON（或 PDF/TXT）
+  - CLI：ai-rpa 一鍵執行；另有 sma-spamcheck, sma-run
+  - 工程：pyproject.toml、ruff/black/isort、pytest、pre-commit、GitHub Actions
 
-1. 建立與啟用虛擬環境：
-   ```bash
-   python3 -m venv .venv && . .venv/bin/activate
-   pip install -r requirements.txt
-   ```
+[快速開始]
+    # 建議把這段加到 ~/.bashrc
+    sma() { cd "$HOME/projects/smart-mail-agent" || return 2; export VIRTUAL_ENV_DISABLE_PROMPT=0; . "$HOME/.venv/sma/bin/activate"; PS1="(sma) $PS1"; }
 
-2. 設定 `.env`（可參考 `.env.example`）：
-   - NOTO_FONT_PATH、PDF_FONT_FALLBACK：中文 PDF 字型路徑（必要時自備字型檔放入 assets/fonts/）
-   - SMTP_HOST、SMTP_PORT、SMTP_USER、SMTP_PASS、MAIL_FROM：SMTP 寄信設定
-   - OUTPUT_DIR：輸出資料夾（PDF、附件）
+    # 初始化
+    sma
+    pip install -e ".[ocr,llm,dev]"
+    ai-rpa --input-path samples/nlp_demo.txt --tasks nlp,actions --output data/output/report.json
 
-3. 執行主流程：
-   ```bash
-   bin/smarun --help
-   # 或
-   python -m src.run_action_handler --help
-   ```
+[OCR（中文）]
+    ai-rpa --input-path samples/ocr_tra.png --tasks ocr,nlp,actions --output data/output/ocr_report.json
 
-## CI
+[LLM（可選）]
+    echo "OPENAI_API_KEY=sk-..." > .env
+    export OPENAI_API_KEY=sk-...
+    ai-rpa --input-path samples/nlp_demo.txt --tasks nlp,actions --output data/output/report.json
 
-已提供 `.github/workflows/ci.yml`，push/PR 會自動執行 pytest 與覆蓋率報告。
+[測試與格式]
+    make lint
+    make test
+
+[結構]
+    src/
+      ai_rpa/                (OCR/Scrape/NLP/LLM/Actions 統一入口)
+      smart_mail_agent/      (既有模組：ingestion/features/spam/…)
+    tests_smoke/             (最小煙囪測試)
+    assets/fonts/            (NotoSansTC-Regular.ttf)
+    samples/                 (OCR/NLP 範例)
+    data/output/             (產物)
+
+授權：MIT License

@@ -1,76 +1,127 @@
-#!/usr/bin/env python3
-# 檔案位置: src/ai_rpa/main.py
-# 模組用途: Orchestrator/CLI，與 PDF 設計相符
 from __future__ import annotations
+
 import argparse
-from typing import List, Dict, Any
-from ai_rpa.utils.config_loader import load_config
-from ai_rpa.utils.logger import get_logger
-from ai_rpa.ocr import run_ocr
-from ai_rpa.scraper import scrape
-from ai_rpa.file_classifier import classify_dir
-from ai_rpa.nlp import analyze_text
+from pathlib import Path
+from typing import Any, Dict, List
+
 from ai_rpa.actions import write_json
+from smart_mail_agent.utils.logger import get_logger
 
-log = get_logger("CLI")
+# 可選模組（存在就用）
+try:
+    from ai_rpa import ocr  # type: ignore
+except Exception:  # pragma: no cover
+    ocr = None
+try:
+    from ai_rpa import scraper  # type: ignore
+except Exception:  # pragma: no cover
+    scraper = None
+try:
+    from ai_rpa import nlp  # type: ignore
+except Exception:  # pragma: no cover
+    nlp = None
+from ai_rpa import nlp_llm
 
-def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="AI+RPA pipeline")
-    p.add_argument("--config", default="configs/ai_rpa_config.yaml")
-    p.add_argument("--tasks", default="", help="逗號分隔: ocr,scrape,classify_files,nlp,actions")
-    p.add_argument("--input-path", default="data/input")
-    p.add_argument("--url", default="https://example.com")
-    p.add_argument("--output", default="data/output/report.json")
-    p.add_argument("--log-level", default="INFO")
-    p.add_argument("--dry-run", action="store_true")
+logger = get_logger("ai_rpa.main")
+
+
+def _parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(prog="ai-rpa", description="AI+RPA Pipeline")
+    p.add_argument("--input-path", dest="input_path", type=str, default="", help="輸入路徑或文字檔 / 網址")
+    p.add_argument(
+        "--output", dest="output", type=str, default="data/output/report.json", help="輸出檔（完整檔名或目錄）"
+    )
+    p.add_argument("--tasks", type=str, default="ocr,scrape,nlp,actions", help="任務清單，以逗號分隔")
+    p.add_argument("--dry-run", action="store_true", help="僅顯示不寫檔")
     return p.parse_args()
 
-def main() -> int:
-    args = parse_args()
-    cfg = load_config(args.config if args.config else None)
-    tasks = [t for t in (args.tasks.split(",") if args.tasks else cfg.get("tasks", [])) if t]
-    out: Dict[str, Any] = {"steps": [], "errors": []}
+
+def _normalize_output_path(out: str) -> Path:
+    outp = Path(out)
+    return outp / "report.json" if (outp.is_dir() or not outp.suffix) else outp
+
+
+def _to_text(x) -> str:
+    if x is None:
+        return ""
+    if isinstance(x, (list, tuple)):
+        return "\n".join(_to_text(y) for y in x)
+    if isinstance(x, dict):
+        for k in ("text", "content", "ocr_text", "body", "data"):
+            if k in x and x[k]:
+                return _to_text(x[k])
+        # 兜底：把所有簡單值拼成可讀文本
+        try:
+            items = []
+            for k, v in x.items():
+                if isinstance(v, (str, int, float)):
+                    items.append(f"{k}: {v}")
+            return "\n".join(items)
+        except Exception:
+            return ""
+    return str(x)
+
+
+def run_pipeline(args: argparse.Namespace) -> Dict[str, Any]:
+    tasks: List[str] = [t.strip() for t in (args.tasks or "").split(",") if t.strip()]
+    result: Dict[str, Any] = {"ok": True, "tasks": tasks, "artifacts": {}}
+    text_corpus = ""
 
     # 1) OCR
-    if "ocr" in tasks:
-        ocr_in = f"{args.input_path}/sample.jpg"
+    if "ocr" in tasks and ocr and args.input_path:
+        ip = args.input_path
         try:
-            res = run_ocr(ocr_in)
-            out["steps"].append({"ocr": res})
+            ocr_out = ocr.run_ocr(ip)  # 允許回傳 dict/list/str
+            piece = _to_text(ocr_out)
+            text_corpus += (piece + "\n") if piece else ""
+            result["artifacts"]["ocr"] = {"input": ip, "chars": len(piece)}
         except Exception as e:
-            out["errors"].append({"ocr": str(e)})
+            logger.exception("OCR 失敗：%s", e)
+            result.setdefault("errors", []).append({"stage": "ocr", "error": str(e)})
 
     # 2) Scrape
-    if "scrape" in tasks:
+    if "scrape" in tasks and scraper and args.input_path.startswith("http"):
         try:
-            out["steps"].append({"scrape": scrape(args.url)})
+            sc = scraper.scrape_to_text(args.input_path)
+            piece = _to_text(sc)
+            text_corpus += (piece + "\n") if piece else ""
+            result["artifacts"]["scrape"] = {"url": args.input_path}
         except Exception as e:
-            out["errors"].append({"scrape": str(e)})
+            logger.exception("Scraper 失敗：%s", e)
+            result.setdefault("errors", []).append({"stage": "scrape", "error": str(e)})
 
-    # 3) File classify
-    if "classify_files" in tasks:
+    # 3) NLP（若存在）
+    if "nlp" in tasks and nlp:
         try:
-            out["steps"].append({"classify_files": classify_dir(args.input_path)})
+            analysis = nlp.analyze_text(text_corpus)
+            result["artifacts"]["nlp"] = analysis
         except Exception as e:
-            out["errors"].append({"classify_files": str(e)})
+            logger.exception("NLP 失敗：%s", e)
+            result.setdefault("errors", []).append({"stage": "nlp", "error": str(e)})
 
-    # 4) NLP
-    if "nlp" in tasks:
-        texts: List[str] = []
-        for step in out["steps"]:
-            if "ocr" in step and step["ocr"].get("text"):
-                texts.append(step["ocr"]["text"])
-            if "scrape" in step:
-                texts.extend([x["text"] for x in step["scrape"]])
-        try:
-            out["steps"].append({"nlp": analyze_text(texts, cfg.get("nlp", {}).get("model", "offline-keyword"))})
-        except Exception as e:
-            out["errors"].append({"nlp": str(e)})
+    # 4) LLM 摘要（退化可用）
+    try:
+        llm_out = nlp_llm.summarize(text_corpus)
+        result["artifacts"]["llm"] = llm_out
+    except Exception as e:
+        logger.exception("LLM 摘要失敗：%s", e)
+        result.setdefault("errors", []).append({"stage": "llm", "error": str(e)})
 
-    # 5) Actions
-    if "actions" in tasks and not args.dry_run:
-        write_json(out, args.output)
-    return 0
+    # 5) Actions（輸出 JSON）
+    if "actions" in tasks:
+        out_file = _normalize_output_path(args.output)
+        if not args.dry_run:
+            write_json(result, out_file)
+        else:
+            logger.info("[dry-run] 將輸出到：%s", out_file)
+
+    return result
+
+
+def main() -> None:
+    args = _parse_args()
+    run_pipeline(args)
+
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()

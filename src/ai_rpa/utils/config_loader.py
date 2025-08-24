@@ -2,8 +2,10 @@
 # 檔案位置: src/ai_rpa/utils/config_loader.py
 # 模組用途: 載入 YAML 配置與 .env，集中管理參數
 from __future__ import annotations
+
 import os
 from typing import Any, Dict
+
 import yaml
 
 DEFAULT_CONFIG: Dict[str, Any] = {
@@ -12,6 +14,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "tasks": ["ocr", "scrape", "classify_files", "nlp", "actions"],
     "nlp": {"model": "offline-keyword"},
 }
+
 
 def load_config(path: str | None) -> Dict[str, Any]:
     """

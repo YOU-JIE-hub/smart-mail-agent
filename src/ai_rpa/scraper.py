@@ -2,12 +2,16 @@
 # 檔案位置: src/ai_rpa/scraper.py
 # 模組用途: 簡易網頁擷取（示範：抓取 h1/h2）
 from __future__ import annotations
-from typing import List, Dict
+
+from typing import Dict, List
+
 import requests
 from bs4 import BeautifulSoup
+
 from ai_rpa.utils.logger import get_logger
 
 log = get_logger("SCRAPER")
+
 
 def scrape(url: str) -> List[Dict[str, str]]:
     """

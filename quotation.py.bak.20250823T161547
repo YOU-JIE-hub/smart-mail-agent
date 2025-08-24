@@ -1,0 +1,44 @@
+from __future__ import annotations
+import os, re, pathlib
+from typing import Any, Dict, Tuple
+
+QUOTES_DIR = pathlib.Path(os.environ.get("QUOTES_DIR", "quotes"))
+QUOTES_DIR.mkdir(parents=True, exist_ok=True)
+
+def _safe_stem(name: str) -> str:
+    s = re.sub(r"[^0-9A-Za-z\u4e00-\u9fff]+", "_", name or "")
+    s = re.sub(r"_+", "_", s).strip("._")
+    return s or "quote"
+
+def _norm_inputs(*args, **kwargs) -> Tuple[str, str]:
+    if len(args) == 1 and isinstance(args[0], dict):
+        d = args[0]
+        return str(d.get("subject","")), str(d.get("body",""))
+    if kwargs:
+        return str(kwargs.get("subject","")), str(kwargs.get("body",""))
+    subj = str(args[0]) if len(args) >= 1 else ""
+    body = str(args[1]) if len(args) >= 2 else ""
+    return subj, body
+
+def _pick(subject: str, body: str) -> str:
+    text = f"{subject} {body}"
+    def has(*ks): return any(k in text for k in ks)
+    if has("整合","API","ERP","LINE"): return "企業"
+    if has("自動分類","自動化","排程"): return "專業"
+    if has("報價","價格"): return "基礎"
+    if ("其他詢問" in subject) or ("功能" in body): return "企業"
+    return "基礎"
+
+def choose_package(*args, **kwargs) -> Dict[str, Any]:
+    subject, body = _norm_inputs(*args, **kwargs)
+    return {"package": _pick(subject, body), "needs_manual": True}
+
+_MIN_PDF = b"%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]/Contents 4 0 R>>endobj\n4 0 obj<</Length 44>>stream\nBT /F1 18 Tf 20 100 Td (Smart Mail Agent Quote) Tj ET\nendstream endobj\nxref\n0 5\n0000000000 65535 f \n0000000010 00000 n \n0000000060 00000 n \n0000000115 00000 n \n0000000210 00000 n \ntrailer<</Root 1 0 R/Size 5>>\nstartxref\n300\n%%EOF\n"
+
+def generate_pdf_quote(package: str, client_name: str) -> str:
+    stem = _safe_stem(client_name.replace("@","_at_").replace(".","_"))
+    out = pathlib.Path(os.environ.get("QUOTES_DIR","quotes")) / f"{stem}.pdf"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    if not out.exists() or out.stat().st_size < 20:
+        out.write_bytes(_MIN_PDF)
+    return str(out)

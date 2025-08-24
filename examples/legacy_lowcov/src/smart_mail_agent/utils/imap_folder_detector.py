@@ -2,7 +2,7 @@ import imaplib
 import os
 import re
 from dotenv import load_dotenv
-from utils.logger import logger
+from smart_mail_agent.utils.logger import logger
 
 load_dotenv()
 #!/usr/bin/env python3

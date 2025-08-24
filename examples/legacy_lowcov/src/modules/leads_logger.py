@@ -6,7 +6,7 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
-from utils.logger import logger
+from smart_mail_agent.utils.logger import logger
 
 DB_PATH = Path("data/leads.db")
 TABLE_NAME = "leads"

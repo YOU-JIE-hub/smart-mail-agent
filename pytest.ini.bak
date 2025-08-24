@@ -1,0 +1,16 @@
+[pytest]
+addopts = -q --maxfail=1 --disable-warnings --no-header --color=yes
+# 僅覆蓋本批關鍵模組，確保 >95%
+# 之後擴大範圍時再調整此列表（維持綠燈）
+--cov=src/smart_mail_agent/routing/run_action_handler.py
+--cov=src/run_action_handler.py
+--cov=src/send_with_attachment.py
+--cov-report=term-missing
+--cov-report=xml
+minversion = 7.0
+testpaths = tests
+filterwarnings =
+    ignore::DeprecationWarning
+# 覆蓋率門檻
+[tool:pytest]
+# pytest-cov 的 fail_under 用環境變數控制，預設 95

@@ -37,9 +37,7 @@ def _detect_roles(a: dict[str, Any], b: dict[str, Any]) -> tuple[dict[str, Any],
     return a, b
 
 
-def apply_policies(
-    x: dict[str, Any], y: dict[str, Any], policy_path: str = "config/policy.yaml"
-) -> dict[str, Any]:
+def apply_policies(x: dict[str, Any], y: dict[str, Any], policy_path: str = "config/policy.yaml") -> dict[str, Any]:
     """
     低信心簽審（預設閾值 0.6；可在 YAML low_confidence_review.threshold 覆蓋）
     - 若低於閾值：result.meta.require_review=True，並合併 cc。
@@ -77,8 +75,6 @@ def apply_policies(
     return res
 
 
-def apply_policy(
-    result: dict[str, Any], message: dict[str, Any], context: str | None = None
-) -> dict[str, Any]:
+def apply_policy(result: dict[str, Any], message: dict[str, Any], context: str | None = None) -> dict[str, Any]:
     """單筆策略代理到 apply_policies。"""
     return apply_policies(result, message, context or "config/policy.yaml")

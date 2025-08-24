@@ -4,7 +4,7 @@ import re
 import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Sequence, Tuple, Union, Optional
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 try:
     import yaml  # type: ignore

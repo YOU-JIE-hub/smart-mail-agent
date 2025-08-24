@@ -8,8 +8,8 @@ import os
 from action_handler import route_action
 from dotenv import load_dotenv
 from inference_classifier import classify_intent
-from utils.log_writer import write_log
-from utils.logger import logger
+from smart_mail_agent.utils.log_writer import write_log
+from smart_mail_agent.utils.logger import logger
 
 from spam.spam_filter_orchestrator import SpamFilterOrchestrator
 

@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from importlib import import_module as _im
 
 _mod = _im("smart_mail_agent.utils.jsonlog")

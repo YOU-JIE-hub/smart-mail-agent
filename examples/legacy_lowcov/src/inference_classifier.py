@@ -6,7 +6,7 @@ import json
 import os
 
 from dotenv import load_dotenv
-from utils.logger import logger
+from smart_mail_agent.utils.logger import logger
 
 import torch
 from transformers import (

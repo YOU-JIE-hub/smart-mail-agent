@@ -4,7 +4,7 @@
 
 import sqlite3
 
-from utils.logger import logger
+from smart_mail_agent.utils.logger import logger
 
 
 def get_user_by_email(db_path: str, email: str) -> dict | None:

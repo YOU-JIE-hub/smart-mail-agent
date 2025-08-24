@@ -1,29 +1,69 @@
 from __future__ import annotations
-from typing import Any, Dict, Iterable, List, Tuple
 
-def _contains_any(text: str, needles: Iterable[str]) -> bool:
-    t = text.lower()
-    return any(n.lower() in t for n in needles)
+from typing import Any, Callable, Dict, Tuple
 
-_LABELS = {
-    "complaint": ("售後服務或抱怨", "complaint"),
-    "policy":    ("詢問流程或規則", "policy"),
-    "sales":     ("詢問流程或規則", "sales_inquiry"),
-    "other":     ("其他", "other"),
+LABEL_ZH = {
+    "other": "其他",
+    "quote": "業務接洽或報價",
+    "sales": "業務接洽或報價",
+    "refund": "詢問流程或規則",
+    "process": "詢問流程或規則",
+    "support": "售後服務或抱怨",
 }
 
-_KW_COMPLAINT = ["抱怨","投訴","客訴","不滿","壞了","故障","退貨","退款","保固","維修"]
-_KW_POLICY = ["流程","規則","政策","policy","rules","如何申請","怎麼申請","SOP"]
-_KW_QUOTE_SALES = ["報價","價格","quote","quotation","price","pricing","費率"]
 
-def _make_result(kind: str, score: float) -> Dict[str, Any]:
-    label_zh, raw = _LABELS.get(kind, _LABELS["other"])
-    return {"label": label_zh, "predicted_label": label_zh, "raw_label": raw, "score": float(score), "confidence": float(score)}
+def _norm_pipe(out: Any) -> Tuple[str, float, Dict[str, Any]]:
+    """接受多種形狀：str | (label,score) | dict"""
+    if isinstance(out, str):
+        return out, 0.0, {"raw_label": out, "score": 0.0}
+    if isinstance(out, tuple) and len(out) >= 2:
+        return str(out[0]), float(out[1]), {"raw": out}
+    if isinstance(out, dict):
+        label = out.get("label") or out.get("raw_label") or "other"
+        score = float(out.get("score") or 0.0)
+        return str(label), score, out
+    return "other", 0.0, {"raw": out}
 
-def classify_intent(subject: str | None, content: str | None) -> Dict[str, Any]:
-    s = (subject or "").strip(); c = (content or "").strip(); text = f"{s}\n{c}".strip()
-    if not text: return _make_result("other", 0.40)
-    if _contains_any(text, _KW_COMPLAINT): return _make_result("complaint", 0.96)
-    if _contains_any(text, _KW_QUOTE_SALES): return _make_result("sales", 0.93)
-    if _contains_any(text, _KW_POLICY): return _make_result("policy", 0.92)
-    return _make_result("other", 0.40)
+
+def _rule_override(subject: str, content: str) -> str | None:
+    s = (subject or "") + " " + (content or "")
+    if any(k in s for k in ("報價", "詢價", "合作")):
+        return "業務接洽或報價"
+    if any(k in s for k in ("售後", "抱怨", "投訴")):
+        return "售後服務或抱怨"
+    if any(k in s for k in ("流程", "退費", "退款")):
+        return "詢問流程或規則"
+    return None
+
+
+def _is_generic(subject: str, content: str) -> bool:
+    s = (subject or "").lower() + " " + (content or "").lower()
+    return any(x in s for x in ("hi", "hello", "您好", "哈囉"))
+
+
+class IntentClassifier:
+    def __init__(self, model_path: str = "", pipeline_override: Callable[..., Any] | None = None):
+        self.model_path = model_path
+        self._pipe = pipeline_override
+
+    def classify(self, subject: str = "", content: str = "") -> Dict[str, Any]:
+        # 模型輸出正規化
+        raw_label, score, extra = _norm_pipe(self._pipe() if callable(self._pipe) else {"label": "other", "score": 0.0})
+        # 先把英文/代碼映射到中文
+        label_zh = LABEL_ZH.get(
+            raw_label,
+            raw_label if raw_label in ("其他", "售後服務或抱怨", "業務接洽或報價", "詢問流程或規則") else "其他",
+        )
+        # 規則覆寫（保留原 score）
+        rule = _rule_override(subject, content)
+        predicted = rule or label_zh
+        # generic + 低信心 -> 其他（保留分數）
+        if _is_generic(subject, content) and score < 0.5:
+            predicted = "其他"
+        return {
+            "label": label_zh,
+            "predicted_label": predicted,
+            "raw_label": raw_label,
+            "confidence": float(score),
+            **({"extra": extra} if extra else {}),
+        }

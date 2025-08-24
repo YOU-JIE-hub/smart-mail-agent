@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Tuple
 
@@ -10,6 +11,7 @@ _ZH = {
     "unknown": "其他",
 }
 
+
 def _to_label_score(x: Any) -> Tuple[str, float]:
     if isinstance(x, tuple) and len(x) >= 2:
         return str(x[0]), float(x[1])
@@ -19,9 +21,11 @@ def _to_label_score(x: Any) -> Tuple[str, float]:
         return str(lbl), float(scr)
     return "other", 0.0
 
+
 def _is_generic_greeting(subject: str, content: str) -> bool:
     s = f"{subject} {content}".lower()
     return any(k in s for k in ["hi", "hello", "哈囉", "您好"])
+
 
 @dataclass
 class IntentClassifier:

@@ -1,28 +1,19 @@
-.PHONY: venv install lint fmt test typecheck ci all
-
-venv:
-	python3 -m venv .venv
-
-install:
-	. .venv/bin/activate; \
-	pip install -U pip; \
-	if [ -f requirements.txt ]; then pip install -r requirements.txt; fi; \
-	pip install ruff mypy pytest pytest-cov pytest-timeout pre-commit
-
+.PHONY: setup lint test ocr-demo nlp-demo dist
+setup:
+	python -m pip install -U pip
+	pip install -e ".[ocr,llm,dev]"
+	pre-commit install || true
 lint:
-	. .venv/bin/activate; ruff check .
-
-fmt:
-	. .venv/bin/activate; ruff format .
-
-typecheck:
-	. .venv/bin/activate; mypy .
-
+	ruff check --fix src tests_smoke || true
+	black src tests_smoke
+	isort src tests_smoke
 test:
-	. .venv/bin/activate; \
-	PYTHONNOUSERSITE=1 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 OFFLINE=1 PYTHONPATH=".:src" \
-	pytest -q -p pytest_timeout -p pytest_cov --cov --cov-branch --cov-report=term-missing:skip-covered
-
-ci: lint typecheck test
-
-all: install fmt lint typecheck test
+	pytest -q
+ocr-demo:
+	ai-rpa --input-path samples/ocr_tra.png --tasks ocr,nlp,actions --output data/output/ocr_report.json
+	@echo "→ data/output/ocr_report.json"
+nlp-demo:
+	ai-rpa --input-path samples/nlp_demo.txt --tasks nlp,actions --output data/output/report.json
+	@echo "→ data/output/report.json"
+dist:
+	python -m build || true

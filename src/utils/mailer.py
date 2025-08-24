@@ -1,9 +1,11 @@
 from __future__ import annotations
+
 import os
 import smtplib
 from email.message import EmailMessage
 from pathlib import Path
 from typing import Optional
+
 
 def validate_smtp_config() -> bool:
     req = ["SMTP_USER", "SMTP_PASS", "SMTP_HOST", "SMTP_PORT", "SMTP_FROM"]
@@ -15,6 +17,7 @@ def validate_smtp_config() -> bool:
     except Exception:
         return False
     return True
+
 
 def send_email_with_attachment(
     recipient: str,

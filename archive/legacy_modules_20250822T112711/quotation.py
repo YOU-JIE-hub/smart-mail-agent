@@ -75,7 +75,7 @@ def generate_pdf_quote(*args: Any, **kwargs: Any) -> str:
     2) 舊版：generate_pdf_quote(client_name, items, outdir=pathlike) -> str
     """
     try:
-        from utils.pdf_safe import write_pdf_or_txt  # 頂層 utils 版本
+        from smart_mail_agent.utils.pdf_safe import write_pdf_or_txt  # 頂層 utils 版本
     except Exception:  # pragma: no cover
         from smart_mail_agent.utils.pdf_safe import write_pdf_or_txt  # type: ignore
 
