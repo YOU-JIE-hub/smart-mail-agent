@@ -1,19 +1,29 @@
-.PHONY: setup lint test ocr-demo nlp-demo dist
+PY=python
+PIP=pip
+
+.PHONY: setup fmt lint test smoke run-nlp run-ocr
+
 setup:
-	python -m pip install -U pip
-	pip install -e ".[ocr,llm,dev]"
-	pre-commit install || true
+	$(PIP) install -e ".[ocr,llm,dev]"
+
+fmt:
+	ruff check --fix .
+	black .
+	isort .
+
 lint:
-	ruff check --fix src tests_smoke || true
-	black src tests_smoke
-	isort src tests_smoke
+	ruff check .
+	black --check .
+	isort --check-only .
+
 test:
 	pytest -q
-ocr-demo:
-	ai-rpa --input-path samples/ocr_tra.png --tasks ocr,nlp,actions --output data/output/ocr_report.json
-	@echo "→ data/output/ocr_report.json"
-nlp-demo:
+
+smoke:
+	pytest -q tests_smoke
+
+run-nlp:
 	ai-rpa --input-path samples/nlp_demo.txt --tasks nlp,actions --output data/output/report.json
-	@echo "→ data/output/report.json"
-dist:
-	python -m build || true
+
+run-ocr:
+	ai-rpa --input-path samples/ocr_tra.png --tasks ocr,nlp,actions --output data/output/ocr_report.json

@@ -2,25 +2,25 @@ name: CI
 on: [push, pull_request]
 jobs:
   test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-          cache: 'pip'
-      - name: System deps
+        with: { python-version: "3.10" }
+      - name: Apt deps (OCR + fonts)
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y tesseract-ocr tesseract-ocr-eng tesseract-ocr-osd poppler-utils
-      - name: Install
+          sudo apt-get install -y tesseract-ocr tesseract-ocr-eng tesseract-ocr-osd \
+                                  tesseract-ocr-chi-tra tesseract-ocr-chi-sim \
+                                  poppler-utils fonts-noto-cjk
+      - name: Install deps
         run: |
           python -m pip install -U pip
           pip install -e ".[ocr,llm,dev]"
       - name: Lint
         run: |
-          ruff check --fix src tests_smoke
-          black --check src tests_smoke
-          isort --check-only src tests_smoke
-      - name: Test
+          ruff check .
+          black --check .
+          isort --check-only .
+      - name: Tests
         run: pytest -q
