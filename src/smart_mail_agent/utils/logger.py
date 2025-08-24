@@ -1,36 +1,26 @@
 from __future__ import annotations
-
 import logging
 import os
-import sys
-from logging.handlers import RotatingFileHandler
-from pathlib import Path
 
-_LOGGER: logging.Logger | None = None
+_ENV = "SMA_LOG_LEVEL"
+_DEFAULT = "INFO"
 
-
-def _mk_handler() -> logging.Handler:
-    log_dir = os.environ.get("SMA_LOG_DIR", str(Path.cwd() / "logs"))
-    Path(log_dir).mkdir(parents=True, exist_ok=True)
-    log_path = Path(log_dir) / "ai_rpa.log"
-    handler = RotatingFileHandler(log_path, maxBytes=5_000_000, backupCount=3, encoding="utf-8")
-    fmt = logging.Formatter(fmt="%(asctime)s [%(levelname)s] %(name)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-    handler.setFormatter(fmt)
-    return handler
-
+def _level_from_env() -> int:
+    lvl = (os.getenv(_ENV, _DEFAULT) or _DEFAULT).upper()
+    return getattr(logging, lvl, logging.INFO)
 
 def get_logger(name: str | None = None) -> logging.Logger:
-    global _LOGGER
-    if _LOGGER is None:
-        _LOGGER = logging.getLogger("ai_rpa")
-        _LOGGER.setLevel(os.environ.get("SMA_LOG_LEVEL", "INFO").upper())
-        if not _LOGGER.handlers:
-            _LOGGER.addHandler(_mk_handler())
-            sh = logging.StreamHandler(stream=sys.stderr)
-            sh.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
-            _LOGGER.addHandler(sh)
-        _LOGGER.propagate = False
-    return _LOGGER if name is None else _LOGGER.getChild(name)
+    base = "ai_rpa"
+    if name:
+        nm = name.strip(".")
+        full = nm if nm.startswith(f"{base}.") else f"{base}.{nm}"
+    else:
+        full = base
+    lg = logging.getLogger(full)
+    lg.setLevel(_level_from_env())
+    # 關鍵：不要自掛 handler，用 propagate=True 讓 pytest 的 caplog root handler 捕捉
+    lg.propagate = True
+    return lg
 
-
+# 模組層預設 logger（可用但單測不依賴）
 logger = get_logger()

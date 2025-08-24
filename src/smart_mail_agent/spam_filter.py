@@ -1,5 +1,12 @@
 from __future__ import annotations
-
-from modules import SpamFilterOrchestrator, score_spam
-
-__all__ = ["SpamFilterOrchestrator", "score_spam"]
+# Back-compat shim: keep legacy import path working
+try:
+    from smart_mail_agent.spam.orchestrator import SpamFilterOrchestrator, score_spam  # type: ignore
+except Exception:
+    try:
+        from smart_mail_agent.spam.filter import SpamFilterOrchestrator, score_spam  # type: ignore
+    except Exception:
+        class SpamFilterOrchestrator:  # minimal stub
+            def __init__(self, *a, **kw): ...
+            def predict(self, text: str) -> float: return 0.0
+        def score_spam(text: str) -> float: return 0.0

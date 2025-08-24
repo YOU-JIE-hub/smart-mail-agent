@@ -1,6 +1,10 @@
 from __future__ import annotations
-import importlib, logging
+
+import importlib
+import logging
+
 import smart_mail_agent.utils.logger as logger
+
 
 def test_get_logger_and_level(monkeypatch, caplog):
     monkeypatch.setenv("SMA_LOG_LEVEL", "DEBUG")
