@@ -1,22 +1,30 @@
 from __future__ import annotations
-import argparse, sys
+
+import argparse
 from pathlib import Path
 from typing import Any, Dict, List
 
-from ai_rpa import ocr, scraper, file_classifier, nlp
+from ai_rpa import file_classifier, nlp, ocr, scraper
 from ai_rpa.actions import write_json
+
 
 def _parse_args():
     p = argparse.ArgumentParser(prog="ai-rpa", description="AI+RPA Pipeline")
     p.add_argument("--input-path", dest="input_path", default=None)
     p.add_argument("--output", dest="output", default=None)
-    p.add_argument("--tasks", dest="tasks", default=None,
-                   help="Comma list: ocr,scrape,classify_files,nlp,actions")
+    p.add_argument(
+        "--tasks",
+        dest="tasks",
+        default=None,
+        help="Comma list: ocr,scrape,classify_files,nlp,actions",
+    )
     p.add_argument("--url", dest="url", default=None)
-    p.add_argument("--config", dest="config", default=None,
-                   help="YAML config: tasks/input_path/output/url")
+    p.add_argument(
+        "--config", dest="config", default=None, help="YAML config: tasks/input_path/output/url"
+    )
     p.add_argument("--dry-run", action="store_true")
     return p.parse_args()
+
 
 def _norm_text(x) -> str:
     if isinstance(x, str):
@@ -26,6 +34,7 @@ def _norm_text(x) -> str:
     if isinstance(x, (list, tuple)):
         return "\n".join(str(i) for i in x)
     return "" if x is None else str(x)
+
 
 def run_pipeline(args) -> Dict[str, Any]:
     results: Dict[str, Any] = {}
@@ -71,12 +80,14 @@ def run_pipeline(args) -> Dict[str, Any]:
 
     return results
 
+
 def main() -> int:
     args = _parse_args()
 
     # YAML config（若提供）：僅補上 CLI 未提供的欄位
     if args.config:
         import yaml
+
         cfg = yaml.safe_load(Path(args.config).read_text(encoding="utf-8")) or {}
         if not args.tasks:
             ts = cfg.get("tasks", [])
@@ -91,6 +102,7 @@ def main() -> int:
     # 無 tasks 視為 no-op，但仍回傳 0
     run_pipeline(args)
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

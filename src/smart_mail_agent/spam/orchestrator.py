@@ -27,7 +27,12 @@ class SpamFilterOrchestrator:
         if sender and any(d in sender for d in _SHORT_DOMAINS):
             rs.append("suspicious_domain")
         sc = self.score(subject, content, sender)["score"]
-        return {"is_spam": sc >= self.threshold, "score": sc, "reasons": rs, "threshold": self.threshold}
+        return {
+            "is_spam": sc >= self.threshold,
+            "score": sc,
+            "reasons": rs,
+            "threshold": self.threshold,
+        }
 
     def is_legit(self, subject: str, content: str, sender: str = "") -> Dict[str, object]:
         r = self.is_spam(subject, content, sender)

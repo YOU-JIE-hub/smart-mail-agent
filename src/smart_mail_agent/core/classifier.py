@@ -6,8 +6,10 @@ import re
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
+
 try:
     from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
+
     _TRANS_AVAIL = True
 except Exception:  # noqa: F401
     _TRANS_AVAIL = False
@@ -90,7 +92,9 @@ class IntentClassifier:
             logger.info(f"[IntentClassifier] 載入模型：{model_path}")
             self.tokenizer = AutoTokenizer.from_pretrained(model_path)
             self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
-            self.pipeline = pipeline("text-classification", model=self.model, tokenizer=self.tokenizer)
+            self.pipeline = pipeline(
+                "text-classification", model=self.model, tokenizer=self.tokenizer
+            )
 
     @staticmethod
     def _is_negative(text: str) -> bool:
@@ -132,7 +136,9 @@ class IntentClassifier:
             fallback_label = "其他"
 
         if fallback_label != model_label:
-            logger.info(f"[Fallback] 類別調整：{model_label} → {fallback_label}（信心值：{confidence:.4f}）")
+            logger.info(
+                f"[Fallback] 類別調整：{model_label} → {fallback_label}（信心值：{confidence:.4f}）"
+            )
 
         return {
             "predicted_label": fallback_label,

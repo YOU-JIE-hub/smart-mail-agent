@@ -5,16 +5,16 @@ import argparse
 import json
 import os
 
-from dotenv import load_dotenv
-from smart_mail_agent.utils.logger import logger
-
 import torch
+from dotenv import load_dotenv
 from transformers import (
     AutoModelForSeq2SeqLM,
     AutoModelForSequenceClassification,
     AutoTokenizer,
     pipeline,
 )
+
+from smart_mail_agent.utils.logger import logger
 
 load_dotenv()
 

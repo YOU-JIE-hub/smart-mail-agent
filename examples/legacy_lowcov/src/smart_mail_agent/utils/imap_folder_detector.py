@@ -1,7 +1,9 @@
 import imaplib
 import os
 import re
+
 from dotenv import load_dotenv
+
 from smart_mail_agent.utils.logger import logger
 
 load_dotenv()
@@ -24,10 +26,6 @@ def _decode_imap_bytes(v: bytes | tuple[bytes, ...] | bytearray) -> str:
         return str(v)
     except Exception:
         return str(v)
-
-
-
-
 
 
 def detect_all_mail_folder() -> str:

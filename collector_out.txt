@@ -1294,4 +1294,3 @@ def test_other_fallback():
 def test_unknown_label_as_general():
     r = _run("未定義標籤")
     assert r["ok"] is True and r["action_name"] == "reply_general"
-

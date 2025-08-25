@@ -19,7 +19,11 @@ def test_write_pdf_or_txt_pdf_success(tmp_path: Path):
 
 
 def test_write_pdf_or_txt_txt_fallback(tmp_path: Path, monkeypatch):
-    monkeypatch.setattr(pdf_safe, "_write_minimal_pdf", lambda *_a, **_kw: (_ for _ in ()).throw(RuntimeError("boom")))
+    monkeypatch.setattr(
+        pdf_safe,
+        "_write_minimal_pdf",
+        lambda *_a, **_kw: (_ for _ in ()).throw(RuntimeError("boom")),
+    )
     out = pdf_safe.write_pdf_or_txt(["X"], tmp_path, "weird/name?.pdf")
     p = Path(out)
     assert p.exists() and p.suffix == ".txt"

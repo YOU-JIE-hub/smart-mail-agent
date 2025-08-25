@@ -1,9 +1,11 @@
 from __future__ import annotations
+
 import os
 import smtplib
 from email.message import EmailMessage
 
 __all__ = ["main", "smtplib"]
+
 
 def main() -> int:
     need = ["SMTP_USER", "SMTP_PASS", "SMTP_HOST", "SMTP_PORT", "REPLY_TO"]

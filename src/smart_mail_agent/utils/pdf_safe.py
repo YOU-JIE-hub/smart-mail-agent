@@ -1,11 +1,14 @@
 from __future__ import annotations
+
 from pathlib import Path
-from typing import Optional, Union, Iterable, Any
+from typing import Any, Optional, Union
+
 
 def _safe_stem(name: str) -> str:
     s = "".join(ch if ch.isalnum() or ch in "._- " else "_" for ch in (name or "output"))
     s = s.strip("._ ")
     return s or "output"
+
 
 def _escape_pdf_text(s: str) -> str:
     if s is None:
@@ -14,12 +17,14 @@ def _escape_pdf_text(s: str) -> str:
     s = s.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
     return "".join(ch if ch == "\n" or ord(ch) >= 32 else " " for ch in s)
 
+
 def _iter_lines(text_or_lines: Any) -> list[str]:
     if isinstance(text_or_lines, (list, tuple)):
         return [str(x) for x in text_or_lines]
     if isinstance(text_or_lines, dict):
         return [str(text_or_lines.get("text") or text_or_lines.get("content") or "")]
     return (str(text_or_lines or "")).splitlines() or [""]
+
 
 def _norm_text(text_or_lines: Any) -> str:
     if isinstance(text_or_lines, str):
@@ -30,6 +35,7 @@ def _norm_text(text_or_lines: Any) -> str:
         return "\n".join(str(i) for i in text_or_lines)
     return "" if text_or_lines is None else str(text_or_lines)
 
+
 def _write_minimal_pdf(
     text_or_lines: Any,
     out_dir: Union[str, Path],
@@ -37,10 +43,10 @@ def _write_minimal_pdf(
     font_path: Optional[str] = None,
 ) -> Path:
     """Write a very small multi-line PDF into out_dir/<safe(title)>.pdf, return Path."""
-    from reportlab.pdfgen import canvas
     from reportlab.lib.pagesizes import A4
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
+    from reportlab.pdfgen import canvas
 
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -70,10 +76,14 @@ def _write_minimal_pdf(
     c.save()
     return pdf_path
 
-def write_text_pdf(text: str, output_path: Union[str, Path], font_path: Optional[str] = None) -> Path:
+
+def write_text_pdf(
+    text: str, output_path: Union[str, Path], font_path: Optional[str] = None
+) -> Path:
     """Compat helper: write text directly to a specific .pdf path."""
     out = Path(output_path)
     return _write_minimal_pdf(text, out.parent, out.stem, font_path)
+
 
 def write_pdf_or_txt(
     text_or_lines: Any,

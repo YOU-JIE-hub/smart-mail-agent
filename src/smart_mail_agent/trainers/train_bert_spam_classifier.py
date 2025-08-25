@@ -11,8 +11,8 @@ Import-safe BERT spam trainer.
 _TRANSFORMERS_AVAILABLE = False
 try:
     from transformers import (
-        AutoTokenizer,
         AutoModelForSequenceClassification,
+        AutoTokenizer,
         Trainer,
         TrainingArguments,
     )

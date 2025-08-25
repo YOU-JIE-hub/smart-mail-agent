@@ -1,21 +1,29 @@
 from __future__ import annotations
-import datetime, re, sqlite3
+
+import datetime
+import re
+import sqlite3
 from typing import Any, Dict
 
-def _parse(content: str) -> Dict[str,str]:
+
+def _parse(content: str) -> Dict[str, str]:
     # 簡單擷取「電話/地址」
     phone = ""
     addr = ""
     if content:
         m = re.search(r"(?:電話|手機)\s*[:：]\s*([0-9\-+ ]{6,})", content)
-        if m: phone = m.group(1).strip()
+        if m:
+            phone = m.group(1).strip()
         m2 = re.search(r"(?:地址)\s*[:：]\s*(.+)", content)
-        if m2: addr = m2.group(1).strip()
+        if m2:
+            addr = m2.group(1).strip()
     return {"phone": phone, "address": addr}
+
 
 def _ensure_tables(db_path: str) -> None:
     with sqlite3.connect(db_path) as c:
-        c.executescript("""
+        c.executescript(
+            """
         CREATE TABLE IF NOT EXISTS users(
           email TEXT PRIMARY KEY, phone TEXT, address TEXT
         );
@@ -23,7 +31,9 @@ def _ensure_tables(db_path: str) -> None:
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           email TEXT, 欄位 TEXT, 原值 TEXT, 新值 TEXT, created_at TEXT
         );
-        """)
+        """
+        )
+
 
 def update_user_info(email: str, content: str, *, db_path: str) -> Dict[str, Any]:
     _ensure_tables(db_path)

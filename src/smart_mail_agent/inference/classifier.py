@@ -45,7 +45,9 @@ class IntentClassifier:
         if isinstance(out, tuple) and len(out) == 2:
             return str(out[0]), float(out[1])
         if isinstance(out, dict):
-            lab = str(out.get("label") or out.get("raw_label") or out.get("predicted_label") or "其他")
+            lab = str(
+                out.get("label") or out.get("raw_label") or out.get("predicted_label") or "其他"
+            )
             sc = float(out.get("score") or out.get("confidence") or 0.0)
             return lab, sc
         if isinstance(out, str):

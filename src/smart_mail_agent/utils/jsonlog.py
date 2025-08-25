@@ -16,7 +16,12 @@ def _log_dir() -> Path:
 def log_event(meta: Dict[str, Any], email: Dict[str, Any], result: Dict[str, Any]) -> str:
     ts = datetime.utcnow().strftime("%Y%m%d")
     path = _log_dir() / f"events_{ts}.ndjson"
-    rec = {"ts": datetime.utcnow().isoformat(timespec="seconds") + "Z", "meta": meta, "email": email, "result": result}
+    rec = {
+        "ts": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "meta": meta,
+        "email": email,
+        "result": result,
+    }
     with path.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
     # 回填 logged_path 供測試檢查

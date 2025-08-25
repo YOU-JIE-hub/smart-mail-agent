@@ -107,7 +107,9 @@ class SpamFilterOrchestratorOffline:
     def __init__(self, thresholds: Optional[Thresholds] = None) -> None:
         self.thresholds = thresholds or Thresholds()
 
-    def decide(self, subject: str, html_or_text: str, *, model: str | None = None) -> Dict[str, Any]:
+    def decide(
+        self, subject: str, html_or_text: str, *, model: str | None = None
+    ) -> Dict[str, Any]:
         text_all = f"{subject or ''}\n{html_or_text or ''}"
 
         reasons: list[str] = []
@@ -185,7 +187,9 @@ def orchestrate(
 
     try:
         if _call_rule(rule, payload):
-            return OrchestrationResult(is_spam=True, score=1.0, source="rule", action="drop", is_borderline=False)
+            return OrchestrationResult(
+                is_spam=True, score=1.0, source="rule", action="drop", is_borderline=False
+            )
     except Exception:
         pass
 
@@ -242,7 +246,11 @@ def orchestrate(
                         is_spam=is_spam,
                         score=sc,
                         source="model",
-                        action=("review" if (is_spam and is_borderline) else ("drop" if is_spam else "route_to_inbox")),
+                        action=(
+                            "review"
+                            if (is_spam and is_borderline)
+                            else ("drop" if is_spam else "route_to_inbox")
+                        ),
                         is_borderline=is_borderline,
                     )
                 # 全不可判 -> ham

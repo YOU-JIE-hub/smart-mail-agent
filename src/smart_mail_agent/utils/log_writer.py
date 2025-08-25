@@ -14,7 +14,9 @@ except Exception:  # pragma: no cover
         import json
         import logging
 
-        logging.getLogger("SMA").info("[event=%s] %s", event, json.dumps(fields, ensure_ascii=False))
+        logging.getLogger("SMA").info(
+            "[event=%s] %s", event, json.dumps(fields, ensure_ascii=False)
+        )
 
 
 try:
@@ -31,6 +33,7 @@ except Exception:  # pragma: no cover
 write_log = _write_log
 log_to_db = _log_to_db  # type: ignore[name-defined]
 __all__ = ["write_log", "log_to_db"]
+
 
 # ---------------------------------------------------------------------
 # AP-13: Backward-compat shim for historical imports
@@ -58,6 +61,7 @@ class JsonLogWriter:
         # 優先使用 jsonlog.log_event
         try:
             from smart_mail_agent.utils.jsonlog import log_event  # lazy import
+
             try:
                 return log_event(*args, **kwargs)
             except TypeError:
@@ -86,6 +90,7 @@ class JsonLogWriter:
 
     def __exit__(self, exc_type, exc, tb):
         return False
+
 
 # 確保匯出符號
 try:

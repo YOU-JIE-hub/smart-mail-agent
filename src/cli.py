@@ -61,9 +61,12 @@ def run(payload: Dict[str, Any], *flags: str) -> Dict[str, Any]:
     # ---------- 最終守門：若應該有 double_ext 但清單沒有，就補上 ----------
     try:
         need_double = any(
-            (lambda low: (len([x for x in low.split(".") if x]) >= 3 and low.rsplit(".", 1)[-1] in _EXEC_EXT))(
-                str((a or {}).get("filename", "")).lower()
-            )
+            (
+                lambda low: (
+                    len([x for x in low.split(".") if x]) >= 3
+                    and low.rsplit(".", 1)[-1] in _EXEC_EXT
+                )
+            )(str((a or {}).get("filename", "")).lower())
             for a in (attachments or [])
         )
         if need_double and not any("double_ext" in r for r in risks):

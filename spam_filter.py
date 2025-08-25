@@ -1,10 +1,18 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
+
 from typing import Any, Dict, List, Sequence
 
+
 class SpamFilterOrchestrator:
-    def is_legit(self, *, subject: str = "", content: str = "", sender: str = "",
-                 to: Sequence[str] | None = None) -> Dict[str, Any]:
+    def is_legit(
+        self,
+        *,
+        subject: str = "",
+        content: str = "",
+        sender: str = "",
+        to: Sequence[str] | None = None,
+    ) -> Dict[str, Any]:
         text = f"{subject} {content}"
         reasons: List[str] = []
 

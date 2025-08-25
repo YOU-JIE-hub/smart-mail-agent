@@ -3,14 +3,14 @@
 # 檔案位置：src/spam/ml_spam_classifier.py
 # 模組用途：使用 fine-tuned BERT 模型進行垃圾郵件分類預測
 
-from smart_mail_agent.utils.logger import logger
-
 import torch
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
     TextClassificationPipeline,
 )
+
+from smart_mail_agent.utils.logger import logger
 
 
 def smart_truncate(text: str, max_chars: int = 1000) -> str:

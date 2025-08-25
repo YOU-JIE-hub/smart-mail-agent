@@ -17,7 +17,12 @@ def notify_sales(
     """
     subject = subject or f"[報價完成] {client_name} - {package}"
     message = message or f"已為 {client_name} 產出 {package} 報價，附件見 PDF：{pdf_path}"
-    if os.environ.get("OFFLINE", "") == "1" and subject is not None and message is not None and pdf_path is not None:
+    if (
+        os.environ.get("OFFLINE", "") == "1"
+        and subject is not None
+        and message is not None
+        and pdf_path is not None
+    ):
         # sma 測試只檢查布林 True
         return True
     return {"ok": True, "subject": subject, "message": message, "attachment": pdf_path}

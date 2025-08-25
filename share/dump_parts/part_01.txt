@@ -2855,7 +2855,7 @@ counts    : repo_counts.txt
 -----8<----- FILE: docs/index.md  SHA256:d3384d5418e413d7237bcaeef97d624ea4f68bedff8b50c1c6774c1eb1709f74  BYTES:372 -----
 # Smart Mail Agent
 
-一個可離線驗證的 AI + RPA 郵件處理範例專案。  
+一個可離線驗證的 AI + RPA 郵件處理範例專案。
 快速連結：
 - [Architecture](architecture.md)
 - [Cookbook](cookbook.md)

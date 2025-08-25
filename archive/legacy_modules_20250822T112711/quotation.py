@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import re
 import re as _re
 from pathlib import Path
-from typing import Iterable, Tuple, Any
-import re
+from typing import Any, Iterable, Tuple
 
 __all__ = ["choose_package", "generate_pdf_quote"]
 

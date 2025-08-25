@@ -12,6 +12,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from reportlab.pdfgen import canvas
+
 from smart_mail_agent.utils.logger import logger
 
 # 強制指定 .env 位置

@@ -10,8 +10,8 @@ Import-safe generic classifier trainer.
 _TRANSFORMERS_AVAILABLE = False
 try:
     from transformers import (
-        AutoTokenizer,
         AutoModelForSequenceClassification,
+        AutoTokenizer,
         Trainer,
         TrainingArguments,
     )

@@ -1,21 +1,5 @@
 line-length = 100
 target-version = "py310"
-
 [lint]
-select = ["E", "F", "I"]
-ignore = [
-  "E701",  # 同行多語句（:）
-  "E702",  # 同行多語句（;）
-  "E402",  # imports 不在頂部
-  "E741",  # 模糊變數名，如 l
-  "F403",  # wildcard import
-  "F811",  # 重複定義
-  "E501",  # 行過長（暫時忽略，之後再收斂）
-]
-
-# 路徑排除
-exclude = [
-  ".venv", "build", "dist",
-  ".z_legacy_*", ".backup_conflicts_*", ".release_stage",
-  "legacy_tests", "tests/internal_smoke", "tests/ai_rpa"
-]
+select = ["E","F","I","W"]
+fix = true

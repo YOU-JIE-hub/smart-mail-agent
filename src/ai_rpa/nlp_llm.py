@@ -15,7 +15,10 @@ def summarize(text: str, model: str | None = None) -> Dict[str, Any]:
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
         logger.warning("OPENAI_API_KEY 未設置，改用退化摘要")
-        return {"provider": "fallback", "summary": (text[:200] + ("..." if len(text) > 200 else ""))}
+        return {
+            "provider": "fallback",
+            "summary": (text[:200] + ("..." if len(text) > 200 else "")),
+        }
     try:
         from openai import OpenAI  # type: ignore
 
@@ -29,4 +32,8 @@ def summarize(text: str, model: str | None = None) -> Dict[str, Any]:
         return {"provider": "openai", "model": mdl, "summary": content}
     except Exception as e:
         logger.exception("LLM 摘要失敗，改用退化摘要：%s", e)
-        return {"provider": "fallback", "error": str(e), "summary": (text[:200] + ("..." if len(text) > 200 else ""))}
+        return {
+            "provider": "fallback",
+            "error": str(e),
+            "summary": (text[:200] + ("..." if len(text) > 200 else "")),
+        }

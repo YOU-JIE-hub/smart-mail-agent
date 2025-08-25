@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from __future__ import annotations
-import argparse, json, os, sys
+
+import argparse
+import json
+import os
+import sys
 from typing import Any, Dict, List
 
-_EXEC_EXT = {"exe","bat","cmd","com","js","vbs","scr","jar","ps1","msi","dll"}
+_EXEC_EXT = {"exe", "bat", "cmd", "com", "js", "vbs", "scr", "jar", "ps1", "msi", "dll"}
+
 
 def _assess_for_matrix(attachments: List[Dict[str, Any]]) -> List[str]:
     """符合 tests/policy/test_attachment_risks_matrix.py 的名稱與邏輯。"""
@@ -31,8 +36,10 @@ def _assess_for_matrix(attachments: List[Dict[str, Any]]) -> List[str]:
     out, seen = [], set()
     for r in risks:
         if r not in seen:
-            out.append(r); seen.add(r)
+            out.append(r)
+            seen.add(r)
     return out
+
 
 def main(argv: List[str]) -> int:
     ap = argparse.ArgumentParser()
@@ -67,6 +74,7 @@ def main(argv: List[str]) -> int:
     if os.getenv("SMA_DEBUG_CLI") == "1":
         print(f"[run_action_handler] wrote {args.output} meta.risks={risks}", file=sys.stderr)
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv[1:]))

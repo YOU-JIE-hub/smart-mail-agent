@@ -1,9 +1,14 @@
 from __future__ import annotations
+
 from pathlib import Path
 from typing import Any, Dict, List
+
 from smart_mail_agent.smart_mail_agent.utils.pdf_safe import write_pdf_or_txt
 
-def _mk_reply(subject_tag: str, action: str, attachments: List[str] | None = None) -> Dict[str, Any]:
+
+def _mk_reply(
+    subject_tag: str, action: str, attachments: List[str] | None = None
+) -> Dict[str, Any]:
     return {
         "ok": True,
         "action_name": action,
@@ -11,8 +16,9 @@ def _mk_reply(subject_tag: str, action: str, attachments: List[str] | None = Non
         "attachments": attachments or [],
     }
 
+
 def handle(payload: Dict[str, Any]) -> Dict[str, Any]:
-    label = payload.get("predicted_label","")
+    label = payload.get("predicted_label", "")
     subj = payload.get("subject") or payload.get("content") or ""
     # 六大分類（中文）
     if label == "請求技術支援":

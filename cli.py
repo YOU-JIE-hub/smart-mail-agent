@@ -1,15 +1,18 @@
 from __future__ import annotations
-import os, sys
+
+import os
+import sys
 from typing import Any, Dict, List
 
 # ---------- 內建 fallback（與 policy_engine.assess_attachments 等價） ----------
-_EXEC_EXT = {"exe","bat","cmd","com","js","vbs","scr","jar","ps1","msi","dll"}
+_EXEC_EXT = {"exe", "bat", "cmd", "com", "js", "vbs", "scr", "jar", "ps1", "msi", "dll"}
+
 
 def _assess_fallback(attachments: List[Dict[str, Any]]) -> List[str]:
     risks: List[str] = []
     for a in attachments or []:
-        fn = str((a or {}).get("filename",""))
-        mime = str((a or {}).get("mime","")).lower()
+        fn = str((a or {}).get("filename", ""))
+        mime = str((a or {}).get("mime", "")).lower()
         low = fn.lower()
 
         parts = [x for x in low.split(".") if x]
@@ -30,14 +33,17 @@ def _assess_fallback(attachments: List[Dict[str, Any]]) -> List[str]:
     out, seen = [], set()
     for r in risks:
         if r not in seen:
-            out.append(r); seen.add(r)
+            out.append(r)
+            seen.add(r)
     return out
+
 
 # 優先使用 policy_engine，失敗就用 fallback
 try:
     from smart_mail_agent.policy_engine import assess_attachments  # type: ignore
 except Exception:
     assess_attachments = _assess_fallback  # type: ignore
+
 
 def run(payload: Dict[str, Any], *flags: str) -> Dict[str, Any]:
     """最小 CLI 介面：回傳 dict，至少包含 meta.risks（若有）"""
@@ -55,8 +61,12 @@ def run(payload: Dict[str, Any], *flags: str) -> Dict[str, Any]:
     # ---------- 最終守門：若應該有 double_ext 但清單沒有，就補上 ----------
     try:
         need_double = any(
-            (lambda low: (len([x for x in low.split('.') if x]) >= 3 and low.rsplit('.',1)[-1] in _EXEC_EXT)
-            )(str((a or {}).get("filename","")).lower())
+            (
+                lambda low: (
+                    len([x for x in low.split(".") if x]) >= 3
+                    and low.rsplit(".", 1)[-1] in _EXEC_EXT
+                )
+            )(str((a or {}).get("filename", "")).lower())
             for a in (attachments or [])
         )
         if need_double and not any("double_ext" in r for r in risks):

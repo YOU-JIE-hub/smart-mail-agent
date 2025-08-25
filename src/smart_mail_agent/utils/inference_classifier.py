@@ -20,7 +20,9 @@ _zh_map = {
 
 
 class IntentClassifier:
-    def __init__(self, model_path: Optional[str] = None, pipeline_override: Optional[Callable] = None):
+    def __init__(
+        self, model_path: Optional[str] = None, pipeline_override: Optional[Callable] = None
+    ):
         self.model_path = model_path
         self.pipeline = pipeline_override  # 測試會注入 mock
         self.loaded = False
@@ -36,13 +38,21 @@ class IntentClassifier:
         t = text.lower()
         # 業務/詢價
         if any(k in t for k in ["報價", "詢價", "合作", "quotation", "quote"]):
-            return {"predicted_label": _zh_map["sales_inquiry"], "raw_label": "sales_inquiry", "confidence": 0.85}
+            return {
+                "predicted_label": _zh_map["sales_inquiry"],
+                "raw_label": "sales_inquiry",
+                "confidence": 0.85,
+            }
         # 流程/規則
         if any(k in t for k in ["流程", "規則", "退貨", "退款", "退費", "how to"]):
             return {"predicted_label": _zh_map["faq"], "raw_label": "faq", "confidence": 0.8}
         # 投訴
         if any(k in t for k in ["投訴", "抱怨", "退款", "無法使用", "down", "嚴重"]):
-            return {"predicted_label": _zh_map["complaint"], "raw_label": "complaint", "confidence": 0.75}
+            return {
+                "predicted_label": _zh_map["complaint"],
+                "raw_label": "complaint",
+                "confidence": 0.75,
+            }
         return {"predicted_label": _zh_map["other"], "raw_label": "other", "confidence": 0.5}
 
     def classify(self, subject: str, body: str) -> Dict[str, Any]:
@@ -72,12 +82,21 @@ class IntentClassifier:
                 return {
                     "predicted_label": predicted,
                     "raw_label": raw_label,
-                    "label": raw_label if raw_label in ("other", "sales_inquiry", "complaint", "faq") else "other",
+                    "label": (
+                        raw_label
+                        if raw_label in ("other", "sales_inquiry", "complaint", "faq")
+                        else "other"
+                    ),
                     "confidence": score,
                 }
             except Exception:
                 # 失敗當作未知
-                return {"label": "unknown", "predicted_label": "未知", "raw_label": "unknown", "confidence": 0.0}
+                return {
+                    "label": "unknown",
+                    "predicted_label": "未知",
+                    "raw_label": "unknown",
+                    "confidence": 0.0,
+                }
         # 無模型：走規則
         return self._keyword_rules(text)
 

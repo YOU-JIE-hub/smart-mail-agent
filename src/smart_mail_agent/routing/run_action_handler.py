@@ -59,7 +59,9 @@ def _complaint_meta(text: str) -> Dict[str, Any]:
     return meta
 
 
-def _apply_policy(payload: Dict[str, Any], *, dry: bool, simulate: str | None, whitelist: bool) -> Dict[str, Any]:
+def _apply_policy(
+    payload: Dict[str, Any], *, dry: bool, simulate: str | None, whitelist: bool
+) -> Dict[str, Any]:
     subject = payload.get("subject") or ""
     sender = payload.get("from") or payload.get("sender") or ""
     label = payload.get("predicted_label") or payload.get("label") or ""

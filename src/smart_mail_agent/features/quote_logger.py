@@ -81,7 +81,9 @@ def log_quote(
         raise
 
 
-def get_latest_quote(db_path: str = DEFAULT_DB_PATH, table_name: str = DEFAULT_TABLE) -> tuple[str, str, str] | None:
+def get_latest_quote(
+    db_path: str = DEFAULT_DB_PATH, table_name: str = DEFAULT_TABLE
+) -> tuple[str, str, str] | None:
     """
     取得最新一筆報價記錄（供測試用）
 

@@ -3,4 +3,10 @@
 # 模組用途：相容 shim，轉接至 smart_mail_agent.inference_classifier
 from __future__ import annotations
 
-from ..inference_classifier import *  # noqa: F401,F403
+from src.smart_mail_agent.inference_classifier import (
+    classify_intent,
+    load_model,
+    smart_truncate,
+)
+
+__all__ = ["classify_intent", "load_model", "smart_truncate"]

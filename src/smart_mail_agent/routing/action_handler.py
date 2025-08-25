@@ -41,7 +41,9 @@ def _ensure_attachment(title: str, lines: List[str]) -> str:
         return tf.name
 
 
-def _send(to_addr: str, subject: str, body: str, attachments: List[str] | None = None) -> Dict[str, Any]:
+def _send(
+    to_addr: str, subject: str, body: str, attachments: List[str] | None = None
+) -> Dict[str, Any]:
     if os.getenv("OFFLINE") == "1":
         return {"ok": True, "offline": True, "sent": False, "attachments": attachments or []}
     # 測試環境不真正送信
@@ -102,14 +104,18 @@ def _normalize_label(label: str) -> str:
     return label_str
 
 
-def handle(payload: Dict[str, Any], *, dry_run: bool = False, simulate_failure: str = "") -> Dict[str, Any]:
+def handle(
+    payload: Dict[str, Any], *, dry_run: bool = False, simulate_failure: str = ""
+) -> Dict[str, Any]:
     label = payload.get("predicted_label") or ""
     if not label:
         clf = IntentClassifier()
         c = clf.classify(payload.get("subject", ""), payload.get("body", ""))
         label = c.get("predicted_label") or c.get("label") or "其他"
     label = _normalize_label(label)
-    action_fn = _LABEL_TO_ACTION.get(label) or _LABEL_TO_ACTION.get(label.lower()) or _action_reply_general
+    action_fn = (
+        _LABEL_TO_ACTION.get(label) or _LABEL_TO_ACTION.get(label.lower()) or _action_reply_general
+    )
     out = action_fn(payload)
 
     # 風險與白名單
@@ -119,7 +125,7 @@ def handle(payload: Dict[str, Any], *, dry_run: bool = False, simulate_failure: 
 
     # 投訴嚴重度（P1）
     if label in ("complaint", "投訴與抱怨"):
-        text = f"{payload.get('subject','')} {payload.get('body','')}"
+        text = f"{payload.get('subject', '')} {payload.get('body', '')}"
         if any(k in text for k in ["down", "無法使用", "嚴重", "影響"]):
             out["priority"] = "P1"
             out["cc"] = ["oncall@example.com"]
@@ -174,7 +180,9 @@ def main(argv: List[str] | None = None) -> int:
 
     if ns.output:
         Path(ns.output).parent.mkdir(parents=True, exist_ok=True)
-        Path(ns.output).write_text(json.dumps(out_obj, ensure_ascii=False, indent=2), encoding="utf-8")
+        Path(ns.output).write_text(
+            json.dumps(out_obj, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
     else:
         print(json.dumps(out_obj, ensure_ascii=False))
 

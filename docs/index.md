@@ -1,6 +1,6 @@
 # Smart Mail Agent
 
-一個可離線驗證的 AI + RPA 郵件處理範例專案。  
+一個可離線驗證的 AI + RPA 郵件處理範例專案。
 快速連結：
 - [Architecture](architecture.md)
 - [Cookbook](cookbook.md)

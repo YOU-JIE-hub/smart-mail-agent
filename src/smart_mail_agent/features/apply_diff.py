@@ -18,14 +18,17 @@ def update_user_info(user: str, text: str, *, db_path: str = ":memory:") -> Dict
     f = extract_fields(text)
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
-    cur.execute("CREATE TABLE IF NOT EXISTS user_info(email TEXT PRIMARY KEY, phone TEXT, address TEXT)")
+    cur.execute(
+        "CREATE TABLE IF NOT EXISTS user_info(email TEXT PRIMARY KEY, phone TEXT, address TEXT)"
+    )
     cur.execute("SELECT phone, address FROM user_info WHERE email=?", (user,))
     row = cur.fetchone()
     if row and row[0] == f["phone"] and row[1] == f["address"]:
         conn.close()
         return {"status": "no_change"}
     cur.execute(
-        "INSERT OR REPLACE INTO user_info(email, phone, address) VALUES(?,?,?)", (user, f["phone"], f["address"])
+        "INSERT OR REPLACE INTO user_info(email, phone, address) VALUES(?,?,?)",
+        (user, f["phone"], f["address"]),
     )
     conn.commit()
     conn.close()
