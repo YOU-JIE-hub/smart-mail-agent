@@ -1,97 +1,95 @@
 from __future__ import annotations
 
-# src/trainers/train_bert_spam_classifier.py
-import argparse
-import json
-import os
-from datetime import datetime
+"""
+Import-safe BERT spam trainer.
+- No file I/O or heavy work at import time.
+- Optional deps (transformers / datasets / sklearn) are guarded.
+- Call `train_bert_spam_classifier(...)` to actually train.
+"""
 
-from datasets import Dataset
-from sklearn.utils import shuffle
-from transformers import (
-    BertForSequenceClassification,
-    BertTokenizer,
-    Trainer,
-    TrainingArguments,
-)
-
-LABEL2ID = {"ham": 0, "spam": 1}
-ID2LABEL = {0: "ham", 1: "spam"}
-
-
-def load_data(path):
-    with open(path, encoding="utf-8") as f:
-        raw = json.load(f)
-    data, stats = [], {}
-    for item in raw:
-        subject = item.get("subject", "")
-        content = item.get("content", "")
-        label = item.get("label")
-        if label not in LABEL2ID:
-            continue
-        data.append({"text": subject.strip() + "\n" + content.strip(), "label": LABEL2ID[label]})
-        stats[label] = stats.get(label, 0) + 1
-    print(" 資料分布：", stats)
-    return shuffle(data, random_state=42)
-
-
-def tokenize(example, tokenizer):
-    return tokenizer(
-        example["text"],
-        padding="max_length",
-        truncation=True,
-        max_length=512,
+# ----- Optional dependencies (clean guards) -----
+_TRANSFORMERS_AVAILABLE = False
+try:
+    from transformers import (
+        AutoTokenizer,
+        AutoModelForSequenceClassification,
+        Trainer,
+        TrainingArguments,
     )
 
+    _TRANSFORMERS_AVAILABLE = True
+except Exception:  # pragma: no cover
+    AutoTokenizer = AutoModelForSequenceClassification = Trainer = TrainingArguments = None  # type: ignore
 
-def get_output_dir():
-    now = datetime.now().strftime("%Y%m%d-%H%M")
-    path = f"model/bert_spam_classifier_{now}"
-    os.makedirs(path, exist_ok=True)
-    return path
+_DATASETS_AVAILABLE = False
+try:
+    from datasets import load_dataset  # type: ignore
+
+    _DATASETS_AVAILABLE = True
+except Exception:  # pragma: no cover
+
+    def load_dataset(*_a, **_k):
+        raise RuntimeError("`datasets` not installed. Install with: pip install datasets")
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--data", required=True, help="訓練資料 JSON 路徑")
-    parser.add_argument("--model", default="bert-base-chinese", help="預訓練模型")
-    parser.add_argument("--epochs", type=int, default=5)
-    args = parser.parse_args()
+_SKLEARN_AVAILABLE = False
+try:
+    from sklearn.utils import shuffle  # noqa: F401
 
-    print("[INFO] 載入資料...")
-    dataset = Dataset.from_list(load_data(args.data))
+    _SKLEARN_AVAILABLE = True
+except Exception:  # pragma: no cover
 
-    print("[INFO] 載入 tokenizer 和模型...")
-    tokenizer = BertTokenizer.from_pretrained(args.model)
-    tokenized = dataset.map(lambda x: tokenize(x, tokenizer), batched=True)
+    def shuffle(*_a, **_k):
+        raise RuntimeError("`scikit-learn` not installed. Install with: pip install scikit-learn")
 
-    model = BertForSequenceClassification.from_pretrained(
-        args.model, num_labels=2, label2id=LABEL2ID, id2label=ID2LABEL
-    )
 
-    output_dir = get_output_dir()
+# ----- Public API -----
+def train_bert_spam_classifier(
+    dataset_name_or_path: str,
+    *,
+    model_name: str = "bert-base-uncased",
+    text_field: str = "text",
+    label_field: str = "label",
+    output_dir: str = "out/bert_spam",
+    epochs: int = 1,
+    batch_size: int = 8,
+) -> None:
+    """
+    Simple BERT fine-tune example.
+    `dataset_name_or_path` can be a HF dataset name OR a JSON/JSONL file path
+    with fields `text` and `label`.
+    """
+    if not _TRANSFORMERS_AVAILABLE:
+        raise RuntimeError("`transformers` not installed. Install with: pip install transformers")
+    if not _DATASETS_AVAILABLE:
+        raise RuntimeError("`datasets` not installed. Install with: pip install datasets")
 
-    training_args = TrainingArguments(
+    # Load dataset (lazy & explicit; no import-time I/O)
+    if dataset_name_or_path.endswith(".json") or dataset_name_or_path.endswith(".jsonl"):
+        ds = load_dataset("json", data_files=dataset_name_or_path)
+    else:
+        ds = load_dataset(dataset_name_or_path)
+
+    tok = AutoTokenizer.from_pretrained(model_name)
+
+    def tokenize(batch):
+        return tok(batch[text_field], truncation=True, padding="max_length")
+
+    ds = ds.map(tokenize)
+
+    model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
+
+    args = TrainingArguments(
         output_dir=output_dir,
-        per_device_train_batch_size=4,
-        num_train_epochs=args.epochs,
-        learning_rate=2e-5,
-        weight_decay=0.01,
-        save_strategy="epoch",
-        save_total_limit=1,
-        logging_steps=20,
+        per_device_train_batch_size=batch_size,
+        num_train_epochs=epochs,
+        evaluation_strategy="no",
+        save_strategy="no",
+        logging_strategy="no",
         report_to="none",
     )
-
-    print("[INFO] 開始訓練...")
-    trainer = Trainer(model=model, tokenizer=tokenizer, args=training_args, train_dataset=tokenized)
-
+    trainer = Trainer(model=model, args=args, train_dataset=ds["train"])
     trainer.train()
 
-    print(f"[INFO] 模型儲存到：{output_dir}")
-    model.save_pretrained(output_dir)
-    tokenizer.save_pretrained(output_dir)
 
-
-if __name__ == "__main__":
-    main()
+__all__ = ["train_bert_spam_classifier"]

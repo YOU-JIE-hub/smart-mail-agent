@@ -1,9 +1,2 @@
-import os
-
-if os.getenv("COVERAGE_PROCESS_START"):
-    try:
-        import coverage  # type: ignore
-
-        coverage.process_startup()
-    except Exception:
-        pass
+# neutralized: do nothing; avoid sys.path hacks & monkey patches
+# This file is intentionally left inert by AP-05.

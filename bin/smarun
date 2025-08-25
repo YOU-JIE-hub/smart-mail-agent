@@ -1,16 +1,2 @@
 #!/usr/bin/env bash
-set -Eeuo pipefail
-IN="$(mktemp)"; OUT="$(mktemp)"
-trap 'rm -f "$IN" "$OUT"' EXIT
-cat > "$IN" <<'JSON'
-{
-  "subject": "健康檢查",
-  "from": "healthcheck@local",
-  "body": "ok",
-  "predicted_label": "reply_faq",
-  "confidence": 0.9,
-  "attachments": []
-}
-JSON
-python3 -m src.run_action_handler --in "$IN" --out "$OUT" --dry-run >/dev/null 2>&1 || true
-exit 0
+exec python -m smart_mail_agent.routing.run_action_handler "$@"

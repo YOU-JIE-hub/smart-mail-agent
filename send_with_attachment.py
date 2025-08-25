@@ -1,20 +1,6 @@
-from __future__ import annotations
-import argparse
-
-def send_email_with_attachment(to: str, subject: str, body: str, file: str) -> bool:
-    # 真實世界會寄信；測試中會被 mock 掉
-    return True
-
-def main(argv=None) -> int:
-    p = argparse.ArgumentParser()
-    p.add_argument("--to", required=True)
-    p.add_argument("--subject", required=True)
-    p.add_argument("--body", required=True)
-    p.add_argument("--file", required=True)
-    ns = p.parse_args(argv)
-    ok = send_email_with_attachment(ns.to, ns.subject, ns.body, ns.file)
-    print("OK" if ok else "FAIL")
-    return 0 if ok else 1
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+# Auto-alias shim by AP-15 — do not edit.
+# 使 `import send_with_attachment` 直接等同
+# `smart_mail_agent.ingestion.integrations.send_with_attachment`
+import importlib as _il, sys as _sys
+_mod = _il.import_module('smart_mail_agent.ingestion.integrations.send_with_attachment')
+_sys.modules[__name__] = _mod

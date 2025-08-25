@@ -1,81 +1,91 @@
 from __future__ import annotations
 
-import json
+"""
+Import-safe generic classifier trainer.
+- Optional deps guarded (transformers / datasets / sklearn).
+- No top-level heavy work; training only runs inside functions.
+"""
 
-from datasets import Dataset
-from transformers import (
-    AutoModelForSequenceClassification,
-    AutoTokenizer,
-    Trainer,
-    TrainingArguments,
-)
-
-# 類別對應（順序需與原標籤一致）
-LABELS = [
-    "請求技術支援",
-    "申請修改資訊",
-    "詢問流程或規則",
-    "投訴與抱怨",
-    "業務接洽或報價",
-    "其他",
-]
-label2id = {label: i for i, label in enumerate(LABELS)}
-id2label = {i: label for i, label in enumerate(LABELS)}
-
-# 路徑設定
-DATA_PATH = "data/train/emails_train.json"
-MODEL_OUT = "model/roberta-zh-checkpoint"
-PRETRAINED_MODEL = "bert-base-chinese"
-
-# 載入資料
-with open(DATA_PATH, encoding="utf-8") as f:
-    raw_data = json.load(f)
-for row in raw_data:
-    row["label"] = label2id[row["label"]]
-
-# 建立 Dataset
-dataset = Dataset.from_list(raw_data)
-
-# 分詞器
-tokenizer = AutoTokenizer.from_pretrained(PRETRAINED_MODEL)
-
-
-def tokenize(batch):
-    return tokenizer(
-        batch["subject"] + "\n" + batch["content"],
-        truncation=True,
-        padding="max_length",
-        max_length=256,
+# ----- Optional dependencies (clean guards) -----
+_TRANSFORMERS_AVAILABLE = False
+try:
+    from transformers import (
+        AutoTokenizer,
+        AutoModelForSequenceClassification,
+        Trainer,
+        TrainingArguments,
     )
 
+    _TRANSFORMERS_AVAILABLE = True
+except Exception:  # pragma: no cover
+    AutoTokenizer = AutoModelForSequenceClassification = Trainer = TrainingArguments = None  # type: ignore
 
-encoded_dataset = dataset.map(tokenize)
+_DATASETS_AVAILABLE = False
+try:
+    from datasets import load_dataset  # type: ignore
 
-# 模型初始化
-model = AutoModelForSequenceClassification.from_pretrained(
-    PRETRAINED_MODEL, num_labels=len(LABELS), label2id=label2id, id2label=id2label
-)
+    _DATASETS_AVAILABLE = True
+except Exception:  # pragma: no cover
 
-# 訓練參數
-args = TrainingArguments(
-    output_dir=MODEL_OUT,
-    per_device_train_batch_size=8,
-    learning_rate=2e-5,
-    num_train_epochs=5,
-    logging_dir="./logs",
-    logging_steps=10,
-    save_strategy="epoch",
-    report_to="none",
-)
+    def load_dataset(*_a, **_k):
+        raise RuntimeError("`datasets` not installed. Install with: pip install datasets")
 
-# Trainer
-trainer = Trainer(model=model, args=args, train_dataset=encoded_dataset, tokenizer=tokenizer)
 
-# 開始訓練
-trainer.train()  # type: ignore[attr-defined]
+_SKLEARN_AVAILABLE = False
+try:
+    from sklearn.utils import shuffle  # noqa: F401
 
-# 儲存模型與 tokenizer
-model.save_pretrained(MODEL_OUT)
-tokenizer.save_pretrained(MODEL_OUT)
+    _SKLEARN_AVAILABLE = True
+except Exception:  # pragma: no cover
 
-print(f"模型已儲存至：{MODEL_OUT}")
+    def shuffle(*_a, **_k):
+        raise RuntimeError("`scikit-learn` not installed. Install with: pip install scikit-learn")
+
+
+# ----- Public API -----
+def train_classifier(
+    dataset_name_or_path: str,
+    *,
+    model_name: str = "bert-base-uncased",
+    text_field: str = "text",
+    label_field: str = "label",
+    output_dir: str = "out/generic_classifier",
+    epochs: int = 1,
+    batch_size: int = 8,
+) -> None:
+    """
+    Generic transformer-based text classifier.
+    """
+    if not _TRANSFORMERS_AVAILABLE:
+        raise RuntimeError("`transformers` not installed. Install with: pip install transformers")
+    if not _DATASETS_AVAILABLE:
+        raise RuntimeError("`datasets` not installed. Install with: pip install datasets")
+
+    # Load dataset (no import-time I/O)
+    if dataset_name_or_path.endswith(".json") or dataset_name_or_path.endswith(".jsonl"):
+        ds = load_dataset("json", data_files=dataset_name_or_path)
+    else:
+        ds = load_dataset(dataset_name_or_path)
+
+    tok = AutoTokenizer.from_pretrained(model_name)
+
+    def tokenize(batch):
+        return tok(batch[text_field], truncation=True, padding="max_length")
+
+    ds = ds.map(tokenize)
+
+    model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
+    args = TrainingArguments(
+        output_dir=output_dir,
+        per_device_train_batch_size=batch_size,
+        num_train_epochs=epochs,
+        evaluation_strategy="no",
+        save_strategy="no",
+        logging_strategy="no",
+        report_to="none",
+    )
+    trainer = Trainer(model=model, args=args, train_dataset=ds["train"])
+    trainer.train()
+
+
+__all__ = ["train_classifier"]

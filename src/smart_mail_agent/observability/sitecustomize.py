@@ -1,4 +1,2 @@
-"""
-No-op sitecustomize to avoid mutating sys.path or monkey-patching at import time.
-This file intentionally left blank (previous behavior archived).
-"""
+# neutralized: do nothing; avoid sys.path hacks & monkey patches
+# This file is intentionally left inert by AP-05.

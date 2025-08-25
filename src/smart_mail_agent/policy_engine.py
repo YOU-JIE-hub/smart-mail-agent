@@ -1,80 +1,74 @@
-from __future__ import annotations
+from smart_mail_agent.core.policy_engine import *  # re-export by AP-15
+"""
+Compatibility wrapper for `smart_mail_agent.policy_engine`.
 
-import os
-from collections.abc import Iterable
-from typing import Any
+- Re-exports everything from `smart_mail_agent.core.policy_engine`
+- Ensures `apply_policies` is available for legacy imports:
+    from smart_mail_agent.policy_engine import apply_policies
+"""
+from importlib import import_module
+from types import SimpleNamespace as _NS
 
-import yaml
+_core = import_module("smart_mail_agent.core.policy_engine")
 
+# Re-export everything public from core
+for _k, _v in _core.__dict__.items():
+    if not _k.startswith("_"):
+        globals()[_k] = _v
 
-def _sum_attachments_size(att: Iterable[dict] | None) -> int:
-    total = 0
-    for a in att or []:
-        try:
-            total += int(a.get("size") or 0)
-        except Exception:
-            pass
-    return total
+# Provide a compat entrypoint if missing
+if "apply_policies" not in globals():
+    def apply_policies(*args, **kwargs):
+        """
+        Compat shim: try common entrypoints in core.policy_engine.
+        Preference:
+          1) core.apply_policies
+          2) core.PolicyEngine().apply_policies / .apply / .run / .evaluate
+          3) core.apply / core.run / core.evaluate
+        """
+        # 1) direct function
+        for fn in ("apply_policies",):
+            if hasattr(_core, fn):
+                return getattr(_core, fn)(*args, **kwargs)
+        # 2) class instance methods (common names)
+        if hasattr(_core, "PolicyEngine"):
+            _pe = getattr(_core, "PolicyEngine")()
+            for m in ("apply_policies", "apply", "run", "evaluate"):
+                if hasattr(_pe, m):
+                    return getattr(_pe, m)(*args, **kwargs)
+        # 3) module-level fallbacks
+        for fn in ("apply", "run", "evaluate"):
+            if hasattr(_core, fn):
+                return getattr(_core, fn)(*args, **kwargs)
+        raise AttributeError(
+            "smart_mail_agent.core.policy_engine 未提供可用的 apply 入口（apply_policies/apply/run/evaluate）。"
+        )
 
-
-def _from_domain(addr: str | None) -> str | None:
-    if not addr or "@" not in addr:
-        return None
-    return addr.split("@", 1)[1].lower()
-
-
-def _detect_roles(a: dict[str, Any], b: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
-    """回傳 (result, request)；自動判別參數順序以相容舊測試。"""
-    score_a = int(bool(a.get("action_name") or a.get("ok") or a.get("code")))
-    score_b = int(bool(b.get("action_name") or b.get("ok") or b.get("code")))
-    if score_a > score_b:
-        return a, b
-    if score_b > score_a:
-        return b, a
-    # 平手時用特徵判斷：含 predicted_label/attachments 視為 request
-    if "predicted_label" in a or "attachments" in a:
-        return b, a
-    return a, b
-
-
-def apply_policies(x: dict[str, Any], y: dict[str, Any], policy_path: str = "config/policy.yaml") -> dict[str, Any]:
-    """
-    低信心簽審（預設閾值 0.6；可在 YAML low_confidence_review.threshold 覆蓋）
-    - 若低於閾值：result.meta.require_review=True，並合併 cc。
-    - 相容舊參數順序：自動判別 (result, request)。
-    """
-    result, request = _detect_roles(x, y)
-    res = dict(result or {})
-    meta = dict(res.get("meta") or {})
-    cc = list(res.get("cc") or [])
-
-    conf = request.get("confidence")
-    threshold = 0.6
-    extra_cc = ["review@company.com"]  # 預設 cc（測試期望至少包含此位址）
-
-    try:
-        if os.path.exists(policy_path):
-            rules = yaml.safe_load(open(policy_path, encoding="utf-8")) or {}
-            lcr = rules.get("low_confidence_review") or {}
-            threshold = float(lcr.get("threshold", threshold))
-            yaml_cc = list(lcr.get("cc") or [])
-            if yaml_cc:
-                extra_cc = yaml_cc  # YAML 覆蓋預設
-    except Exception:
-        pass
-
-    if conf is not None and conf < threshold:
-        meta["require_review"] = True
-        for x in extra_cc:
-            if x not in cc:
-                cc.append(x)
-
-    res["meta"] = meta
-    if cc:
-        res["cc"] = cc
-    return res
+# keep a clean __all__
+__all__ = [k for k in globals().keys() if not k.startswith("_")]
 
 
-def apply_policy(result: dict[str, Any], message: dict[str, Any], context: str | None = None) -> dict[str, Any]:
-    """單筆策略代理到 apply_policies。"""
-    return apply_policies(result, message, context or "config/policy.yaml")
+# AP15_ALIAS_BLOCK: begin (auto-added by AP-15)
+# 目標：兼容 from policy_engine import apply_policy / apply_policies
+try:
+    apply_policies  # type: ignore[name-defined]
+except Exception:
+    def apply_policies(*args, **kwargs):  # type: ignore
+        from smart_mail_agent.core import policy_engine as _pe
+        return _pe.apply_policies(*args, **kwargs)
+
+try:
+    apply_policy  # type: ignore[name-defined]
+except Exception:
+    apply_policy = apply_policies  # type: ignore
+
+# 對齊 __all__
+try:
+    __all__  # type: ignore[name-defined]
+    for _n in ("apply_policies","apply_policy"):
+        if _n not in __all__:
+            __all__.append(_n)
+except Exception:
+    __all__ = ["apply_policies","apply_policy"]
+# AP15_ALIAS_BLOCK: end
+

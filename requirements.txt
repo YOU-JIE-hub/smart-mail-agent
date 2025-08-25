@@ -8,3 +8,8 @@ pytest-timeout
 requests>=2.32
 beautifulsoup4>=4.12
 Pillow>=10
+
+# added by AP-01
+transformers
+openai>=1.12.0
+pytesseract

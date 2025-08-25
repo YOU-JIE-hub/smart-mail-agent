@@ -6,8 +6,15 @@ import re
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
+try:
+    from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
+    _TRANS_AVAIL = True
+except Exception:  # noqa: F401
+    _TRANS_AVAIL = False
+    AutoModelForSequenceClassification = None
+    AutoTokenizer = None
+    pipeline = None
 
-from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
 
 from smart_mail_agent.utils.logger import logger  # 統一日誌
 
@@ -171,3 +178,13 @@ def _cli() -> None:
 
 if __name__ == "__main__":
     _cli()
+
+
+# --- AP-01 helper ---
+def _require_transformers():
+    if not _TRANS_AVAIL:
+        raise RuntimeError(
+            "'transformers' 未安裝或載入失敗：請在專案根執行\n"
+            "  pip install -r requirements.txt\n"
+            "或安裝 extras：pip install -e .[llm]\n"
+        )
