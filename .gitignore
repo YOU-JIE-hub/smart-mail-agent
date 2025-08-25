@@ -20,3 +20,7 @@ support_bundle_*/
 data/db/
 htmlcov/
 share/smoke_output/
+
+# AP backups
+*.ap*.bak
+*.bak
